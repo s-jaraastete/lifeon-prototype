@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import NextAuthSessionProvider from "@/providers/NextAuthSessionProvider";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 
-import { Geist, Geist_Mono, Poppins } from "next/font/google";
+import { Geist, Geist_Mono, Poppins, Google_Sans_Flex } from "next/font/google";
 import "./globals.css";
 
 
@@ -25,6 +25,13 @@ const geistPoppins = Poppins({
   display: "swap",
 });
 
+const geistGoogleSansFlex = Google_Sans_Flex({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-google-sans-flex",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "LifeOn",
   description: "Conoce nuestros módulos disponibles",
@@ -33,7 +40,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${geistPoppins.variable} antialiased`}>
+      <body className={`${geistGoogleSansFlex.variable} ${geistSans.variable} ${geistMono.variable} ${geistPoppins.variable}  antialiased`}>
         <NextAuthSessionProvider>
           <ReactQueryProvider>
             <main>

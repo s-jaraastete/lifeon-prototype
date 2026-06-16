@@ -1,5 +1,46 @@
 @import "tailwindcss";
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Google Sans Flex", Helvetica, sans-serif;
+}
+
+@theme {
+  --color-primary: #FF3737;
+  --color-secondary: #008B74;
+
+  --color-primary-text: #4A4A4A;
+  --color-secondary-text: #848484;
+  --color-stroke: #EDEDED;
+
+  --color-teal-50: #F0F9F7;
+  --color-teal-100: #CCE8E3;
+  --color-teal-200: #99D1C7;
+  --color-teal-300: #66B9AC;
+  --color-teal-400: #33A290;
+  --color-teal-500: #008B74;
+  --color-teal-600: #006F5D;
+  --color-teal-700: #005346;
+  --color-teal-800: #00382E;
+  --color-teal-900: #001C17;
+  --color-teal-950: #00100D;
+
+  --color-red-50: #FFF6F6;
+  --color-red-100: #FFD7D7;
+  --color-red-200: #FFAFAF;
+  --color-red-300: #FF8787;
+  --color-red-400: #FF5F5F;
+  --color-red-500: #FF3737;
+  --color-red-600: #CC2C2C;
+  --color-red-700: #992121;
+  --color-red-800: #661616;
+  --color-red-900: #330B0B;
+  --color-red-950: #1B0404;
+
+  --color-gray-100: #FAFAFA;
+  --color-gray-200: #F5F5F5;
+  --color-gray-300: #EBEBEB;
+  --color-gray-400: #D9D9D9;
+  --color-gray-500: #C7C7C7;
+  --color-gray-600: #B1B1B1;
+  --color-gray-700: #929292;
 }
