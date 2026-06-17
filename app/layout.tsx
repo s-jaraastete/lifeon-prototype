@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
 
+import Footer from "./components/Footer";
+
 import NextAuthSessionProvider from "@/providers/NextAuthSessionProvider";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 
@@ -26,9 +28,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={`${geistPoppins.variable}  antialiased`}>
         <NextAuthSessionProvider>
           <ReactQueryProvider>
-            <main>
+            <main className="flex-1">
               {children}
             </main>
+            <Footer />
           </ReactQueryProvider>
         </NextAuthSessionProvider>
       </body>
