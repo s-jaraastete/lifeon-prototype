@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
 
+import Footer from "./components/Footer";
+
 import NextAuthSessionProvider from "@/providers/NextAuthSessionProvider";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 
@@ -40,12 +42,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${geistGoogleSansFlex.variable} ${geistSans.variable} ${geistMono.variable} ${geistPoppins.variable}  antialiased`}>
+      <body className={`${geistGoogleSansFlex.variable} ${geistSans.variable} ${geistMono.variable} ${geistPoppins.variable} antialiased flex flex-col min-h-screen`}>
         <NextAuthSessionProvider>
           <ReactQueryProvider>
-            <main>
+            <main className="flex-1">
               {children}
             </main>
+            <Footer />
           </ReactQueryProvider>
         </NextAuthSessionProvider>
       </body>
