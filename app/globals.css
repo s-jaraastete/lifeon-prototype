@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 body {
-  font-family: "Google Sans Flex", Helvetica, sans-serif;
+  font-family: "Poppins";
 }
 
 @theme {
