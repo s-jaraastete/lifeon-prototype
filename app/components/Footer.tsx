@@ -4,10 +4,10 @@ import { FaInstagram, FaLinkedin, FaYoutube } from "react-icons/fa";
 const Footer = () => {
   return (
     <footer className="flex flex-col mx-auto w-full h-full">
-      <div className="w-full bg-secondary text-white">
+      <div className="w-full bg-secondary text-white px-4">
         {/* TODO: Verify responsive layout for mobile */}
-        <div className="flex flex-col py-[50px] px-[16px] lg:flex lg:py-20 lg:px-10 h-full mx-auto max-w-[1300px]">
-          <div className="text-center lg:text-left grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-4 gap-6 pb-10 w-full border-b border-teal-400">
+        <div className="flex flex-col py-[50px] lg:flex lg:py-20 h-full mx-auto max-w-[1300px]">
+          <div className="text-center lg:text-left flex flex-col lg:flex-row justify-between gap-6 pb-10 w-full border-b border-teal-400">
             <div className="flex flex-col items-center lg:items-start space-y-7 mb-6 lg:mb-0">
               <Link href="/">
                 <h3 className="text-[40px] font-semibold">Life
@@ -42,9 +42,9 @@ const Footer = () => {
               </div>
             </div>
 
-            <div className="mb lg:col-span-2">
+            <div className="mb-6 lg:mb-0 text-center lg:text-left">
               <h6 className="font-semibold text-[18px] mb-3">Módulos</h6>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-2.5">
+              <div className="lg:columns-2 lg:gap-x-16 xl:gap-x-36 [&_a]:inline-block [&_a]:max-w-62">
                 <ul className="space-y-2.5">
                   <li>
                     <Link href="/">MIPER</Link>
@@ -61,8 +61,6 @@ const Footer = () => {
                   <li>
                     <Link href="/">Verificación de Controles Críticos</Link>
                   </li>
-                </ul>
-                <ul className="space-y-2.5">
                   <li>
                     <Link href="/">Asset Integrity e Inspecciones Estructurales</Link>
                   </li>
@@ -79,9 +77,9 @@ const Footer = () => {
               </div>
             </div>
 
-            <div>
-              <h6 className="font-semibold text-xl mb-3">Soporte</h6>
-              <ul className="space-y-2.5">
+            <div className="mb-6 lg:mb-0 text-center lg:text-left">
+              <h6 className="font-semibold text-[18px] mb-3">Soporte</h6>
+              <ul className="space-y-2.5 [&_a]:inline-block [&_a]:max-w-62">
                 <li>
                   <Link href="/">Centro de ayuda</Link>
                 </li>
