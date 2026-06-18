@@ -63,7 +63,7 @@ const Header = () => {
                     <p className="text-3xl font-semibold text-primary">Life<span className="text-secondary font-extrabold">On</span></p>
                   </Link>
 
-                  <div className="flex items-center gap-6">
+                  <nav aria-label="Main" className="flex items-center gap-6">
                     <ul className="hidden md:flex gap-10 text-primary-text">
                       {mainLinks.map((link) => {
                         let isActive = false;
@@ -131,7 +131,7 @@ const Header = () => {
                         );
                       })}
                     </ul>
-                  </div>
+                  </nav>
 
                   <div className="flex items-center gap-8">
                     <ShoppingCart />
