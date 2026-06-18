@@ -8,6 +8,7 @@ import ReactQueryProvider from "@/providers/ReactQueryProvider";
 
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import Header from "./components/Header";
 
 
 const geistPoppins = Poppins({
@@ -28,7 +29,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={`${geistPoppins.variable}  antialiased`}>
         <NextAuthSessionProvider>
           <ReactQueryProvider>
-            <main className="flex-1">
+            <Header />
+            <main>
               {children}
             </main>
             <Footer />
