@@ -9,19 +9,12 @@ export interface TextInputProps extends DetailedHTMLProps<
 }
 
 const TextInput = (props: TextInputProps) => {
-  const {
-    label,
-    className,
-    ...inputProps
-  } = props;
+  const { label, className, ...inputProps } = props;
 
   return (
     <div className="flex flex-col gap-2.5">
       {label && (
-        <label className="text-lg font-medium leading-6">
-          {props.label}
-          {props.required && <span className="text-red-600 ml-0.5">*</span>}
-        </label>
+        <label className="text-lg font-medium leading-6">{ label }</label>
       )}
 
       <input
@@ -32,7 +25,7 @@ const TextInput = (props: TextInputProps) => {
           ${props.disabled ? "cursor-not-allowed" : ""}
           ${className ?? ""}
         `}
-        {...inputProps}
+        { ...inputProps }
       />
     </div>
   );

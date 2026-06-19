@@ -1,5 +1,6 @@
 import Link from "next/link";
 import TextInput from "../../components/ui/TextInput";
+import TextArea from "../../components/ui/TextArea";
 
 const ContactForm = () => {
   return (
@@ -28,6 +29,12 @@ const ContactForm = () => {
         <TextInput
           label="Empresa"
           placeholder="Nombre de tu empresa"
+        />
+      </div>
+      <div className="mb-6">
+        <TextArea
+          label="Tu mensaje"
+          placeholder="Escribe aquí como podemos ayudarte..."
         />
       </div>
       <button className="w-full font-medium bg-primary px-4 py-3 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
