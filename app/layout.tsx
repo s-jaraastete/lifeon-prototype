@@ -1,14 +1,14 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
 
-import Footer from "./components/Footer";
+import Footer from "./components/layout/Footer";
 
 import NextAuthSessionProvider from "@/providers/NextAuthSessionProvider";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import Header from "./components/Header";
+import Header from "./components/layout/Header";
 
 
 const geistPoppins = Poppins({

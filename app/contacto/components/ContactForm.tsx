@@ -1,5 +1,5 @@
 import Link from "next/link";
-import TextInput from "../../components/TextInput";
+import TextInput from "../../components/ui/TextInput";
 
 const ContactForm = () => {
   return (

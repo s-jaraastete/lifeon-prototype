@@ -1,9 +1,10 @@
-import Header from "./components/Header";
+import HeroSection from "./components/landing/HeroSection";
+
 
 const HomePage = () => {
   return (
     <>
-      {/* <Header /> */}
+      <HeroSection />
     </>
   );
 };

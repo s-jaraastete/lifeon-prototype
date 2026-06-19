@@ -4,12 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import ShoppingCart from "./ShoppingCart";
+import ShoppingCart from "../shopping/ShoppingCart";
 
 // Icons
 import { LuChevronDown, LuUserRound } from "react-icons/lu";
-
-
 
 
 const Header = () => {
@@ -23,7 +21,7 @@ const Header = () => {
   };
 
   const mainLinks: NavLink[] = [
-    { name: "Software", href: "/" },
+    { name: "Software", href: "/software" },
     { name: "Módulos", modal: "modules" },
     { name: "Recursos", href: "/", modal: "resources" },
     { name: "Contacto", href: "/contacto" },
@@ -70,37 +68,25 @@ const Header = () => {
 
                         if (
                           link.name === "Software" &&
-                          (pathname === "/inicio" || pathname === "/")
+                          (pathname === "/software")
                         ) {
                           isActive = true;
                         } else if (
-                          link.name === "Innovaciones" &&
-                          pathname.startsWith("/innovaciones")
+                          link.name === "Módulos" &&
+                          pathname.startsWith("/modulos")
                         ) {
                           isActive = true;
                         } else if (
                           link.name === "Recursos" &&
-                          (pathname.startsWith("/blog") ||
-                            pathname.startsWith("/novedades"))
+                          (pathname === "/recursos")
                         ) {
                           isActive = true;
                         } else if (
-                          link.name === "Nuestro modelo" &&
-                          pathname === "/nuestro-modelo"
+                          link.name === "Contacto" &&
+                          pathname === "/contacto"
                         ) {
                           isActive = true;
-                        } else if (
-                          link.name === "Ecosistema" &&
-                          pathname.startsWith("/ecosistema")
-                        ) {
-                          isActive = true;
-                        } else if (
-                          link.name === "Empresa" &&
-                          (pathname === "/quienes-somos" ||
-                            pathname === "/modelo-cultural")
-                        ) {
-                          isActive = true;
-                        }
+                        } 
                         return (
                           <li
                             key={link.name}

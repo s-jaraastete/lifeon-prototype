@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import DiscountCoupon from './DiscountCoupon'
+import Select from '@/app/components/ui/Select'
 
 // Icons
 import { LuChevronRight, LuTrash2 } from 'react-icons/lu'
@@ -39,15 +40,19 @@ const CartResume = () => {
                 <div className="border border-gray-400 rounded-2xl bg-white p-6 flex gap-6">
                   <div className="w-1/2">
                     <label className="block font-medium mb-2">Plan</label>
-                    <select className="w-full border rounded-lg p-3 text-sm text-gray-600">
-                      <option>Selecciona un plan</option>
-                    </select>
+                    <Select placeholder="Seleccione un plan">
+                      <option value="plan1">Plan Básico</option>
+                      <option value="plan2">Plan Pro</option>
+                      <option value="plan3">Plan Empresarial</option>
+                    </Select>
                   </div>
                   <div className="w-1/2">
                     <label className="block font-medium mb-2">Suscripción</label>
-                    <select className="w-full border rounded-lg p-3 text-sm text-gray-600">
-                      <option>Selecciona una suscripción</option>
-                    </select>
+                    <Select placeholder="Seleccione una suscripción">
+                      <option value="subscription1">Suscripción Básica</option>
+                      <option value="subscription2">Suscripción Pro</option>
+                      <option value="subscription3">Suscripción Empresarial</option>
+                    </Select>
                   </div>
                 </div>
 
