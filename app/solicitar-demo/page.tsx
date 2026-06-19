@@ -1,4 +1,5 @@
 import Image from "next/image";
+import DemoForm from "./components/DemoForm";
 
 export default function SolicitarDemoPage() {
   return (
@@ -27,6 +28,7 @@ export default function SolicitarDemoPage() {
             </p>
           </div>
           <div className="flex-1 max-w-[569px]">
+            <DemoForm />
           </div>
         </div>
       </div>
