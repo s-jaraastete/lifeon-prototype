@@ -1,7 +1,7 @@
 import Image from "next/image";
 import DemoForm from "./components/DemoForm";
 
-export default function SolicitarDemoPage() {
+export default function RequestDemoPage() {
   return (
     <div className="relative w-full min-h-screen">
       {/* Background Image */}
