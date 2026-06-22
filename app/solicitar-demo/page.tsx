@@ -24,7 +24,8 @@ export default function RequestDemoPage() {
               Solicita una demostración y obtén 1 mes gratis de prueba
             </h1>
             <p className="text-[22px] leading-7.5">
-              Conoce la plataforma en acción y descubre cómo cientos de organizaciones están modernizando su gestión preventiva. Solicita una demostración personalizada y comienza con 1 mes de prueba sin costo.
+              Conoce la plataforma en acción y descubre cómo cientos de organizaciones están modernizando su gestión preventiva.
+              Solicita una demostración personalizada y comienza con 1 mes de prueba sin costo.
             </p>
           </div>
           <div className="flex-1 max-w-[569px]">
