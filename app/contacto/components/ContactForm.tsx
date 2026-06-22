@@ -6,65 +6,77 @@ import TextInput from "../../components/ui/TextInput";
 import TextArea from "../../components/ui/TextArea";
 
 const ContactForm = () => {
-  const [nombre, setNombre] = useState("");
-  const [apellidos, setApellidos] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [empresa, setEmpresa] = useState("");
-  const [mensaje, setMensaje] = useState("");
+  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
+  const [message, setMessage] = useState("");
 
-  const isDisabled = !nombre || !apellidos || !email || !telefono || !empresa || !mensaje;
+  const isDisabled = !firstName || !lastName || !email || !phone || !company || !message;
 
   return (
     <form className="bg-white p-7.5 rounded-[14px]">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <TextInput
+          id="firstName"
           label="Nombre"
           placeholder="Tu nombre"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
+          autoComplete="given-name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
         />
         <TextInput
+          id="lastName"
           label="Apellidos"
           placeholder="Tus apellidos"
-          value={apellidos}
-          onChange={(e) => setApellidos(e.target.value)}
+          autoComplete="family-name"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-10 gap-4 mb-4">
         <div className="md:col-span-6">
           <TextInput
+            id="email"
             label="Correo electrónico"
             placeholder="Tu correo electrónico"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div className="md:col-span-4">
           <TextInput
+            id="phone"
             label="Teléfono"
             placeholder="+56"
             type="tel"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
+            autoComplete="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
           />
         </div>
       </div>
       <div className="mb-4">
         <TextInput
+          id="company"
           label="Empresa"
           placeholder="Nombre de tu empresa"
-          value={empresa}
-          onChange={(e) => setEmpresa(e.target.value)}
+          autoComplete="organization"
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
         />
       </div>
       <div className="mb-6">
         <TextArea
+          id="message"
           label="Tu mensaje"
           placeholder="Escribe aquí como podemos ayudarte..."
-          value={mensaje}
-          onChange={(e) => setMensaje(e.target.value)}
+          autoComplete="off"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
         />
       </div>
       <button

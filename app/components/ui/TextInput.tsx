@@ -14,7 +14,12 @@ const TextInput = (props: TextInputProps) => {
   return (
     <div className="flex flex-col gap-2.5">
       {label && (
-        <label className="text-lg font-medium leading-6">{ label }</label>
+        <label
+          htmlFor={inputProps.id}
+          className="text-lg font-medium leading-6"
+        >
+          {label}
+        </label>
       )}
 
       <input
@@ -25,7 +30,7 @@ const TextInput = (props: TextInputProps) => {
           ${props.disabled ? "cursor-not-allowed" : ""}
           ${className ?? ""}
         `}
-        { ...inputProps }
+        {...inputProps}
       />
     </div>
   );

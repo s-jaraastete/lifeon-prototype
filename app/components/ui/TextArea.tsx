@@ -14,7 +14,12 @@ const TextArea = (props: TextAreaProps) => {
   return (
     <div className="flex flex-col gap-2.5">
       {label && (
-        <label className="text-lg font-medium leading-6">{ label }</label>
+        <label
+          htmlFor={textareaProps.id}
+          className="text-lg font-medium leading-6"
+        >
+          {label}
+        </label>
       )}
 
       <textarea
@@ -28,7 +33,7 @@ const TextArea = (props: TextAreaProps) => {
           ${props.disabled ? "cursor-not-allowed" : ""}
           ${className ?? ""}
         `}
-        { ...textareaProps }
+        {...textareaProps}
       />
     </div>
   );
