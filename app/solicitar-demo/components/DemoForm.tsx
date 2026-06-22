@@ -69,14 +69,9 @@ const DemoForm = () => {
         />
       </div>
       <div className="mb-6">
-        <label
-          htmlFor="modules"
-          className="block text-lg font-medium mb-2"
-        >
-          Módulos de interés
-        </label>
         <Select
           id="modules"
+          label="Módulos de interés"
           placeholder="Selecciona una o más opciones"
           value={modules}
           onValueChange={setModules}
