@@ -7,7 +7,7 @@ export default function ContactPage() {
     <div className="w-full px-6 py-25 bg-gray-200">
       <div className="flex flex-col lg:flex-row mx-auto max-w-[1300px] gap-15">
         <div className="flex-1 flex flex-col">
-          <h1 className="text-5xl font-bold mb-2.5">
+          <h1 className="text-5xl font-bold leading-14.5 mb-2.5">
             Completa el formulario y te contactaremos pronto
           </h1>
           <p className="text-[24px] leading-7.5 text-primary-text">
@@ -19,7 +19,10 @@ export default function ContactPage() {
           <ContactForm />
         </div>
       </div>
-      <div className="mx-auto max-w-[1300px] mt-20">
+      <div className="flex flex-col mx-auto max-w-[1300px] gap-7.5 mt-35">
+        <h2 className="text-5xl font-semibold leading-14.5 text-center">
+          Canales de atención
+        </h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5.5">
           <ContactCard
             icon={LuHeadset}
