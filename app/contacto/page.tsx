@@ -1,6 +1,7 @@
 import { LuHeadset, LuPhone, LuBuilding2 } from "react-icons/lu";
+
+import Card from "../components/ui/Card";
 import ContactForm from "./components/ContactForm";
-import ContactCard from "./components/ContactCard";
 
 export default function ContactPage() {
   return (
@@ -24,9 +25,9 @@ export default function ContactPage() {
           Canales de atención
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5.5">
-          <ContactCard
-            icon={LuHeadset}
+          <Card
             title="Soporte clientes"
+            icon={LuHeadset}
             content={
               <>
                 <p>Teléfono: +56 9 8877 6655</p>
@@ -34,9 +35,9 @@ export default function ContactPage() {
               </>
             }
           />
-          <ContactCard
-            icon={LuPhone}
+          <Card
             title="Área comercial"
+            icon={LuPhone}
             content={
               <>
                 <p>Teléfono: +56 9 8877 6655</p>
@@ -44,9 +45,9 @@ export default function ContactPage() {
               </>
             }
           />
-          <ContactCard
-            icon={LuBuilding2}
+          <Card
             title="Oficinas"
+            icon={LuBuilding2}
             content={
               <>
                 <p>Dirección Número, Comuna, Chile</p>
