@@ -8,7 +8,7 @@ type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
 	onValueChange?: (value: string) => void
 }
 
-const Select: React.FC<SelectProps> = ({ placeholder = "Seleccione", className, children, onChange, onValueChange, ...rest }) => {
+const Select: React.FC<SelectProps> = ({ placeholder, className, children, onChange, onValueChange, ...rest }) => {
 	const handleChange: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
 		onChange && onChange(e as any)
 		onValueChange && onValueChange(e.target.value)

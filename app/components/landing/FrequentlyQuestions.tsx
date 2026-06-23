@@ -1,0 +1,35 @@
+import Accordion from "../ui/Accordion";
+
+
+interface FrequentlyQuestion {
+  items: { title: string; content: string }[];
+}
+
+const FrequentlyQuestions = ({ items }: FrequentlyQuestion) => {
+  return (
+    <div className="flex flex-col items-center justify-center w-full pb-20 px-4 lg:px-0 lg:pb-25 lg:pt-15">
+      <div className="max-w-325 mx-auto w-full flex flex-col gap-10">
+        <div className="flex flex-col justify-center items-center gap-2 text-center" data-aos="fade-up">
+          <h2 className="font-semibold text-5xl leading-tight">
+            ¿Tienes dudas? <br /> Te ayudamos a resolverlas
+          </h2>
+          <p className="text-lg text-center text-primary-text">
+            Encuentra respuestas a las consultas más comunes sobre LifeOn, sus módulos y su implementación.
+          </p>
+        </div>
+        <div data-aos="fade-up">
+          <Accordion
+            items={items.map((item) => ({
+              ...item,
+              content: (
+                <div dangerouslySetInnerHTML={{ __html: item.content }} />
+              ),
+            }))}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FrequentlyQuestions;

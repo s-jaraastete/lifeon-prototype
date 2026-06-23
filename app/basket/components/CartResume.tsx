@@ -1,7 +1,10 @@
+"use client";
+
 import Image from 'next/image'
 import Link from 'next/link'
 import DiscountCoupon from './DiscountCoupon'
-import Select from '@/app/components/ui/Select'
+import { useState } from 'react'
+import SelectSuscription from './SelectSuscription'
 
 // Icons
 import { LuChevronRight, LuTrash2 } from 'react-icons/lu'
@@ -22,12 +25,18 @@ const items: Item[] = [
 const CartResume = () => {
   const subtotal = items.reduce((s, i) => s + i.price, 0)
   const discount = 10000
-  const total = subtotal - discount
+
+  const [plan, setPlan] = useState<string>('plan-mensual')
+
+  // Example: apply a 10% additional discount for annual plan
+  const subscriptionDiscount = plan === 'plan-anual' ? Math.round(subtotal * 0.1) : 0
+
+  const total = subtotal - discount - subscriptionDiscount
   const disabled = items.length === 0 || total <= 0
 
   return (
     <div className="w-full bg-white">
-      <div className="max-w-360 mx-auto">
+      <div className="max-w-325 mx-auto">
         <div className="bg-white py-12.5">
           <div>
             <h1 className="text-4xl font-semibold mb-2">Carrito de compras</h1>
@@ -37,25 +46,6 @@ const CartResume = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 flex flex-col gap-6">
-                <div className="border border-gray-400 rounded-2xl bg-white p-6 flex gap-6">
-                  <div className="w-1/2">
-                    <label className="block font-medium mb-2">Plan</label>
-                    <Select placeholder="Seleccione un plan">
-                      <option value="plan1">Plan Básico</option>
-                      <option value="plan2">Plan Pro</option>
-                      <option value="plan3">Plan Empresarial</option>
-                    </Select>
-                  </div>
-                  <div className="w-1/2">
-                    <label className="block font-medium mb-2">Suscripción</label>
-                    <Select placeholder="Seleccione una suscripción">
-                      <option value="subscription1">Suscripción Básica</option>
-                      <option value="subscription2">Suscripción Pro</option>
-                      <option value="subscription3">Suscripción Empresarial</option>
-                    </Select>
-                  </div>
-                </div>
-
                 <div className="border border-gray-400 rounded-2xl bg-white p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-medium">Producto</h3>
@@ -92,10 +82,15 @@ const CartResume = () => {
                 <DiscountCoupon />
                 
                 <div className="border border-gray-400 rounded-2xl bg-white p-6">
+                  <SelectSuscription value={plan} onValueChange={setPlan} />
+                  
                   <h4 className="font-medium mb-4">Total</h4>
                   <div className="flex flex-col gap-3 text-sm">
                     <div className="flex justify-between"><span>Subtotal</span><span>${subtotal} CLP</span></div>
                     <div className="flex justify-between"><span>Descuento</span><span>{discount} CLP</span></div>
+                    {subscriptionDiscount > 0 && (
+                      <div className="flex justify-between"><span>Descuento suscripción</span><span>{subscriptionDiscount} CLP</span></div>
+                    )}
                     <div className="border-t border-gray-400 pt-3 flex justify-between font-semibold"><span>Total</span><span>${total} CLP</span></div>
                   </div>
 

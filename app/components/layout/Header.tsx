@@ -8,11 +8,13 @@ import ShoppingCart from "../shopping/ShoppingCart";
 
 // Icons
 import { LuChevronDown, LuUserRound } from "react-icons/lu";
+import ModulesModal from "./ModulesModal";
 
 
 const Header = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const pathname = usePathname();
+  const isHome = pathname === "/";
 
   type NavLink = {
     name: string;
@@ -21,9 +23,9 @@ const Header = () => {
   };
 
   const mainLinks: NavLink[] = [
-    { name: "Software", href: "/software" },
+    { name: "Software", href: "/" },
     { name: "Módulos", modal: "modules" },
-    { name: "Recursos", href: "/", modal: "resources" },
+    { name: "Recursos", modal: "resources" },
     { name: "Contacto", href: "/contacto" },
   ];
 
@@ -36,7 +38,7 @@ const Header = () => {
       <div className="sticky top-0 w-full z-999 flex flex-col">
         <header className="hidden lg:block w-full border-b border-gray-400 left-0 z-100 top-0 ">
           <div className="bg-white">
-            <div className="max-w-360 mx-auto py-4 flex justify-between items-center">
+            <div className="max-w-325 mx-auto py-4 flex justify-between items-center">
               {pathname === "/basket" || pathname === "/checkout" ? (
                 <Link href="/" className="flex items-center py-1">
                   {/* <Image
@@ -68,7 +70,7 @@ const Header = () => {
 
                         if (
                           link.name === "Software" &&
-                          (pathname === "/software")
+                          (pathname === "/")
                         ) {
                           isActive = true;
                         } else if (
@@ -140,11 +142,11 @@ const Header = () => {
 
       {/* Modals */}
       <div className="relative z-990">
-        {/* <CompanieModal
-          open={activeModal === "company"}
+        <ModulesModal
+          open={activeModal === "modules"}
           onClose={() => setActiveModal(null)}
           isHome={isHome}
-        /> */}
+        />
       </div>
     </>
   );
