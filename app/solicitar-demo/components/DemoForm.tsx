@@ -3,21 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import TextInput from "../../components/ui/TextInput";
-import TextArea from "../../components/ui/TextArea";
+import Select from "../../components/ui/Select";
 
-const ContactForm = () => {
+const DemoForm = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [company, setCompany] = useState("");
-  const [message, setMessage] = useState("");
+  const [modules, setModules] = useState("");
 
-  const isDisabled = !firstName || !lastName || !email || !phone || !company || !message;
+  const isDisabled = !firstName || !lastName || !email || !phone || !company || !modules;
 
   return (
     <form className="bg-white p-7.5 rounded-[14px]">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <h2 className="text-2xl font-bold mb-4">Completa tus datos</h2>
+      <div className="mb-4">
         <TextInput
           id="firstName"
           label="Nombre"
@@ -26,6 +27,8 @@ const ContactForm = () => {
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
         />
+      </div>
+      <div className="mb-4">
         <TextInput
           id="lastName"
           label="Apellidos"
@@ -35,29 +38,25 @@ const ContactForm = () => {
           onChange={(e) => setLastName(e.target.value)}
         />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-10 gap-4 mb-4">
-        <div className="md:col-span-6">
-          <TextInput
-            id="email"
-            label="Correo electrónico"
-            placeholder="Tu correo electrónico"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="md:col-span-4">
-          <TextInput
-            id="phone"
-            label="Teléfono"
-            placeholder="+56"
-            type="tel"
-            autoComplete="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <TextInput
+          id="email"
+          label="Correo electrónico"
+          placeholder="Tu correo electrónico"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <TextInput
+          id="phone"
+          label="Teléfono"
+          placeholder="+56"
+          type="tel"
+          autoComplete="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
       </div>
       <div className="mb-4">
         <TextInput
@@ -70,14 +69,16 @@ const ContactForm = () => {
         />
       </div>
       <div className="mb-6">
-        <TextArea
-          id="message"
-          label="Tu mensaje"
-          placeholder="Escribe aquí como podemos ayudarte..."
-          autoComplete="off"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
+        <Select
+          id="modules"
+          label="Módulos de interés"
+          placeholder="Selecciona una o más opciones"
+          value={modules}
+          onValueChange={setModules}
+        >
+          <option value="modulo1">Módulo 1</option>
+          <option value="modulo2">Módulo 2</option>
+        </Select>
       </div>
       <button
         disabled={isDisabled}
@@ -90,7 +91,7 @@ const ContactForm = () => {
           }
         `}
       >
-        Enviar mensaje
+        Solicitar
       </button>
       <p className="mt-7.5 text-[12px] text-primary-text text-center">
         Al enviar tu información, autorizas a LifeOn a procesar tus datos
@@ -105,4 +106,4 @@ const ContactForm = () => {
   );
 };
 
-export default ContactForm;
+export default DemoForm;
