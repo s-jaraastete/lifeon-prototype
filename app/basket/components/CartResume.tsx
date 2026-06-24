@@ -81,29 +81,34 @@ const CartResume = () => {
                 <div className="border border-gray-500 rounded-2xl bg-white p-6">
                   <SelectSuscription value={plan} onValueChange={setPlan} />
                   
-                  <h4 className="font-semibold text-base mb-4">Total</h4>
-                  <div className="flex flex-col gap-3 text-sm">
-                    <div className="flex justify-between items-baseline">
+                  <h4 className="font-semibold text-lg">Total</h4>
+                  <hr className="border-stroke my-5.5" />
+                  <div className="flex flex-col gap-3 text-base">
+                    <div className="flex justify-between items-baseline text-black ">
                       <span>Subtotal</span>
                       <div className="text-right">
                         <span>2,5 UF</span>
-                        <span className="text-xs text-primary-text ml-1.5">(Ref: $95.125 CLP)</span>
+                        <span className="text-secondary-text ml-1.5">(Ref: $95.125 CLP)</span>
                       </div>
                     </div>
-                    <div className="flex justify-between items-baseline text-red-500">
+                    <div className="flex justify-between items-baseline text-black">
                       <span>Descuento</span>
-                      <span>- 2.5 UF (Mes gratis)</span>
-                    </div>
-                    <div className="border-t border-gray-400 pt-3 flex justify-between items-baseline">
-                      <span className="font-semibold text-base text-black">Total a pagar</span>
                       <div className="text-right">
-                        <span className="font-bold text-lg text-black">0 UF</span>
-                        <span className="text-xs text-primary-text ml-1.5">(Ref: $0 CLP)</span>
+                        <span>- 2.5 UF</span>
+                        <span className="text-secondary-text ml-1.5">(Mes gratis)</span>
+                      </div>
+                    </div>
+                    <hr className="border-stroke my-2" />
+                    <div className="flex justify-between items-baseline">
+                      <span className="font-medium text-lg text-black">Total a pagar</span>
+                      <div className="flex flex-col items-end">
+                        <span className="font-medium text-lg text-black">0 UF</span>
+                        <span className="text-sm text-secondary-text">(Ref: $0 CLP)</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 bg-gray-100 rounded-xl p-4 text-xs leading-relaxed text-primary-text">
+                  <div className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
                     Tu prueba de 30 días comienza hoy por 0 UF y tu primer periodo
                     facturado se iniciará el 18/07/2026 por 2,5 UF mensual.
                     El botón &apos;Ir a pagar&apos; te redirigirá de forma segura para
@@ -113,18 +118,27 @@ const CartResume = () => {
                     desde tu panel antes de esa fecha.
                   </div>
 
-                  <Link href="/checkout" className="block w-full">
+                  <Link
+                    href="/checkout"
+                    className="block w-full mt-10.5"
+                  >
                     <button
                       type="button"
                       className="mt-6 w-full py-3 rounded-lg text-white bg-primary hover:bg-red-600 cursor-pointer transition-colors duration-150 flex items-center justify-center gap-1.5"
                     >
                       Ir a pagar
-                      <LuChevronRight className="w-4 h-4" />
+                      <LuChevronRight size={20} />
                     </button>
                   </Link>
 
-                  <div className="mt-4 flex items-center justify-center">
-                    <Image src="/images/pay_methods.png" alt="Payment Method" width={134} height={100} className='w-33 h-auto' />
+                  <div className="mt-4 flex items-center justify-end">
+                    <Image
+                      src="/images/pay_methods.png"
+                      alt="Payment Method"
+                      width={134}
+                      height={100}
+                      className='w-33 h-auto'
+                    />
                   </div>
                 </div>
               </div>
