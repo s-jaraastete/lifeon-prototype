@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { CSSProperties, useEffect, useRef, useState } from "react"
 
 type Slide = {
   id: string | number
-  content: React.ReactNode
+  content: React.ReactNode | ((isActive: boolean) => React.ReactNode)
 }
 
 type Props = {
@@ -19,6 +19,9 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
   const [idx, setIdx] = useState(0)
   const paused = useRef(false)
   const timer = useRef<number | null>(null)
+  const progressStyle = {
+    "--hero-slider-progress-duration": `${intervalMs}ms`,
+  } as CSSProperties
 
   useEffect(() => {
     if (slides.length <= 1) return
@@ -61,7 +64,7 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
           }`}
           aria-hidden={i === idx ? "false" : "true"}
         >
-          {s.content}
+          {typeof s.content === 'function' ? s.content(i === idx) : s.content}
         </div>
       ))}
 
@@ -79,9 +82,9 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
                   className="relative h-2 w-11 rounded-full bg-teal-100 overflow-hidden cursor-pointer"
                 >
                   <span
-                    className={
-                      "absolute left-0 top-0 h-full rounded-full transition-all duration-700 bg-secondary w-5"
-                    }
+                    key={idx}
+                    className="hero-slider-progress absolute left-0 top-0 h-full w-full origin-left rounded-full bg-secondary"
+                    style={progressStyle}
                   />
                 </button>
               )

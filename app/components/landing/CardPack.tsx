@@ -16,7 +16,7 @@ type CardPackProps = {
 
 const CardPack = ({ chip, icon, bgIcon, title, description, details, borderButtonColor, hoverButton, hoverBorderCard }: CardPackProps) => {
   return (
-    <div className={`border-2 border-gray-300 rounded-xl p-6 w-full h-138.25 flex flex-col ${hoverBorderCard} transition duration-200`}>
+    <div className={`border-2 border-gray-300 rounded-3xl p-6 w-full h-138.25 flex flex-col ${hoverBorderCard} transition duration-200`}>
       <div className="w-57">
         <p className="text-xs text-secondary bg-teal-50 px-3 py-1 rounded-xl w-auto">{chip}</p>
       </div>

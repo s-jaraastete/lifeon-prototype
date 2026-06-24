@@ -18,7 +18,7 @@ const ShoppingCart = () => {
               className="relative cursor-pointer hover:text-gray-700"
             >
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                3
+                0
               </span>
               <LuShoppingCart className="w-6 h-6" />
             </button>

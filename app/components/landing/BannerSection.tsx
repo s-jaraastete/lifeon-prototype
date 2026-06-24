@@ -4,7 +4,7 @@ import { LuChevronRight } from 'react-icons/lu';
 
 const BannerSection = () => {
   return (
-    <div className="w-full py-15">
+    <section className="w-full py-15">
       <div className="max-w-325 mx-auto">
         <div className="relative w-full h-60 sm:h-72 md:h-80 lg:h-96 overflow-hidden">
           <Image
@@ -35,7 +35,7 @@ const BannerSection = () => {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 };
 

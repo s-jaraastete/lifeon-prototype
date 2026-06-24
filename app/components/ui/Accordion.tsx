@@ -37,14 +37,14 @@ const Accordion = ({ items, className, onOpenChange }: AccordionProps) => {
         return (
           <div
             key={index}
-            className="border border-gray-200 rounded-lg transition-all duration-200"
+            className="border border-gray-300 rounded-3xl transition-all duration-200"
           >
             <div
               onClick={() => toggleAccordion(index)}
-              className="flex items-center justify-between w-full p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between w-full p-4 rounded-3xl cursor-pointer hover:bg-gray-50 transition-colors"
             >
               <div className="flex flex-col text-left">
-                <h3 className={`text-base lg:text-lg text-black ${isOpen ? "font-medium" : "font-normal"}`}>
+                <h3 className={`text-base lg:text-lg text-primary-text ${isOpen ? "font-medium text-black" : "font-normal"}`}>
                   {item.title}
                 </h3>
                 {item.description && (
@@ -72,7 +72,7 @@ const Accordion = ({ items, className, onOpenChange }: AccordionProps) => {
             {/* contenido del accordion con animacion suave, no se puede animar con h-auto, tiene que tener una medida fija*/}
             <div
               className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${
-                isOpen ? "max-h-[2000px]" : "max-h-0"
+                isOpen ? "max-h-[2000px] rounded-3xl" : "max-h-0"
               }`}
             >
               <div className="border-t border-gray-100 bg-white p-4 text-primary-text text-sm lg:text-base">

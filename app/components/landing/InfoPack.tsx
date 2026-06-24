@@ -15,7 +15,7 @@ const InfoPack = () => {
   ];
   
   return (
-    <div className="w-full py-15">
+    <section className="w-full py-15">
       <div className="max-w-325 mx-auto flex gap-20">
         <div className='w-full h-144.5'>
           <Image 
@@ -23,7 +23,7 @@ const InfoPack = () => {
             alt="Description" 
             width={1000} 
             height={400} 
-            className="object-cover w-full h-full rounded-xl" 
+            className="object-cover w-full h-full rounded-3xl" 
           />
         </div>
         <div className='w-full h-144.5'>
@@ -35,15 +35,15 @@ const InfoPack = () => {
           </p>
           <ul className="mt-8 flex flex-col gap-4">
             {ListData.map((item, index) => (
-              <li key={index} className="text-lg text-primary-text">
-                <LuCheck size={20} className="inline-block mr-2 text-primary" />
-                {item}
+                <li key={index} className="flex items-start gap-2 text-lg text-primary-text">
+                  <LuCheck className="w-5 h-5 mt-1 shrink-0 text-primary" />
+                  <span>{item}</span>
               </li>
             ))}
           </ul>
         </div>
       </div>
-    </div>
+    </section>
   )
 };
 

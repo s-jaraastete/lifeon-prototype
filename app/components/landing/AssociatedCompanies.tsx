@@ -12,7 +12,7 @@ interface InfoCardProps {
 
 const InfoCard = ({ title, description, icon }: InfoCardProps) => {
   return (
-    <div className='border border-gray-300 p-6 flex flex-col gap-5 rounded-xl w-full'>
+    <div className='border border-gray-300 p-6 flex flex-col gap-5 rounded-3xl w-full'>
       <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-xl'>
         {icon}
       </div>
@@ -44,7 +44,7 @@ const AssociatedCompanies = () => {
   ]
   
   return (
-    <div className="w-full pb-15">
+    <section className="w-full pb-15">
       <div className="max-w-325 mx-auto h-[50vh] flex flex-col justify-center items-center gap-8">
         <h2 className="text-3xl font-semibold text-center mb-8 mx-30">
           +1.700 empresas usan LifeOn para simplificar el cumplimiento normativo y la gestión de riesgos.
@@ -76,7 +76,7 @@ const AssociatedCompanies = () => {
           ))}
         </div>
       </div>
-    </div>
+    </section>
   )
 };
 

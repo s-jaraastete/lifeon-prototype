@@ -44,7 +44,7 @@ const BasePack = () => {
   ];
 
   return (
-    <div className="w-full py-15">
+    <section className="w-full py-15">
       <div className="max-w-325 mx-auto">
         <div className="flex flex-col items-center justify-center gap-4">
           <h3 className="text-2xl font-semibold text-secondary">PAQUETE BASE ESENCIAL</h3>
@@ -80,7 +80,7 @@ const BasePack = () => {
           </p>
         </div>
       </div>
-    </div>
+    </section>
   )
 };
 

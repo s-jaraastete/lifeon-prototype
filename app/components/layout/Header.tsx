@@ -124,10 +124,10 @@ const Header = () => {
                   <div className="flex items-center gap-8">
                     <ShoppingCart />
                     <div className="flex items-center gap-3">
-                      <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
+                      {/* <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
                         Pruébalo gratis
-                      </button>
-                      <button className="font-medium bg-white border border-primary px-4 py-1 rounded-xl text-primary hover:bg-gray-200 transition duration-200 cursor-pointer">
+                      </button> */}
+                      <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
                         <LuUserRound className="w-5 h-5 inline-block mr-1" />
                         Acceder
                       </button>

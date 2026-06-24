@@ -11,7 +11,7 @@ const PricePack = () => {
   const [isAnnual, setIsAnnual] = useState(false);
   
   return (
-  <div className="border-2 border-gray-300 rounded-xl p-6 w-full">
+  <section className="border-2 border-gray-300 rounded-3xl p-6 w-full">
     <div className="flex items-center justify-between">
       <div className="flex items-center">
         <div className="group inline-flex items-center">
@@ -65,7 +65,7 @@ const PricePack = () => {
         Comienza ahora
       </button>
     </div>
-  </div>
+  </section>
   )
 };
 

@@ -69,11 +69,11 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>((props, ref) => {
         />
 
         <div
-          className={`w-full h-full rounded-full transition-colors ${current ? bgColor : 'bg-gray-300'} ${disabled ? 'opacity-50' : ''}`}
+          className={`w-full h-full rounded-full cursor-pointer transition-colors ${current ? bgColor : 'bg-gray-300'} ${disabled ? 'opacity-50' : ''}`}
         />
 
         <span
-          className={`absolute top-1/2 transform -translate-y-1/2 bg-white rounded-full shadow ${s.knob} ${current ? 'right-1' : 'left-1'}`}
+          className={`absolute top-1/2 transform -translate-y-1/2 bg-white cursor-pointer rounded-full shadow ${s.knob} ${current ? 'right-1' : 'left-1'}`}
           aria-hidden="true"
         />
       </div>

@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 const ManagementMap = () => {
   return (
-    <div className='w-full py-15'>
+    <section className='w-full py-15'>
       <div className='max-w-325 mx-auto bg-gray-200 p-10 rounded-3xl flex flex-col gap-15'>
         <div>
           <h1 className='text-5xl font-semibold text-center mx-30 leading-tight'>
@@ -17,7 +17,7 @@ const ManagementMap = () => {
           <Image src="/images/management-map.png" alt="Management Map" width={900} height={800} className='mx-auto mt-10' />
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 

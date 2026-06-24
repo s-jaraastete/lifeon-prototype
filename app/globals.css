@@ -44,3 +44,17 @@ body {
   --color-gray-600: #B1B1B1;
   --color-gray-700: #929292;
 }
+
+@keyframes hero-slider-progress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.hero-slider-progress {
+  animation: hero-slider-progress var(--hero-slider-progress-duration) linear forwards;
+}
