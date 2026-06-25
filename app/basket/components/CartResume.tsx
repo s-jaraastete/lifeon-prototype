@@ -36,16 +36,28 @@ const CartResume = () => {
 
                     <div className="flex flex-col gap-7">
                       <h3 className="text-lg leading-6.5 font-medium">Producto</h3>
-                      <div className="flex gap-4">
-                        <div className="flex gap-1.5">
-                          <div className="w-8 h-8 rounded-[10px] bg-[#00C7BE]/40 flex items-center justify-center">
-                            <LuTable size={16} />
+                      <div className="flex items-start gap-4">
+                        <div className="group flex">
+                          <div
+                            className="w-8 h-8 rounded-[10px] border-2 border-white bg-white overflow-hidden relative z-10"
+                          >
+                            <div className="w-full h-full bg-[#AF52DE]/40 flex items-center justify-center">
+                              <LuTable size={16} />
+                            </div>
                           </div>
-                          <div className="w-8 h-8 rounded-[10px] bg-[#007AFF]/40 flex items-center justify-center">
-                            <LuFileSearch2 size={16} />
+                          <div
+                            className="w-8 h-8 rounded-[10px] border-2 border-white bg-white overflow-hidden relative z-20 -ml-4 group-hover:ml-0 transition-all duration-300"
+                          >
+                            <div className="w-full h-full bg-[#007AFF]/40 flex items-center justify-center">
+                              <LuFileSearch2 size={16} />
+                            </div>
                           </div>
-                          <div className="w-8 h-8 rounded-[10px] bg-[#AF52DE]/40 flex items-center justify-center">
-                            <LuBotMessageSquare size={16} />
+                          <div
+                            className="w-8 h-8 rounded-[10px] border-2 border-white bg-white overflow-hidden relative z-30 -ml-4 group-hover:ml-0 transition-all duration-300"
+                          >
+                            <div className="w-full h-full bg-[#00C7BE]/40 flex items-center justify-center">
+                              <LuBotMessageSquare size={16} />
+                            </div>
                           </div>
                         </div>
                         <div>
