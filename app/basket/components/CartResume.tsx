@@ -14,6 +14,11 @@ import {
 import DiscountCoupon from './DiscountCoupon'
 import SelectSuscription from './SelectSuscription'
 
+const suscriptionOptions = [
+  { value: 'plan-mensual', label: 'Suscripción mensual' },
+  { value: 'plan-anual', label: 'Suscripción anual', subLabel: '15% OFF' },
+]
+
 const CartResume = () => {
   const [plan, setPlan] = useState<string>('plan-mensual')
 
@@ -79,7 +84,12 @@ const CartResume = () => {
                 <DiscountCoupon />
                 
                 <div className="border border-gray-500 rounded-2xl bg-white p-6">
-                  <SelectSuscription value={plan} onValueChange={setPlan} />
+                  <SelectSuscription
+                    value={plan}
+                    onValueChange={setPlan}
+                    options={suscriptionOptions}
+                    label="Suscripción"
+                  />
                   
                   <h4 className="font-semibold text-lg">Total</h4>
                   <hr className="border-stroke my-5.5" />
