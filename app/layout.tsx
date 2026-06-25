@@ -2,13 +2,14 @@ import { ReactNode } from "react";
 import type { Metadata } from "next";
 
 import Footer from "./components/layout/Footer";
+import Header from "./components/layout/Header";
 
 import NextAuthSessionProvider from "@/providers/NextAuthSessionProvider";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
+import CartProvider from "@/providers/CartProvider";
 
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import Header from "./components/layout/Header";
 
 
 const geistPoppins = Poppins({
@@ -29,11 +30,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={`${geistPoppins.variable}  antialiased`}>
         <NextAuthSessionProvider>
           <ReactQueryProvider>
-            <Header />
-            <main>
-              {children}
-            </main>
-            <Footer />
+            <CartProvider>
+              <Header />
+              <main>
+                {children}
+              </main>
+              <Footer />
+            </CartProvider>
           </ReactQueryProvider>
         </NextAuthSessionProvider>
       </body>
