@@ -5,10 +5,9 @@ import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import ShoppingCart from "../shopping/ShoppingCart";
-import { CartItem, useCart } from "@/providers/CartProvider";
 
 // Icons
-import { LuChevronDown, LuTrash2, LuUserRound } from "react-icons/lu";
+import { LuChevronDown, LuUserRound } from "react-icons/lu";
 import ModulesModal from "./ModulesModal";
 
 
@@ -16,14 +15,6 @@ const Header = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const { addItem, clearCart, hasItem } = useCart();
-
-  const mockCartItem: CartItem = {
-    id: "mock-module-basepack",
-    name: "Paquete Base Esencial",
-    description: "Mock para probar persistencia y badge del carrito",
-    price: 99.99,
-  };
 
   type NavLink = {
     name: string;
@@ -40,10 +31,6 @@ const Header = () => {
 
   const toggleModal = (type: string) => {
     setActiveModal(activeModal === type ? null : type);
-  };
-
-  const handleAddMockItem = () => {
-    addItem(mockCartItem);
   };
 
   return (
@@ -136,22 +123,6 @@ const Header = () => {
 
                   <div className="flex items-center gap-8">
                     <ShoppingCart />
-                    {/* TESTING CART BUTTONS */}
-                    <button
-                      type="button"
-                      onClick={handleAddMockItem}
-                      className="font-medium border border-secondary px-4 py-1 rounded-xl text-secondary hover:bg-teal-50 transition duration-200 cursor-pointer"
-                    >
-                      {hasItem(mockCartItem.id) ? "Mock agregado" : "Agregar mock"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={clearCart}
-                      className="font-medium text-sm text-primary-text hover:text-primary transition duration-200 cursor-pointer"
-                    >
-                      <LuTrash2 className="w-5 h-5" />
-                    </button>
-                    {/* END TESTING CART BUTTONS */}
                     <div className="flex items-center gap-3">
                       {/* <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
                         Pruébalo gratis

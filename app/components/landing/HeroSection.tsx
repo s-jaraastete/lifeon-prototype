@@ -1,12 +1,48 @@
 "use client";
 
-import HeroSlider from './HeroSlider';
 import Image from 'next/image';
 import Link from 'next/link';
+
+import { useCart, CartItem } from '@/providers/CartProvider';
+import HeroSlider from './HeroSlider';
 import ModuleCardsRow from './ModuleCardsRow';
 
+export const mockCartItem: CartItem = {
+  id: "mock-module-basepack",
+  name: "Paquete Base Esencial",
+  description: "Mock para probar persistencia y badge del carrito",
+  currency: "UF",
+  referenceCurrency: "CLP",
+  selectedBillingPeriod: "annual",
+  pricing: {
+    monthly: {
+      price: "1,5",
+      discountAmount: "1,5",
+      finalPrice: "0",
+      discountPercentage: 100,
+      discountDescription: "Mes gratis",
+      referencePrice: "61.214",
+      referenceFinalPrice: "",
+    },
+    annual: {
+      price: "18",
+      discountAmount: "3",
+      finalPrice: "15",
+      discountPercentage: 16.67,
+      discountDescription: "Mes de prueba + Contrato diferido",
+      referencePrice: "734.569,92",
+      referenceFinalPrice: "612.141,60",
+    },
+  },
+};
 
 const HeroSection = () => {
+  const { addItem } = useCart();
+
+  const handleAddPlanToCart = () => {
+    addItem(mockCartItem);
+  };
+
   const slides = [
     { id: 1, content: 
     <div className="relative h-full min-h-[calc(100vh-70px)] overflow-hidden">
@@ -18,7 +54,10 @@ const HeroSection = () => {
           </div>
           <div className="flex flex-col gap-4 mt-10 sm:flex-row">
             <Link href="/basket">
-              <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
+              <button
+                className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25"
+                onClick={handleAddPlanToCart}
+              >
                 Iniciar prueba gratuita 🚀
               </button>
             </Link>
@@ -57,7 +96,10 @@ const HeroSection = () => {
       </div>
       <div className="flex flex-col gap-4 mt-10 sm:flex-row">
         <Link href="/basket">
-          <button className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25">
+          <button
+            className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25"
+            onClick={handleAddPlanToCart}
+          >
             Iniciar prueba gratuita 🚀
           </button>
         </Link>
@@ -102,7 +144,10 @@ const HeroSection = () => {
           </div>
           <div className="flex flex-col gap-4 mt-10 sm:flex-row">
             <Link href="/basket">
-              <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
+              <button
+                className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25"
+                onClick={handleAddPlanToCart}
+              >
                 Comenzar gratis ahora 🚀
               </button>
             </Link>

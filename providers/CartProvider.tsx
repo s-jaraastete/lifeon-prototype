@@ -1,12 +1,35 @@
 'use client'
 
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
-export type CartItem = {
-  id: string
-  name: string
-  description?: string
-  price?: number
+
+export type BillingPeriod = 'monthly' | 'annual';
+export interface PriceDetail {
+  price: string;
+  finalPrice: string;
+  discountAmount?: string;
+  discountPercentage?: number;   
+  discountDescription?: string; 
+  referencePrice?: string;
+  referenceFinalPrice?: string;
+}
+export interface CartItem {
+  id: string;
+  name: string;
+  description: string;
+  currency: string;
+  referenceCurrency?: string;
+  selectedBillingPeriod: BillingPeriod;
+  pricing: {
+    monthly: PriceDetail;
+    annual: PriceDetail;
+  };
 }
 
 type CartContextValue = {
