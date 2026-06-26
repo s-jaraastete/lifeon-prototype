@@ -28,7 +28,7 @@ export const mockCartItem: CartItem = {
       price: "18",
       discountAmount: "3",
       finalPrice: "15",
-      discountPercentage: 16.67,
+      discountPercentage: 16,
       discountDescription: "Mes de prueba + Contrato diferido",
       referencePrice: "734.569,92",
       referenceFinalPrice: "612.141,60",
