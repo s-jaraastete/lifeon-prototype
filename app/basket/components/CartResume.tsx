@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -11,21 +10,33 @@ import {
   LuBotMessageSquare,
 } from 'react-icons/lu';
 
-import { useCart } from '@/providers/CartProvider';
+import { BillingPeriod, useCart } from '@/providers/CartProvider';
 import DiscountCoupon from './DiscountCoupon';
 import SelectSuscription from './SelectSuscription';
 
-const suscriptionOptions = [
-  { value: 'plan-mensual', label: 'Suscripción mensual' },
-  { value: 'plan-anual', label: 'Suscripción anual', subLabel: '15% OFF' },
-];
-
 const CartResume = () => {
-  const [plan, setPlan] = useState<string>('plan-mensual');
-  const { items, isHydrated, removeItem } = useCart();
+  const {
+    items,
+    isHydrated,
+    removeItem,
+    setBillingPeriod,
+  } = useCart();
 
   // Initial item to fill the subscription sidebar with totals, as only one plan exists for now
   const initialPlan = items[0];
+
+  const annualDiscount = initialPlan?.pricing.annual.discountPercentage;
+  const suscriptionOptions = [
+    {
+      value: 'monthly',
+      label: 'Suscripción mensual',
+    },
+    {
+      value: 'annual',
+      label: 'Suscripción anual',
+      subLabel: annualDiscount ? `${annualDiscount}% OFF` : undefined,
+    },
+  ];
 
   return (
     <div className="w-full bg-white">
@@ -82,7 +93,10 @@ const CartResume = () => {
                               {item.referenceCurrency})
                             </div>
                           </div>
-                          <button onClick={() => removeItem(item.id)} className="text-red-500 cursor-pointer m-1">
+                          <button
+                            className="text-red-500 cursor-pointer m-1"
+                            onClick={() => removeItem(item.id)}
+                          >
                             <LuTrash2 size={24} />
                           </button>
                         </div>
@@ -113,8 +127,8 @@ const CartResume = () => {
 
                   <div className="border border-gray-500 rounded-2xl bg-white p-6">
                     <SelectSuscription
-                      value={plan}
-                      onValueChange={setPlan}
+                      value={initialPlan?.selectedBillingPeriod}
+                      onValueChange={(value) => setBillingPeriod(value as BillingPeriod)}
                       options={suscriptionOptions}
                       label="Suscripción"
                     />
@@ -130,11 +144,13 @@ const CartResume = () => {
                             {" "}
                             {initialPlan.currency}
                           </span>
-                          <span className="text-secondary-text ml-1.5">
-                            (Ref: ${initialPlan.pricing[initialPlan.selectedBillingPeriod].referencePrice}
-                            {" "}
-                            {initialPlan.referenceCurrency})
-                          </span>
+                          {initialPlan.pricing[initialPlan.selectedBillingPeriod].referencePrice && (
+                            <span className="text-secondary-text ml-1.5">
+                              (Ref: ${initialPlan.pricing[initialPlan.selectedBillingPeriod].referencePrice}
+                              {" "}
+                              {initialPlan.referenceCurrency})
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex justify-between items-baseline gap-8 text-black">
@@ -145,9 +161,11 @@ const CartResume = () => {
                             {" "}
                             {initialPlan.currency}
                           </span>
-                          <span className="text-secondary-text ml-1.5">
-                            ({initialPlan.pricing[initialPlan.selectedBillingPeriod].discountDescription})
-                          </span>
+                          {initialPlan.pricing[initialPlan.selectedBillingPeriod].discountDescription && (
+                            <span className="text-secondary-text ml-1.5">
+                              ({initialPlan.pricing[initialPlan.selectedBillingPeriod].discountDescription})
+                            </span>
+                          )}
                         </div>
                       </div>
                       <hr className="border-stroke my-2" />
@@ -159,11 +177,13 @@ const CartResume = () => {
                             {" "}
                             {initialPlan.currency}
                           </span>
-                          <span className="text-sm text-secondary-text">
-                            (Ref: ${initialPlan.pricing[initialPlan.selectedBillingPeriod].referenceFinalPrice}
-                            {" "}
-                            {initialPlan.referenceCurrency})
-                          </span>
+                          {initialPlan.pricing[initialPlan.selectedBillingPeriod].referenceFinalPrice && (
+                            <span className="text-sm text-secondary-text">
+                              (Ref: ${initialPlan.pricing[initialPlan.selectedBillingPeriod].referenceFinalPrice}
+                              {" "}
+                              {initialPlan.referenceCurrency})
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

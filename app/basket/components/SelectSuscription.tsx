@@ -5,28 +5,28 @@ import {
   ListboxButton,
   ListboxOption,
   ListboxOptions,
-} from '@headlessui/react'
-import { LuChevronDown } from 'react-icons/lu'
+} from '@headlessui/react';
+import { LuChevronDown } from 'react-icons/lu';
 
 type Option = {
   value: string
   label: string
   subLabel?: string
-}
+};
 
 type Props = {
   value?: string
   onValueChange?: (value: string) => void
   options: Option[]
   label?: string
-}
+};
 
 const SelectSuscription = ({ value, onValueChange, options, label }: Props) => {
-  const selected = options.find((o) => o.value === value) ?? options[0]
+  const selected = options.find((o) => o.value === value) ?? options[0];
 
   const handleChange = (option: Option) => {
     onValueChange?.(option.value)
-  }
+  };
 
   return (
     <div className="relative flex flex-col mb-5">
