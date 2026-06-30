@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import {
+  LuShoppingCart,
   LuChevronRight,
   LuTrash2,
   LuTable,
@@ -21,6 +22,8 @@ const CartResume = () => {
     removeItem,
     setBillingPeriod,
   } = useCart();
+
+  const isCartEmpty = items.length === 0;
 
   // Initial item to fill the subscription sidebar with totals, as only one plan exists for now
   const initialPlan = items[0];
@@ -64,89 +67,105 @@ const CartResume = () => {
           <div>
             <h1 className="text-[40px] leading-12 font-semibold mb-8">Carrito de compras</h1>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 flex flex-col gap-6">
-                {isHydrated && items.map((item) => (
-                  <div key={item.id} className="border border-gray-500 rounded-[22px] bg-white p-7.5">
-                    <div className="flex justify-between">
-                      <div className="flex flex-col gap-7">
-                        <h3 className="text-lg leading-6.5 font-medium">Producto</h3>
-                        <div className="flex items-start gap-4">
-                          {initialPlanIcons}
-                          <div>
-                            <div className="font-medium">{item.name}</div>
-                            {item.description && (
-                              <div className="text-sm text-primary-text">{item.description}</div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-7">
-                        <h3 className="text-lg leading-6.5 font-medium">Total</h3>
-                        <div className="flex items-start gap-8">
-                          <div className="text-primary-text">
-                            {item.selectedBillingPeriod === 'annual' && item.pricing[item.selectedBillingPeriod].discountPercentage ? (
-                              <>
-                                <div className="text-sm">
-                                  <span className="line-through font-light text-secondary-text pe-2">
-                                    {item.pricing[item.selectedBillingPeriod].price}
-                                    {" "}
-                                    {item.currency}
-                                  </span>
-                                  <span className="bg-secondary font-medium leading-5 text-white rounded-[14px] px-2 py-0.5 text-xs">
-                                    -{item.pricing[item.selectedBillingPeriod].discountPercentage}%
-                                  </span>
-                                </div>
-                                <div className="text-sm text-black">
-                                  {item.pricing[item.selectedBillingPeriod].finalPrice}
-                                  {" "}
-                                  {item.currency}
-                                  {" "}
-                                  por el año
-                                </div>
-                              </>
-                            ) : (
-                              <div className='text-sm'>
-                                {item.pricing[item.selectedBillingPeriod].price}
-                                {" "}
-                                {item.currency}
-                              </div>
-                            )}
-                            <div className="text-sm">
-                              (Ref: ${item.pricing[item.selectedBillingPeriod].referencePrice}
-                              {" "}
-                              {item.referenceCurrency})
+            {isHydrated && isCartEmpty && (
+              <div className="h-120 flex flex-col items-center justify-center mb-10">
+                <LuShoppingCart
+                  className="text-secondary mb-2.5"
+                  size={42}
+                />
+                <h2 className="text-3xl font-semibold leading-9.5">Carrito Vacío</h2>
+                <p className="text-lg text-primary-text">Agrega módulos a tu carrito</p>
+                <Link
+                  href="/"
+                  className="mt-3.5"
+                >
+                  <button
+                    type="button"
+                    className="mt-6 w-full py-3 px-6 rounded-[14px] text-white bg-primary hover:bg-red-600 cursor-pointer transition-colors duration-150 flex items-center justify-center gap-1.5"
+                  >
+                    Volver al inicio
+                  </button>
+                </Link>
+              </div>
+            )}
+
+            {isHydrated && !isCartEmpty && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                  {items.map((item) => (
+                    <div key={item.id} className="border border-gray-500 rounded-[22px] bg-white p-7.5">
+                      <div className="flex flex-col lg:flex-row justify-between">
+                        <div className="flex flex-col gap-7">
+                          <h3 className="text-lg leading-6.5 font-medium">Producto</h3>
+                          <div className="flex items-start gap-4">
+                            {initialPlanIcons}
+                            <div>
+                              <div className="font-medium">{item.name}</div>
+                              {item.description && (
+                                <div className="text-sm text-primary-text">{item.description}</div>
+                              )}
                             </div>
                           </div>
-                          <button
-                            className="text-red-500 cursor-pointer m-1"
-                            onClick={() => removeItem(item.id)}
-                          >
-                            <LuTrash2 size={24} />
-                          </button>
+                        </div>
+                        <div className="flex flex-col gap-7">
+                          <h3 className="text-lg leading-6.5 font-medium">Total</h3>
+                          <div className="flex items-start justify-between gap-8 min-w-54">
+                            <div className="text-primary-text">
+                              {item.selectedBillingPeriod === 'annual' && item.pricing[item.selectedBillingPeriod].discountPercentage ? (
+                                <>
+                                  <div className="text-sm">
+                                    <span className="line-through font-light text-secondary-text pe-2">
+                                      {item.pricing[item.selectedBillingPeriod].price}
+                                      {" "}
+                                      {item.currency}
+                                    </span>
+                                    <span className="bg-secondary font-medium leading-5 text-white rounded-[14px] px-2 py-0.5 text-xs">
+                                      -{item.pricing[item.selectedBillingPeriod].discountPercentage}%
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-black">
+                                    {item.pricing[item.selectedBillingPeriod].finalPrice}
+                                    {" "}
+                                    {item.currency}
+                                    {" "}
+                                    por el año
+                                  </div>
+                                </>
+                              ) : (
+                                <div className='text-sm'>
+                                  {item.pricing[item.selectedBillingPeriod].price}
+                                  {" "}
+                                  {item.currency}
+                                </div>
+                              )}
+                              <div className="text-sm">
+                                (Ref: ${item.pricing[item.selectedBillingPeriod].referencePrice}
+                                {" "}
+                                {item.referenceCurrency})
+                              </div>
+                            </div>
+                            <button
+                              className="text-red-500 cursor-pointer m-1"
+                              onClick={() => removeItem(item.id)}
+                            >
+                              <LuTrash2 size={24} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
 
-                {isHydrated && items.length === 0 && (
-                  <div className="border border-gray-500 rounded-[22px] bg-white p-7.5">
-                    <p className="text-primary-text text-center py-10">Tu carrito está vacío</p>
+                  <div className="bg-gray-200 p-5 rounded-[22px]">
+                    <h4 className="font-medium text-lg leading-6.5 text-black">
+                      Próximamente más módulos para sumar a tu Paquete Base
+                    </h4>
+                    <p className="text-sm leading-5.5 text-primary-text">
+                      Prepárate para sumar módulos especializados en camino. Flexibilidad total para el futuro de tu gestión.
+                    </p>
                   </div>
-                )}
-
-                <div className="bg-gray-200 p-5 rounded-[22px]">
-                  <h4 className="font-medium text-lg leading-6.5 text-black">
-                    Próximamente más módulos para sumar a tu Paquete Base
-                  </h4>
-                  <p className="text-sm leading-5.5 text-primary-text">
-                    Prepárate para sumar módulos especializados en camino. Flexibilidad total para el futuro de tu gestión.
-                  </p>
                 </div>
-              </div>
 
-              {isHydrated && items.length > 0 && (
                 <div className="flex flex-col gap-6">
                   <DiscountCoupon />
 
@@ -229,7 +248,7 @@ const CartResume = () => {
                     >
                       <button
                         type="button"
-                        className="mt-6 w-full py-3 rounded-lg text-white bg-primary hover:bg-red-600 cursor-pointer transition-colors duration-150 flex items-center justify-center gap-1.5"
+                        className="mt-6 w-full py-3 rounded-[14px] text-white bg-primary hover:bg-red-600 cursor-pointer transition-colors duration-150 flex items-center justify-center gap-1.5"
                       >
                         Ir a pagar
                         <LuChevronRight size={20} />
@@ -247,8 +266,8 @@ const CartResume = () => {
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
