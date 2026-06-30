@@ -42,7 +42,7 @@ type CartContextValue = {
   hasItem: (id: string) => boolean
 }
 
-const CART_STORAGE_KEY = 'lifeon-cart-items'
+const CART_STORAGE_KEY = 'lifeon-cart-items';
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
 
@@ -81,8 +81,8 @@ const normalizeCartItem = (item: CartItem): CartItem => {
 }
 
 const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [items, setItems] = useState<CartItem[]>([])
-  const [isHydrated, setIsHydrated] = useState(false)
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     try {
@@ -140,21 +140,27 @@ const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const hasItem = (id: string) => items.some((item) => item.id === id)
 
+  const setBillingPeriod = (period: BillingPeriod) => {
+    setItems((prev) =>
+      prev.map((item) => ({ ...item, selectedBillingPeriod: period }))
+    )
+  }
+
   return (
-    <CartContext.Provider value={{ items, isHydrated, addItem, updateItemBillingPeriod, removeItem, clearCart, hasItem }}>
+    <CartContext.Provider value={{ items, isHydrated, addItem, updateItemBillingPeriod, removeItem, clearCart, hasItem, setBillingPeriod }}>
       {children}
     </CartContext.Provider>
   )
 }
 
 export const useCart = () => {
-  const context = useContext(CartContext)
+  const context = useContext(CartContext);
 
   if (!context) {
-    throw new Error('useCart must be used within a CartProvider')
+    throw new Error('useCart must be used within a CartProvider');
   }
 
-  return context
-}
+  return context;
+};
 
-export default CartProvider
+export default CartProvider;

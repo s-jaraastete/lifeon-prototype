@@ -9,7 +9,7 @@ import { useCart } from "@/providers/CartProvider";
 import StartTrialButton from "../shopping/StartTrialButton";
 
 // Icons
-import { LuChevronDown, LuTrash2, LuUserRound } from "react-icons/lu";
+import { LuChevronDown, LuUserRound } from "react-icons/lu";
 import ModulesModal from "./ModulesModal";
 
 
