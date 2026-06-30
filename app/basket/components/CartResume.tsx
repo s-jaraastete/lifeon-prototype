@@ -2,16 +2,11 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {
-  LuShoppingCart,
-  LuChevronRight,
-  LuTrash2,
-  LuTable,
-  LuFileSearch2,
-  LuBotMessageSquare,
-} from 'react-icons/lu';
+import { LuShoppingCart, LuChevronRight } from 'react-icons/lu';
 
 import { BillingPeriod, useCart } from '@/providers/CartProvider';
+import CartProductPlan from './CartProductPlan';
+import CartPricingBlock from './CartPricingBlock';
 import DiscountCoupon from './DiscountCoupon';
 import SelectSuscription from './SelectSuscription';
 
@@ -40,25 +35,6 @@ const CartResume = () => {
       subLabel: annualDiscount ? `${annualDiscount}% OFF` : undefined,
     },
   ];
-  const initialPlanIcons = (
-    <div className="group flex">
-      <div className="w-8 h-8 rounded-[10px] border-2 border-white bg-white overflow-hidden relative z-10">
-        <div className="w-full h-full bg-[#AF52DE]/40 flex items-center justify-center">
-          <LuTable size={16} />
-        </div>
-      </div>
-      <div className="w-8 h-8 rounded-[10px] border-2 border-white bg-white overflow-hidden relative z-20 -ml-4 group-hover:ml-0 transition-all duration-300">
-        <div className="w-full h-full bg-[#007AFF]/40 flex items-center justify-center">
-          <LuFileSearch2 size={16} />
-        </div>
-      </div>
-      <div className="w-8 h-8 rounded-[10px] border-2 border-white bg-white overflow-hidden relative z-30 -ml-4 group-hover:ml-0 transition-all duration-300">
-        <div className="w-full h-full bg-[#00C7BE]/40 flex items-center justify-center">
-          <LuBotMessageSquare size={16} />
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="w-full bg-white">
@@ -92,69 +68,10 @@ const CartResume = () => {
             {isHydrated && !isCartEmpty && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 flex flex-col gap-6">
-                  {items.map((item) => (
-                    <div key={item.id} className="border border-gray-500 rounded-[22px] bg-white p-7.5">
-                      <div className="flex flex-col lg:flex-row justify-between">
-                        <div className="flex flex-col gap-7">
-                          <h3 className="text-lg leading-6.5 font-medium">Producto</h3>
-                          <div className="flex items-start gap-4">
-                            {initialPlanIcons}
-                            <div>
-                              <div className="font-medium">{item.name}</div>
-                              {item.description && (
-                                <div className="text-sm text-primary-text">{item.description}</div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-7">
-                          <h3 className="text-lg leading-6.5 font-medium">Total</h3>
-                          <div className="flex items-start justify-between gap-8 min-w-54">
-                            <div className="text-primary-text">
-                              {item.selectedBillingPeriod === 'annual' && item.pricing[item.selectedBillingPeriod].discountPercentage ? (
-                                <>
-                                  <div className="text-sm">
-                                    <span className="line-through font-light text-secondary-text pe-2">
-                                      {item.pricing[item.selectedBillingPeriod].price}
-                                      {" "}
-                                      {item.currency}
-                                    </span>
-                                    <span className="bg-secondary font-medium leading-5 text-white rounded-[14px] px-2 py-0.5 text-xs">
-                                      -{item.pricing[item.selectedBillingPeriod].discountPercentage}%
-                                    </span>
-                                  </div>
-                                  <div className="text-sm text-black">
-                                    {item.pricing[item.selectedBillingPeriod].finalPrice}
-                                    {" "}
-                                    {item.currency}
-                                    {" "}
-                                    por el año
-                                  </div>
-                                </>
-                              ) : (
-                                <div className='text-sm'>
-                                  {item.pricing[item.selectedBillingPeriod].price}
-                                  {" "}
-                                  {item.currency}
-                                </div>
-                              )}
-                              <div className="text-sm">
-                                (Ref: ${item.pricing[item.selectedBillingPeriod].referencePrice}
-                                {" "}
-                                {item.referenceCurrency})
-                              </div>
-                            </div>
-                            <button
-                              className="text-red-500 cursor-pointer m-1"
-                              onClick={() => removeItem(item.id)}
-                            >
-                              <LuTrash2 size={24} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  <CartProductPlan
+                    items={items}
+                    onRemove={removeItem}
+                  />
 
                   <div className="bg-gray-200 p-5 rounded-[22px]">
                     <h4 className="font-medium text-lg leading-6.5 text-black">
@@ -176,61 +93,8 @@ const CartResume = () => {
                       options={suscriptionOptions}
                       label="Suscripción"
                     />
-                    
-                    <h4 className="font-semibold text-lg">Total</h4>
-                    <hr className="border-stroke my-5.5" />
-                    <div className="flex flex-col gap-3 text-base">
-                      <div className="flex justify-between items-baseline gap-8 text-black">
-                        <span>Subtotal</span>
-                        <div className="text-right">
-                          <span>
-                            {initialPlan.pricing[initialPlan.selectedBillingPeriod].price}
-                            {" "}
-                            {initialPlan.currency}
-                          </span>
-                          {initialPlan.pricing[initialPlan.selectedBillingPeriod].referencePrice && (
-                            <span className="text-secondary-text ml-1.5">
-                              (Ref: ${initialPlan.pricing[initialPlan.selectedBillingPeriod].referencePrice}
-                              {" "}
-                              {initialPlan.referenceCurrency})
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-baseline gap-8 text-black">
-                        <span>Descuento</span>
-                        <div className="text-right">
-                          <span>
-                            - {initialPlan.pricing[initialPlan.selectedBillingPeriod].discountAmount}
-                            {" "}
-                            {initialPlan.currency}
-                          </span>
-                          {initialPlan.pricing[initialPlan.selectedBillingPeriod].discountDescription && (
-                            <span className="text-secondary-text ml-1.5">
-                              ({initialPlan.pricing[initialPlan.selectedBillingPeriod].discountDescription})
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <hr className="border-stroke my-2" />
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-medium text-lg text-black">Total a pagar</span>
-                        <div className="flex flex-col items-end">
-                          <span className="font-medium text-lg text-black">
-                            {initialPlan.pricing[initialPlan.selectedBillingPeriod].finalPrice}
-                            {" "}
-                            {initialPlan.currency}
-                          </span>
-                          {initialPlan.pricing[initialPlan.selectedBillingPeriod].referenceFinalPrice && (
-                            <span className="text-sm text-secondary-text">
-                              (Ref: ${initialPlan.pricing[initialPlan.selectedBillingPeriod].referenceFinalPrice}
-                              {" "}
-                              {initialPlan.referenceCurrency})
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+
+                    <CartPricingBlock plan={initialPlan} />
 
                     <div className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
                       Tu prueba de 30 días comienza hoy por 0 UF y tu primer periodo
