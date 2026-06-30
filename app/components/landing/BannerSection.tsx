@@ -1,6 +1,9 @@
 import Image from 'next/image';
-import React from 'react'
+import StartTrialButton from '../shopping/StartTrialButton';
+
+// Icons
 import { LuChevronRight } from 'react-icons/lu';
+
 
 const BannerSection = () => {
   return (
@@ -25,12 +28,14 @@ const BannerSection = () => {
               </p>
             </div>
             <div>
-              <button 
+              <StartTrialButton
+                slug="paquete-base-esencial"
                 className=" bg-white px-6 py-3 rounded-xl hover:bg-gray-200 transition cursor-pointer flex items-center"
+                pendingText="Preparando prueba..."
               >
                 Comienza ahora
                 <LuChevronRight size={20} className="inline-block ml-2 text-black" />
-              </button>
+              </StartTrialButton>
             </div>
           </div>
         </div>

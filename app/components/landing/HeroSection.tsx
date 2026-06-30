@@ -4,6 +4,7 @@ import HeroSlider from './HeroSlider';
 import Image from 'next/image';
 import Link from 'next/link';
 import ModuleCardsRow from './ModuleCardsRow';
+import StartTrialButton from '../shopping/StartTrialButton';
 
 
 const HeroSection = () => {
@@ -17,11 +18,13 @@ const HeroSection = () => {
             <p className='text-base text-primary-text leading-6 md:text-[22px] md:leading-7'>Estandariza la seguridad de tu empresa. Adopta los altos estándares de la industria en una plataforma intuitiva que evoluciona con tu negocio, activando soluciones a tu propio ritmo.</p>
           </div>
           <div className="flex flex-col gap-4 mt-10 sm:flex-row">
-            <Link href="/basket">
-              <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
-                Iniciar prueba gratuita 🚀
-              </button>
-            </Link>
+            <StartTrialButton
+              slug="paquete-base-esencial"
+              className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25"
+              pendingText="Preparando prueba..."
+            >
+              Iniciar prueba gratuita 🚀
+            </StartTrialButton>
             <Link href="/modulos">
               <button className="w-full border border-secondary text-secondary py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer sm:w-59.25">
                 Conocer módulos
@@ -56,11 +59,13 @@ const HeroSection = () => {
         </div>
       </div>
       <div className="flex flex-col gap-4 mt-10 sm:flex-row">
-        <Link href="/basket">
-          <button className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25">
-            Iniciar prueba gratuita 🚀
-          </button>
-        </Link>
+        <StartTrialButton
+          slug="paquete-base-esencial"
+          className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25"
+          pendingText="Preparando prueba..."
+        >
+          Iniciar prueba gratuita 🚀
+        </StartTrialButton>
         <Link href="/modulos">
           <button className="w-full border border-primary text-primary py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer sm:w-59.25">
             Conocer módulos
@@ -101,11 +106,13 @@ const HeroSection = () => {
             <p className='text-base text-primary-text leading-6 md:text-[22px] md:leading-7'>Democratizamos la seguridad de alto nivel. Implementa MIPER, Control Documental y Asistente Virtual de Prevención, y protege a tus trabajadores sin el presupuesto de una gran minera.</p>
           </div>
           <div className="flex flex-col gap-4 mt-10 sm:flex-row">
-            <Link href="/basket">
-              <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
-                Comenzar gratis ahora 🚀
-              </button>
-            </Link>
+            <StartTrialButton
+              slug="paquete-base-esencial"
+              className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25"
+              pendingText="Preparando prueba..."
+            >
+              Comenzar gratis ahora 🚀
+            </StartTrialButton>
             <Link href="/modulos">
               <button className="w-full border border-secondary text-secondary py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer sm:w-59.25">
                 Conocer módulos

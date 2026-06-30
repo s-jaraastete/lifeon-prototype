@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Switch from '../ui/Switch';
+import StartTrialButton from '../shopping/StartTrialButton';
 
 // Icons
 import { LuBotMessageSquare, LuFileSearch2, LuTable } from 'react-icons/lu';
@@ -59,11 +60,13 @@ const PricePack = () => {
       )}
     </div>
     <div className="mt-5">
-      <button 
+      <StartTrialButton
+        slug="paquete-base-esencial"
         className="w-59.25 bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer"
+        pendingText="Preparando prueba..."
       >
         Comienza ahora
-      </button>
+      </StartTrialButton>
     </div>
   </section>
   )

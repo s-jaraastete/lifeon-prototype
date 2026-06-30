@@ -31,6 +31,6 @@ const CartList = () => {
       <button onClick={clearCart} className="mt-4 text-sm cursor-pointer">Vaciar carrito</button>
     </div>
   )
-}
+};
 
-export default CartList
+export default CartList;
