@@ -12,7 +12,8 @@ import { LuCheck, LuChevronDown } from "react-icons/lu";
 type CheckoutCollapseProps = {
   title: string;
   children: ReactNode;
-  defaultOpen?: boolean;
+  active?: boolean;
+  onToggle?: () => void;
   completed?: boolean;
   className?: string;
 };
@@ -20,16 +21,18 @@ type CheckoutCollapseProps = {
 const CheckoutCollapse = ({
   title,
   children,
-  defaultOpen = false,
+  active = false,
+  onToggle,
   completed = false,
   className = "",
 }: CheckoutCollapseProps) => (
-  <Disclosure defaultOpen={defaultOpen}>
-    {({ open }) => (
+  <Disclosure defaultOpen={active}>
+    {() => (
       <div
         className={`border border-gray-400 rounded-[22px] ${className}`}
       >
         <DisclosureButton
+          onClick={() => onToggle?.()}
           className="flex w-full justify-between p-7.5 cursor-pointer hover:bg-gray-50 transition rounded-[22px] focus-visible:ring-1 focus-visible:ring-gray"
         >
           <span className="text-2xl text-black font-semibold leading-7.5 text-left">
@@ -48,14 +51,14 @@ const CheckoutCollapse = ({
             </div>
             <LuChevronDown
               className={`size-7.5 text-primary-text shrink-0 transition-transform duration-300 ${
-                open ? "rotate-180" : "rotate-0"
+                active ? "rotate-180" : "rotate-0"
               }`}
             />
           </div>
         </DisclosureButton>
 
         <Transition
-          show={open}
+          show={active}
           enter="transition-[grid-template-rows,opacity] duration-300 ease-in-out"
           enterFrom="grid-rows-[0fr] opacity-0"
           enterTo="grid-rows-[1fr] opacity-100"

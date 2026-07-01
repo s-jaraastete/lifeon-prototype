@@ -1,6 +1,4 @@
-import PersonalData from './components/PersonalData';
-import BillingData from './components/BillingData';
-import PaymentMethod from './components/PaymentMethod';
+import CheckoutSections from './components/CheckoutSections';
 
 const CheckoutPage = () => {
   return (
@@ -9,11 +7,7 @@ const CheckoutPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2">
-          <div className="flex flex-col gap-2.5">
-            <PersonalData />
-            <BillingData />
-            <PaymentMethod />
-          </div>
+          <CheckoutSections />
         </div>
         <div>{/* Sidebar */}</div>
       </div>
