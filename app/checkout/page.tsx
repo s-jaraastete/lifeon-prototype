@@ -1,5 +1,6 @@
-import TextInput from '../components/ui/TextInput';
-import CheckoutCollapse from './components/CheckoutCollapse';
+import PersonalData from './components/PersonalData';
+import BillingData from './components/BillingData';
+import PaymentMethod from './components/PaymentMethod';
 
 const CheckoutPage = () => {
   return (
@@ -9,34 +10,9 @@ const CheckoutPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2">
           <div className="flex flex-col gap-2.5">
-            <CheckoutCollapse defaultOpen title="Datos personales">
-              <div className="grid lg:grid-cols-2 gap-5.5">
-                <TextInput
-                  label="Nombre"
-                  placeholder="Tu nombre"
-                />
-                <TextInput
-                  label="Apellidos"
-                  placeholder="Tu apellido"
-                />
-                <TextInput
-                  label="Correo electrónico"
-                  placeholder="Tu correo electrónico"
-                />
-                <TextInput
-                  label="Teléfono"
-                  placeholder="+56"
-                />
-              </div>
-            </CheckoutCollapse>
-
-            <CheckoutCollapse title="Datos de facturación">
-              <div className="h-30">Dirección y datos fiscales</div>
-            </CheckoutCollapse>
-
-            <CheckoutCollapse title="Método de pago">
-              <div className="h-30">Opciones de pago aquí</div>
-            </CheckoutCollapse>
+            <PersonalData />
+            <BillingData />
+            <PaymentMethod />
           </div>
         </div>
         <div>{/* Sidebar */}</div>
