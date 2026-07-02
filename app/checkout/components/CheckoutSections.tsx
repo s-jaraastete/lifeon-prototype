@@ -16,7 +16,7 @@ export default function CheckoutSections() {
   };
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-5.5">
       <CheckoutCollapse
         title="Datos personales"
         active={activeSection === "personal"}

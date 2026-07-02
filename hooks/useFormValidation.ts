@@ -24,6 +24,7 @@ export default function useFormValidation(form: FormFields) {
   const validate = useCallback(() => {
     const newErrors: FormErrors = {};
     if ('name' in form) newErrors.name = validateName(form.name ?? '');
+    if ('first_name' in form) newErrors.first_name = validateName(form.first_name ?? '');
     if ('last_name' in form) newErrors.last_name = validateLastName(form.last_name ?? '');
     if ('email' in form) newErrors.email = validateEmail(form.email ?? '');
     if ('phone' in form) newErrors.phone = validatePhone(form.phone ?? '');

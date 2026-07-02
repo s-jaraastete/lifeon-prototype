@@ -58,6 +58,7 @@ const CheckoutCollapse = ({
         </DisclosureButton>
 
         <Transition
+          unmount={false}
           show={active}
           enter="transition-[grid-template-rows,opacity] duration-300 ease-in-out"
           enterFrom="grid-rows-[0fr] opacity-0"
