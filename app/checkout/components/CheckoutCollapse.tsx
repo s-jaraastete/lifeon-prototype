@@ -15,6 +15,7 @@ type CheckoutCollapseProps = {
   active?: boolean;
   onToggle?: () => void;
   completed?: boolean;
+  locked?: boolean;
   className?: string;
 };
 
@@ -24,16 +25,19 @@ const CheckoutCollapse = ({
   active = false,
   onToggle,
   completed = false,
+  locked = false,
   className = "",
 }: CheckoutCollapseProps) => (
   <Disclosure defaultOpen={active}>
     {() => (
-      <div
-        className={`border border-gray-400 rounded-[22px] ${className}`}
-      >
+      <div className={`border border-gray-400 rounded-[22px] ${className}`}>
         <DisclosureButton
           onClick={() => onToggle?.()}
-          className="flex w-full justify-between p-7.5 cursor-pointer hover:bg-gray-50 transition rounded-[22px] focus-visible:ring-1 focus-visible:ring-gray"
+          className={`flex w-full justify-between p-7.5 transition rounded-[22px] focus-visible:ring-1 focus-visible:ring-gray ${
+            locked
+              ? "cursor-default pointer-events-none"
+              : "cursor-pointer hover:bg-gray-50"
+          }`}
         >
           <span className="text-2xl text-black font-semibold leading-7.5 text-left">
             {title}
@@ -58,7 +62,6 @@ const CheckoutCollapse = ({
         </DisclosureButton>
 
         <Transition
-          unmount={false}
           show={active}
           enter="transition-[grid-template-rows,opacity] duration-300 ease-in-out"
           enterFrom="grid-rows-[0fr] opacity-0"

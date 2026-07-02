@@ -38,7 +38,7 @@ const Select = ({
         <select
           className={`
             appearance-none w-full py-3 px-5 leading-normal
-            transition duration-200 focus:ring-1 focus:ring-primary focus:outline-none
+            transition duration-200 focus:ring-1 focus:ring-gray-600 focus:outline-none
             rounded-xl ring-1 ring-gray-400
             ${selectProps.value ? "" : "text-gray-700"}
             ${className ?? ""}
