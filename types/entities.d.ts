@@ -1,4 +1,37 @@
-interface Example {
-  id: number;
-  name: string;
+interface ProductModule {
+	id: number;
+	name: string;
+	slug: string;
+	description: string | null;
+	is_active: boolean;
+}
+
+interface PackPrice {
+	id: number;
+	pack: number;
+	amount: string;
+	original_amount: string | null;
+	discount_percentage: string | null;
+	discount_label: string | null;
+	currency: 'UF' | 'CLP' | 'USD';
+	billing_period: 'monthly' | 'yearly';
+	trial_days: number;
+	is_active: boolean;
+}
+
+interface PackModule {
+	id: number;
+	pack: number;
+	is_active: boolean;
+	module: ProductModule;
+}
+
+interface Pack {
+	id: number;
+	name: string;
+	slug: string;
+	description: string | null;
+	is_active: boolean;
+	pack_modules: PackModule[];
+	prices: PackPrice[];
 }

@@ -175,3 +175,12 @@ When uncertain:
 * Analyze the codebase first.
 * Follow current project conventions.
 * Ask for clarification instead of making assumptions.
+
+Change safety rules:
+
+* Do not revert, restore, delete, or overwrite files unless the user explicitly asks for that exact action.
+* Do not use broad Git commands such as `git restore`, `git checkout`, `git reset`, or similar commands across multiple files without user confirmation.
+* When the user asks to undo a change, identify the specific file and exact change first, then confirm before applying it if there is any chance of touching unrelated work.
+* If a requested change could affect multiple files, existing user work, or work from another collaborator, ask for confirmation before editing.
+* When uncertain about the intended scope, ask a clarifying question instead of making a broad assumption.
+* Prefer small, targeted patches over broad restores or rewrites.

@@ -4,11 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+
 import ShoppingCart from "../shopping/ShoppingCart";
+import ModulesModal from "./ModulesModal";
 
 // Icons
 import { LuChevronDown, LuUserRound } from "react-icons/lu";
-import ModulesModal from "./ModulesModal";
 
 
 const Header = () => {
@@ -123,6 +124,7 @@ const Header = () => {
 
                   <div className="flex items-center gap-8">
                     <ShoppingCart />
+
                     <div className="flex items-center gap-3">
                       {/* <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
                         Pruébalo gratis

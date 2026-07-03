@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Switch from '../ui/Switch';
+import StartTrialButton from '../shopping/StartTrialButton';
 
 // Icons
 import { LuBotMessageSquare, LuFileSearch2, LuTable } from 'react-icons/lu';
@@ -16,15 +17,15 @@ const PricePack = () => {
       <div className="flex items-center">
         <div className="group inline-flex items-center">
           <div className="flex items-center transition-all duration-300 group-hover:gap-2 gap-0">
-            <div className="rounded-xl p-3 border-2 border-white bg-purple-300 shadow-md transform transition-transform duration-300">
+            <div className="rounded-xl p-3 border-2 border-white bg-purple-300 transform transition-transform duration-300">
               <LuTable className="text-xl text-black" />
             </div>
             <div className="hidden md:group-hover:flex items-center text-lg text-black">+</div>
-            <div className="rounded-xl p-3 border-2 border-white bg-sky-300 shadow-md transform -translate-x-1/2 group-hover:translate-x-0 transition-transform duration-300">
+            <div className="rounded-xl p-3 border-2 border-white bg-sky-300 transform -translate-x-1/2 group-hover:translate-x-0 transition-transform duration-300">
               <LuFileSearch2 className="text-xl text-black" />
             </div>
             <div className="hidden md:group-hover:flex items-center text-lg text-black">+</div>
-            <div className="rounded-xl p-3 border-2 border-white bg-[rgb(0,199,189)] shadow-md transform -translate-x-1/1 group-hover:translate-x-0 transition-transform duration-300">
+            <div className="rounded-xl p-3 border-2 border-white bg-[rgb(0,199,189)] transform -translate-x-1/1 group-hover:translate-x-0 transition-transform duration-300">
               <LuBotMessageSquare className="text-xl text-black" />
             </div>
           </div>
@@ -59,11 +60,13 @@ const PricePack = () => {
       )}
     </div>
     <div className="mt-5">
-      <button 
+      <StartTrialButton
+        slug="paquete-base-esencial"
         className="w-59.25 bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer"
+        pendingText="Preparando prueba..."
       >
         Comienza ahora
-      </button>
+      </StartTrialButton>
     </div>
   </section>
   )

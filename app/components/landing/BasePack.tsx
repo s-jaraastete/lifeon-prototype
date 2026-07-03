@@ -23,12 +23,13 @@ const BasePack = () => {
       chip: "Incluído en Paquete Base Esencial",
       icon: <LuFileSearch2 size={24} className="text-black" />,
       bgIcon: "bg-sky-300",
-      title: "Control documental",
+      title: "Programa y Documentación Preventiva",
       description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
       details: ["Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet"],
       borderButtonColor: "border-sky-300",
       hoverButton: "hover:bg-sky-300",
-      hoverBorderCard: "hover:border-sky-300"
+      hoverBorderCard: "hover:border-sky-300",
+      titleStart: true
     },
     {
       chip: "Incluído en Paquete Base Esencial",
@@ -64,6 +65,7 @@ const BasePack = () => {
                 borderButtonColor={card.borderButtonColor}
                 hoverButton={card.hoverButton}
                 hoverBorderCard={card.hoverBorderCard}
+                titleStart={card.titleStart}
               />
               {index < CardData.length - 1 && (
                 <div className="hidden lg:flex items-center justify-center text-5xl text-teal-300">+</div>

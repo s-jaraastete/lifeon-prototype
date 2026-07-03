@@ -12,9 +12,12 @@ const axiosManagerCore = async (
   options: AxiosManagerOptions,
   headers: any
 ) => {
+  const backendHost = process.env.NEXT_PUBLIC_BACKEND_HOST ?? process.env.backendHost;
+  const adminModuleApi = process.env.NEXT_PUBLIC_ADMIN_MODULE_API ?? process.env.adminModuleAPI;
+
   const api = {
-    backend: process.env.backendHost, //only back host
-    admin: process.env.adminModuleAPI,  //only back
+    backend: backendHost,
+    admin: adminModuleApi,
   };
 
   const endpoint = `${api[options.module ?? "backend"]}${path}`;

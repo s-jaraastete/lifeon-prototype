@@ -1,6 +1,9 @@
 import Image from 'next/image';
-import React from 'react'
+import StartTrialButton from '../shopping/StartTrialButton';
+
+// Icons
 import { LuChevronRight } from 'react-icons/lu';
+
 
 const BannerSection = () => {
   return (
@@ -24,13 +27,15 @@ const BannerSection = () => {
                 Prueba LifeOn durante 30 días. Al finalizar el período de prueba, continuarás con la suscripción seleccionada pagando únicamente el valor del paquete contratado.
               </p>
             </div>
-            <div>
-              <button 
-                className=" bg-white px-6 py-3 rounded-xl hover:bg-gray-200 transition cursor-pointer flex items-center"
+            <div className="flex">
+              <StartTrialButton
+                slug="paquete-base-esencial"
+                className=" bg-white px-6 py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer flex items-center w-full"
+                pendingText="Preparando prueba..."
               >
                 Comienza ahora
                 <LuChevronRight size={20} className="inline-block ml-2 text-black" />
-              </button>
+              </StartTrialButton>
             </div>
           </div>
         </div>
