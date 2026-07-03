@@ -8,6 +8,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   className?: string;
   placeholder?: string;
   onValueChange?: (value: string) => void;
+  error?: string;
 }
 
 const Select = ({
@@ -17,6 +18,7 @@ const Select = ({
 	children,
 	onChange,
 	onValueChange,
+	error,
 	...selectProps
 }: SelectProps) => {
   const handleChange: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
@@ -38,8 +40,9 @@ const Select = ({
         <select
           className={`
             appearance-none w-full py-3 px-5 leading-normal
-            transition duration-200 focus:ring-1 focus:ring-gray-600 focus:outline-none
-            rounded-xl ring-1 ring-gray-400
+            transition duration-200 focus:ring-1 focus:outline-none
+            rounded-xl ring-1
+            ${error ? "ring-primary focus:ring-primary" : "ring-gray-400 focus:ring-gray-600"}
             ${selectProps.value ? "" : "text-gray-700"}
             ${className ?? ""}
           `}
@@ -51,6 +54,9 @@ const Select = ({
         </select>
         <LuChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-700" />
       </div>
+      {error && (
+        <p className="text-sm text-primary leading-tight">{error}</p>
+      )}
     </div>
   );
 };

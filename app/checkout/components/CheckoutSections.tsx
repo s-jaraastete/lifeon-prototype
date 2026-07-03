@@ -16,6 +16,15 @@ const PERSONAL_FIELDS: (keyof FormFields)[] = [
   "email",
   "phone",
 ];
+const BILLING_FIELDS: (keyof FormFields)[] = [
+  "rut",
+  "business_name",
+  "business_line",
+  "billing_email",
+  "address",
+  "region",
+  "comuna",
+];
 
 export default function CheckoutSections() {
   const [activeSection, setActiveSection] = useState<SectionId | null>(
@@ -27,6 +36,13 @@ export default function CheckoutSections() {
     last_name: "",
     email: "",
     phone: "",
+    rut: "",
+    business_name: "",
+    business_line: "",
+    billing_email: "",
+    address: "",
+    region: "",
+    comuna: "",
   });
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -56,7 +72,12 @@ export default function CheckoutSections() {
   const isPersonalCompleted = PERSONAL_FIELDS.every(
     (f) => touched[f] && errors[f] == null,
   );
+  const isBillingCompleted = BILLING_FIELDS.every(
+    (f) => touched[f] && errors[f] == null,
+  );
+
   const isBillingUnlocked = isPersonalCompleted;
+  const isPaymentUnlocked = isBillingCompleted;
 
   return (
     <div className="flex flex-col gap-5.5">
@@ -79,16 +100,23 @@ export default function CheckoutSections() {
         title="Datos de facturación"
         active={activeSection === "billing"}
         onToggle={() => toggle("billing")}
+        completed={isBillingCompleted}
         locked={!isBillingUnlocked}
       >
-        <BillingData />
+        <BillingData
+          values={form}
+          errors={errors}
+          touched={touched}
+          onFieldChange={handleFieldChange}
+          onFieldBlur={handleFieldBlur}
+        />
       </CheckoutCollapse>
 
       <CheckoutCollapse
         title="Método de pago"
         active={activeSection === "payment"}
         onToggle={() => toggle("payment")}
-        locked
+        locked={!isPaymentUnlocked}
       >
         <PaymentMethod />
       </CheckoutCollapse>
