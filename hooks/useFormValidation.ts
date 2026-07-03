@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import {
   validateEmail,
   validatePhone,
@@ -29,9 +29,7 @@ export type FormErrors = {
 };
 
 export default function useFormValidation(form: FormFields) {
-  const [errors, setErrors] = useState<FormErrors>({});
-
-  const validate = useCallback(() => {
+  const errors = useMemo(() => {
     const newErrors: FormErrors = {};
     if ('name' in form) newErrors.name = validateName(form.name ?? '');
     if ('first_name' in form) newErrors.first_name = validateName(form.first_name ?? '');
@@ -45,9 +43,12 @@ export default function useFormValidation(form: FormFields) {
     if ('address' in form) newErrors.address = validateBusinessField(form.address ?? '');
     if ('region' in form) newErrors.region = validateRequired(form.region ?? '');
     if ('comuna' in form) newErrors.comuna = validateRequired(form.comuna ?? '');
-    setErrors(newErrors);
     return newErrors;
   }, [form]);
+
+  const validate = useCallback(() => {
+    return errors;
+  }, [errors]);
 
   return { errors, validate };
 };

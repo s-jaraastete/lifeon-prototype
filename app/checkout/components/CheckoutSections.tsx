@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import CheckoutCollapse from "./CheckoutCollapse";
 import PersonalData from "./PersonalData";
 import BillingData from "./BillingData";
@@ -46,7 +46,7 @@ export default function CheckoutSections() {
   });
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const { errors, validate } = useFormValidation(form);
+  const { errors } = useFormValidation(form);
 
   const handleFieldChange = (field: keyof FormFields, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -57,13 +57,7 @@ export default function CheckoutSections() {
 
   const handleFieldBlur = (field: keyof FormFields) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    validate();
   };
-
-  // Re-validate on form change so errors clear as the user types
-  useEffect(() => {
-    validate();
-  }, [form, validate]);
 
   const toggle = (section: SectionId) => {
     setActiveSection((prev) => (prev === section ? null : section));
