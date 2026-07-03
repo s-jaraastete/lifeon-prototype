@@ -10,8 +10,12 @@ interface PackPrice {
 	id: number;
 	pack: number;
 	amount: string;
+	original_amount: string | null;
+	discount_percentage: string | null;
+	discount_label: string | null;
 	currency: 'UF' | 'CLP' | 'USD';
 	billing_period: 'monthly' | 'yearly';
+	trial_days: number;
 	is_active: boolean;
 }
 

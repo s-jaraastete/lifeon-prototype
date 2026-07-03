@@ -1,40 +1,54 @@
 "use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { LuShoppingCart, LuChevronRight } from 'react-icons/lu';
+import Image from 'next/image'
+import Link from 'next/link'
 
-import { BillingPeriod, useCart } from '@/providers/CartProvider';
-import CartProductPlan from './CartProductPlan';
-import CartPricingBlock from './CartPricingBlock';
-import DiscountCoupon from './DiscountCoupon';
-import SelectSuscription from './SelectSuscription';
+import { CartBillingPeriod, useCart } from '@/providers/CartProvider'
+import CartProductPlan from './CartProductPlan'
+import CartPricingBlock from './CartPricingBlock'
+import DiscountCoupon from './DiscountCoupon'
+import SelectSuscription from './SelectSuscription'
+import { getCurrentDate } from '@/utils/currentDate';
+import { formatApiAmount } from './pricingHelpers';
+
+// Icons
+import { LuChevronRight, LuShoppingCart } from 'react-icons/lu'
+
 
 const CartResume = () => {
-  const {
-    items,
-    isHydrated,
-    removeItem,
-    setBillingPeriod,
-  } = useCart();
+  const { items, isHydrated, removeItem, updateItemBillingPeriod } = useCart()
 
-  const isCartEmpty = items.length === 0;
+  const isCartEmpty = items.length === 0
+  const initialPlan = items[0] ?? null
+  const selectedBillingPeriod = initialPlan?.selectedBillingPeriod ?? 'monthly'
+  const selectedPriceOption = initialPlan?.priceOptions.find(
+    (priceOption) => priceOption.is_active && priceOption.billing_period === selectedBillingPeriod,
+  )
+  const trialDays = selectedPriceOption?.trial_days ?? 30
+  const yearlyPriceOption = initialPlan?.priceOptions.find(
+    (priceOption) => priceOption.is_active && priceOption.billing_period === 'yearly',
+  )
 
-  // Initial item to fill the subscription sidebar with totals, as only one plan exists for now
-  const initialPlan = items[0];
-
-  const annualDiscount = initialPlan?.pricing.annual.discountPercentage;
   const suscriptionOptions = [
     {
       value: 'monthly',
       label: 'Suscripción mensual',
     },
     {
-      value: 'annual',
+      value: 'yearly',
       label: 'Suscripción anual',
-      subLabel: annualDiscount ? `${annualDiscount}% OFF` : undefined,
+      subLabel: yearlyPriceOption?.discount_label
+        ?? (yearlyPriceOption?.discount_percentage ? `${yearlyPriceOption.discount_percentage}% OFF` : undefined),
     },
-  ];
+  ]
+
+  const handleBillingPeriodChange = (value: string) => {
+    if (!initialPlan) {
+      return
+    }
+
+    updateItemBillingPeriod(initialPlan.id, value as CartBillingPeriod)
+  }
 
   return (
     <div className="w-full bg-white">
@@ -49,11 +63,10 @@ const CartResume = () => {
                   className="text-secondary mb-2.5"
                   size={42}
                 />
-                <h2 className="text-3xl font-semibold leading-9.5">Carrito Vacío</h2>
+                <h2 className="text-3xl font-semibold leading-9.5">Carrito vacío</h2>
                 <p className="text-lg text-primary-text">Agrega módulos a tu carrito</p>
                 <Link
                   href="/"
-                  className="mt-3.5"
                 >
                   <button
                     type="button"
@@ -88,23 +101,34 @@ const CartResume = () => {
 
                   <div className="border border-gray-500 rounded-2xl bg-white p-6">
                     <SelectSuscription
-                      value={initialPlan?.selectedBillingPeriod}
-                      onValueChange={(value) => setBillingPeriod(value as BillingPeriod)}
+                      value={selectedBillingPeriod}
+                      onValueChange={handleBillingPeriodChange}
                       options={suscriptionOptions}
                       label="Suscripción"
                     />
 
-                    <CartPricingBlock plan={initialPlan} />
+                    {initialPlan && <CartPricingBlock plan={initialPlan} />}
 
-                    <div className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
-                      Tu prueba de 30 días comienza hoy por 0 UF y tu primer periodo
-                      facturado se iniciará el 18/07/2026 por 2,5 UF mensual.
-                      El botón &apos;Ir a pagar&apos; te redirigirá de forma segura para
-                      inscribir tu método de pago y sellar tu activación, pero hoy
-                      recibirás un comprobante por $0 CLP.
-                      Puedes cambiar de plan o cancelar tu suscripción cuando quieras
-                      desde tu panel antes de esa fecha.
-                    </div>
+                    {initialPlan?.selectedBillingPeriod === 'yearly' ? (
+                      <p className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
+                        Tu prueba de {trialDays}{" "} días comienza hoy por 0 UF y tu primer periodo 
+                        facturado se iniciará el {getCurrentDate()}{" "} por {formatApiAmount(initialPlan.price)}{" "} UF anual (ahorrando 4,5 UF en total).
+                        El botón &apos;Ir a pagar&apos; te redirigirá de forma segura para 
+                        inscribir tu método de pago y sellar tu activación, pero hoy 
+                        recibirás un comprobante por $0 CLP. 
+                        Tienes hasta el día {trialDays} para cancelar en tu panel sin ningún cobro.
+                      </p>
+                    ) : (
+                      <p className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
+                        Tu prueba de {trialDays}{" "} días comienza hoy por 0 UF y tu primer periodo
+                        facturado se iniciará el {getCurrentDate()}{" "} por {formatApiAmount(initialPlan.price)}{" "} UF mensual.
+                        El botón &apos;Ir a pagar&apos; te redirigirá de forma segura para
+                        inscribir tu método de pago y sellar tu activación, pero hoy
+                        recibirás un comprobante por $0 CLP.
+                        Puedes cambiar de plan o cancelar tu suscripción cuando quieras
+                        desde tu panel antes de esa fecha.
+                      </p>
+                    )}
 
                     <Link
                       href="/checkout"
@@ -137,6 +161,6 @@ const CartResume = () => {
       </div>
     </div>
   )
-};
+}
 
-export default CartResume;
+export default CartResume

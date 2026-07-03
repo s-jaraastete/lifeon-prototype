@@ -27,10 +27,10 @@ const BannerSection = () => {
                 Prueba LifeOn durante 30 días. Al finalizar el período de prueba, continuarás con la suscripción seleccionada pagando únicamente el valor del paquete contratado.
               </p>
             </div>
-            <div>
+            <div className="flex">
               <StartTrialButton
                 slug="paquete-base-esencial"
-                className=" bg-white px-6 py-3 rounded-xl hover:bg-gray-200 transition cursor-pointer flex items-center"
+                className=" bg-white px-6 py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer flex items-center w-full"
                 pendingText="Preparando prueba..."
               >
                 Comienza ahora

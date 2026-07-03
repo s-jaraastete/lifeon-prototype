@@ -4,20 +4,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+
 import ShoppingCart from "../shopping/ShoppingCart";
-import { useCart } from "@/providers/CartProvider";
-import StartTrialButton from "../shopping/StartTrialButton";
+import ModulesModal from "./ModulesModal";
 
 // Icons
 import { LuChevronDown, LuUserRound } from "react-icons/lu";
-import ModulesModal from "./ModulesModal";
 
 
 const Header = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const { clearCart } = useCart();
 
   type NavLink = {
     name: string;
@@ -126,24 +124,6 @@ const Header = () => {
 
                   <div className="flex items-center gap-8">
                     <ShoppingCart />
-
-                    {/* TESTING CART BUTTONS */}
-                    <StartTrialButton
-                      slug="paquete-base-esencial"
-                      redirectTo={null}
-                      pendingText="Cargando pack"
-                      className="font-medium border border-secondary px-4 py-1 rounded-xl text-secondary hover:bg-teal-50 transition duration-200 cursor-pointer"
-                    >
-                      Agregar pack
-                    </StartTrialButton>
-                    <button
-                      type="button"
-                      onClick={clearCart}
-                      className="font-medium text-sm text-primary-text hover:text-primary transition duration-200 cursor-pointer"
-                    >
-                      <LuTrash2 className="w-5 h-5" />
-                    </button>
-                    {/* END TESTING CART BUTTONS */}
 
                     <div className="flex items-center gap-3">
                       {/* <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">

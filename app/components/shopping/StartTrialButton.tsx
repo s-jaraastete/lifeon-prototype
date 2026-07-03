@@ -21,13 +21,13 @@ const StartTrialButton = ({
   redirectTo = '/basket',
 }: StartTrialButtonProps) => {
   const router = useRouter()
-  const { addBasePackToCart, isAddingBasePack } = useBasePackCart(slug)
+  const { addBasePackToCart, isAddingBasePack, error } = useBasePackCart(slug)
 
   const handleClick = async () => {
     try {
-      await addBasePackToCart()
+      const cartItem = await addBasePackToCart()
 
-      if (redirectTo) {
+      if (cartItem && redirectTo) {
         router.push(redirectTo)
       }
     } catch (error) {
@@ -36,14 +36,22 @@ const StartTrialButton = ({
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={isAddingBasePack}
-      className={className}
-    >
-      {isAddingBasePack ? pendingText : children}
-    </button>
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={isAddingBasePack}
+        aria-busy={isAddingBasePack}
+        className={className}
+      >
+        {isAddingBasePack ? pendingText : children}
+      </button>
+      {error && (
+        <p className="text-sm text-red-600">
+          {error.message}
+        </p>
+      )}
+    </div>
   )
 }
 

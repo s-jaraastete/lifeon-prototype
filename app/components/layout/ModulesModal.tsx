@@ -27,7 +27,7 @@ const ecosystemItems = [
   },
   {
     icon: <LuFileSearch2 size={24} className="text-black" />,
-    title: "Control documental",
+    title: "Programa y Documentación Preventiva",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
     href: "/modulos/",
@@ -124,7 +124,7 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
                         Próximamente disponible
                       </span>
                     )}
-                    <p className={`text-lg font-medium ${item.textColor}`}>
+                    <p className={`text-lg font-medium ${item.textColor} w-60`}>
                       {item.title}
                     </p>
                     <p className={`text-sm leading-relaxed ${item.textColor}`}>

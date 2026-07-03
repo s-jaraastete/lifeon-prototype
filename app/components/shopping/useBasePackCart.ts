@@ -1,34 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import axiosManager from '@/lib/axios_manager'
 import { CartBillingPeriod, CartItem, CartModule, CartPriceOption, useCart } from '@/providers/CartProvider'
+import getBasePack from './actions/getBasePack'
 
-
-interface PacksResponse {
-  results: Pack[]
-}
 
 interface UseBasePackCartResult {
-  addBasePackToCart: () => Promise<CartItem>
+  addBasePackToCart: () => Promise<CartItem | null>
   isAddingBasePack: boolean
   error: Error | null
-}
-
-const getPackBySlug = async (slug: string): Promise<Pack> => {
-  const response = await axiosManager(`/packs/all/?slug=${encodeURIComponent(slug)}`, null, {
-    method: 'get',
-    useAccessToken: false,
-  }) as PacksResponse
-
-  const pack = response.results.find((item) => item.slug === slug && item.is_active) ?? response.results[0]
-
-  if (!pack) {
-    throw new Error(`Pack not found for slug: ${slug}`)
-  }
-
-  return pack
 }
 
 const getDefaultBillingPeriod = (priceOptions: CartPriceOption[]): CartBillingPeriod => {
@@ -65,8 +45,12 @@ const mapPackPrices = (prices: PackPrice[]): CartPriceOption[] => {
     id: price.id,
     pack: price.pack,
     amount: Number(price.amount),
+    original_amount: price.original_amount !== null ? Number(price.original_amount) : null,
+    discount_percentage: price.discount_percentage !== null ? Number(price.discount_percentage) : null,
+    discount_label: price.discount_label,
     currency: price.currency,
     billing_period: price.billing_period,
+    trial_days: price.trial_days,
     is_active: price.is_active,
   }))
 }
@@ -90,21 +74,27 @@ const mapPackToCartItem = (pack: Pack): CartItem => {
 }
 
 const useBasePackCart = (slug: string): UseBasePackCartResult => {
-  const queryClient = useQueryClient()
-  const { addItem } = useCart()
+  const { addItem, items } = useCart()
   const [isAddingBasePack, setIsAddingBasePack] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
-  const addBasePackToCart = async (): Promise<CartItem> => {
+  const addBasePackToCart = async (): Promise<CartItem | null> => {
+    const existingCartItem = items.find((item) => item.slug === slug)
+    if (existingCartItem) {
+      return existingCartItem
+    }
+
     setIsAddingBasePack(true)
     setError(null)
 
     try {
-      const pack = await queryClient.fetchQuery({
-        queryKey: ['packs', 'by-slug', slug],
-        queryFn: () => getPackBySlug(slug),
-        staleTime: 1000 * 60 * 5,
-      })
+      const pack = await getBasePack(slug)
+
+      if (!pack) {
+        const emptyPackError = new Error(`Pack not found for slug: ${slug}`)
+        setError(emptyPackError)
+        return null
+      }
 
       const cartItem = mapPackToCartItem(pack)
       addItem(cartItem)
@@ -116,7 +106,7 @@ const useBasePackCart = (slug: string): UseBasePackCartResult => {
         : new Error('Failed to load the selected pack')
 
       setError(normalizedError)
-      throw normalizedError
+      return null
     } finally {
       setIsAddingBasePack(false)
     }

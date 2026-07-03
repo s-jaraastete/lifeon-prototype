@@ -12,19 +12,20 @@ type CardPackProps = {
   borderButtonColor?: string;
   hoverButton?: string;
   hoverBorderCard?: string;
+  titleStart?: boolean;
 }
 
-const CardPack = ({ chip, icon, bgIcon, title, description, details, borderButtonColor, hoverButton, hoverBorderCard }: CardPackProps) => {
+const CardPack = ({ chip, icon, bgIcon, title, description, details, borderButtonColor, hoverButton, hoverBorderCard, titleStart = false }: CardPackProps) => {
   return (
     <div className={`border-2 border-gray-300 rounded-3xl p-6 w-full h-138.25 flex flex-col ${hoverBorderCard} transition duration-200`}>
       <div className="w-57">
         <p className="text-xs text-secondary bg-teal-50 px-3 py-1 rounded-xl w-auto">{chip}</p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className={`flex gap-2 ${titleStart ? 'items-start' : 'items-center'}`}>
         <div className={`w-12 h-12 flex items-center justify-center ${bgIcon} rounded-2xl mt-4`}>
         {icon}
         </div>
-        <h3 className="text-xl font-semibold text-black mt-5">{title}</h3>
+        <h3 className="text-xl font-semibold text-black w-50 mt-3">{title}</h3>
       </div>
       <p className="text-primary-text mt-5">{description}</p>
 
