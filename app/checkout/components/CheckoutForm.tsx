@@ -8,6 +8,7 @@ import CheckoutCollapse from "./CheckoutCollapse";
 import PersonalData from "./form/PersonalData";
 import BillingData from "./form/BillingData";
 import PaymentMethod from "./form/PaymentMethod";
+import CheckoutTotals from './CheckoutTotals';
 
 type SectionId = "personal" | "billing" | "payment";
 
@@ -129,6 +130,8 @@ export default function CheckoutForm() {
       </div>
       <div>
         <div className="border border-gray-400 rounded-[22px] p-5">
+          <CheckoutTotals />
+
           <button
             disabled={isButtonDisabled}
             type="submit"
