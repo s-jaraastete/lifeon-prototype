@@ -25,6 +25,9 @@ const BILLING_FIELDS: (keyof FormFields)[] = [
   "region",
   "comuna",
 ];
+const PAYMENT_FIELDS: (keyof FormFields)[] = [
+  "payment_method",
+];
 
 export default function CheckoutSections() {
   const [activeSection, setActiveSection] = useState<SectionId | null>(
@@ -43,6 +46,7 @@ export default function CheckoutSections() {
     address: "",
     region: "",
     comuna: "",
+    payment_method: "",
   });
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -69,7 +73,9 @@ export default function CheckoutSections() {
   const isBillingCompleted = BILLING_FIELDS.every(
     (f) => touched[f] && errors[f] == null,
   );
-
+  const isPaymentCompleted = PAYMENT_FIELDS.every(
+    (f) => touched[f] && errors[f] == null,
+  );
   const isBillingUnlocked = isPersonalCompleted;
   const isPaymentUnlocked = isBillingCompleted;
 
@@ -110,9 +116,13 @@ export default function CheckoutSections() {
         title="Método de pago"
         active={activeSection === "payment"}
         onToggle={() => toggle("payment")}
+        completed={isPaymentCompleted}
         locked={!isPaymentUnlocked}
       >
-        <PaymentMethod />
+        <PaymentMethod
+          value={form.payment_method ?? ""}
+          onChange={(v) => handleFieldChange("payment_method", v)}
+        />
       </CheckoutCollapse>
     </div>
   );
