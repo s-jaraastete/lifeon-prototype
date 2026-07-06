@@ -4,11 +4,12 @@ import { useState } from "react";
 
 import type { FormFields } from "@/hooks/useFormValidation";
 import useFormValidation from "@/hooks/useFormValidation";
+import { useCart } from "@/providers/CartProvider";
 import CheckoutCollapse from "./CheckoutCollapse";
+import CheckoutTotals from "./CheckoutTotals";
 import PersonalData from "./form/PersonalData";
 import BillingData from "./form/BillingData";
 import PaymentMethod from "./form/PaymentMethod";
-import CheckoutTotals from './CheckoutTotals';
 
 type SectionId = "personal" | "billing" | "payment";
 
@@ -32,8 +33,10 @@ const PAYMENT_FIELDS: (keyof FormFields)[] = [
 ];
 
 export default function CheckoutForm() {
-  const [activeSection, setActiveSection] = useState<SectionId | null>("personal");
+  const { items, isHydrated } = useCart();
+  const plan = items[0] ?? null;
 
+  const [activeSection, setActiveSection] = useState<SectionId | null>("personal");
   const [form, setForm] = useState<FormFields>({
     first_name: "",
     last_name: "",
@@ -48,7 +51,6 @@ export default function CheckoutForm() {
     comuna: "",
     payment_method: "",
   });
-
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const { errors } = useFormValidation(form);
 
@@ -58,7 +60,6 @@ export default function CheckoutForm() {
       setTouched((prev) => ({ ...prev, [field]: true }));
     }
   };
-
   const handleFieldBlur = (field: keyof FormFields) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
@@ -80,6 +81,8 @@ export default function CheckoutForm() {
   const isPaymentUnlocked = isBillingCompleted;
 
   const isButtonDisabled = !(isPersonalCompleted && isBillingCompleted && isPaymentCompleted);
+
+  if (!isHydrated) return null;
 
   return (
     <form className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -130,16 +133,20 @@ export default function CheckoutForm() {
       </div>
       <div>
         <div className="border border-gray-400 rounded-[22px] p-5">
-          <CheckoutTotals />
+          <CheckoutTotals
+            plan={plan}
+            paymentMethodId={form.payment_method ?? ""}
+          />
 
           <button
             disabled={isButtonDisabled}
             type="submit"
             className={`
               w-full font-medium mt-10.5 px-6 py-3 rounded-[14px] transition duration-200
-              ${isButtonDisabled
-                ? "text-secondary-text bg-gray-300"
-                : "text-white bg-primary hover:bg-red-600 cursor-pointer"
+              ${
+                isButtonDisabled
+                  ? "text-secondary-text bg-gray-300"
+                  : "text-white bg-primary hover:bg-red-600 cursor-pointer"
               }
             `}
           >

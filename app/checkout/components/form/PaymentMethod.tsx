@@ -1,30 +1,12 @@
 "use client";
 
 import { Radio, RadioGroup, Field, Label } from "@headlessui/react";
+import { PAYMENT_METHODS } from "./paymentMethodsData";
 
 type PaymentMethodProps = {
   value: string;
   onChange: (value: string) => void;
 };
-
-const PAYMENT_METHODS = [
-  {
-    id: "webpay",
-    title: "Tarjeta débito o crédito (Transbank)",
-    icon: (
-      <span className="text-[#c01861] font-bold text-xs">webpay.cl</span>
-    ),
-  },
-  {
-    id: "transfer",
-    title: "Transferencia bancaria",
-    icon: (
-      <div className="text-[8px] leading-tight text-center font-medium text-gray-600">
-        TRANSFE<br />RENCIA
-      </div>
-    ),
-  },
-];
 
 export default function PaymentMethod({ value, onChange }: PaymentMethodProps) {
   return (
@@ -55,6 +37,9 @@ export default function PaymentMethod({ value, onChange }: PaymentMethodProps) {
                 <span className="text-primary-text text-lg leading-6.5">
                   {method.title}
                 </span>
+                {value === method.id &&
+                  <span className="text-secondary text-sm ms-auto">Seleccionado</span>
+                }
               </Radio>
             </Field>
           ))}

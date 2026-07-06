@@ -1,6 +1,4 @@
-"use client";
-
-import { useCart } from '@/providers/CartProvider';
+import type { CartItem } from '@/providers/CartProvider';
 import {
   REFERENCE_CURRENCY,
   formatApiAmount,
@@ -11,24 +9,30 @@ import {
   getReferencePrice,
   getTotalDueToday,
 } from '../../basket/components/pricingHelpers';
+import { getDateAfterDays } from '@/utils/currentDate';
+import { PAYMENT_METHODS } from './form/paymentMethodsData';
 
-const BILLING_PERIOD = {
-  monthly: 'mensual',
-  yearly: 'anual',
-}
+type CheckoutTotalsProps = {
+  plan: CartItem | null;
+  paymentMethodId: string;
+};
 
-const CheckoutTotals = () => {
-  const { items } = useCart();
+const CheckoutTotals = ({ plan, paymentMethodId }: CheckoutTotalsProps) => {
+  const selectedPriceOption = getActivePriceOption(plan, plan?.selectedBillingPeriod ?? 'monthly');
+  const trialDays = selectedPriceOption?.trial_days ?? 30;
 
-  const plan = items[0] ?? null;
-  const selectedPriceOption = getActivePriceOption(plan, plan?.selectedBillingPeriod);
   const discountAmount = getDiscountAmount(selectedPriceOption);
   const discountLabel = getDiscountLabel(selectedPriceOption);
-  const referencePrice = getReferencePrice(plan?.selectedBillingPeriod);
+  const billingPeriod = plan?.selectedBillingPeriod ?? 'monthly';
+  const referencePrice = getReferencePrice(billingPeriod);
   const totalDueToday = getTotalDueToday(selectedPriceOption);
   const referenceFinalPrice = selectedPriceOption?.trial_days
     ? '0'
-    : getReferenceFinalPrice(plan?.selectedBillingPeriod);
+    : getReferenceFinalPrice(billingPeriod);
+
+  const paymentMethodIcon = PAYMENT_METHODS.find(
+    (m) => m.id === paymentMethodId,
+  )?.icon;
 
   return (
     <>
@@ -38,16 +42,16 @@ const CheckoutTotals = () => {
             <p className="font-medium">
               Suscripción
               {" "}
-              {BILLING_PERIOD[plan?.selectedBillingPeriod]}
+              {plan?.selectedBillingPeriod === 'monthly' ? 'mensual' : 'anual'}
             </p>
-            <p className="font-medium">{plan.name}</p>
-            <p className="text-sm">({plan.description})</p>
+            <p className="font-medium">{plan?.name}</p>
+            <p className="text-sm">({plan?.description})</p>
           </div>
           <div className="flex flex-col items-end text-nowrap text-sm">
             <div>
               {formatApiAmount(selectedPriceOption?.amount)}
               {" "}
-              {plan.currency}
+              {plan?.currency}
               {" "}
               por {plan?.selectedBillingPeriod === 'monthly' ? 'mes' : 'año'}
             </div>
@@ -67,7 +71,7 @@ const CheckoutTotals = () => {
             <span>
               {formatApiAmount(selectedPriceOption?.amount)}
               {" "}
-              {plan.currency}
+              {plan?.currency}
             </span>
             <span className="text-secondary-text ml-1.5">
               (Ref: ${referencePrice}
@@ -83,7 +87,7 @@ const CheckoutTotals = () => {
               <span>
                 - {formatApiAmount(discountAmount)}
                 {" "}
-                {plan.currency}
+                {plan?.currency}
               </span>
               {discountLabel && (
                 <span className="text-secondary-text ml-1.5">
@@ -95,12 +99,12 @@ const CheckoutTotals = () => {
         )}
         <hr className="border-stroke my-2" />
         <div className="flex justify-between items-baseline">
-          <span className="font-medium text-lg text-black">Total a pagar</span>
+          <span className="text-black">Total a pagar</span>
           <div className="flex flex-col items-end">
-            <span className="font-medium text-lg text-black">
+            <span className="text-black">
               {formatApiAmount(totalDueToday)}
               {" "}
-              {plan.currency}
+              {plan?.currency}
             </span>
             {referenceFinalPrice && (
               <span className="text-sm text-secondary-text">
@@ -112,6 +116,32 @@ const CheckoutTotals = () => {
           </div>
         </div>
       </div>
+
+      {paymentMethodId && (
+        <>
+          <div className="flex justify-between items-baseline mt-5.5">
+            <span className="text-black">Método de pago</span>
+            {paymentMethodIcon}
+          </div>
+          {trialDays > 0 && (
+            <>
+              <hr className="border-stroke my-10.5" />
+              <p className="bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
+                Para activar tus {trialDays} días de acceso gratuito es
+                necesario configurar tu método de pago. Hoy se realizará una
+                validación por $0 {REFERENCE_CURRENCY} en tu cuenta para
+                verificar la tarjeta. Los cobros recurrentes de{" "}
+                {formatApiAmount(selectedPriceOption?.amount)} {plan?.currency}{" "}
+                {plan?.selectedBillingPeriod === 'monthly' ? 'mensuales' : 'anuales'}{" "}
+                se ejecutarán de forma automática a partir del{" "}
+                {getDateAfterDays(trialDays)}. Recuerda que no tienes contratos de amarre
+                y puedes cancelar cuando quieras desde tu panel para evitar
+                futuros cargos.
+              </p>
+            </>
+          )}
+        </>
+      )}
     </>
   )
 }
