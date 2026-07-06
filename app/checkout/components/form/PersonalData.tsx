@@ -19,7 +19,7 @@ export default function PersonalData({
   onFieldBlur,
 }: PersonalDataProps) {
   return (
-    <form className="grid lg:grid-cols-2 gap-5.5">
+    <div className="grid lg:grid-cols-2 gap-5.5">
       <TextInput
         id="checkout-first-name"
         name="first_name"
@@ -67,6 +67,6 @@ export default function PersonalData({
         onFocus={() => {if (!values.phone) onFieldChange("phone", "+")}}
         error={touched.phone ? (errors.phone ?? undefined) : undefined}
       />
-    </form>
+    </div>
   );
 }

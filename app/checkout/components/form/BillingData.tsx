@@ -20,7 +20,7 @@ export default function BillingData({
   onFieldBlur,
 }: BillingDataProps) {
   return (
-    <form className="grid lg:grid-cols-2 gap-5.5">
+    <div className="grid lg:grid-cols-2 gap-5.5">
       <TextInput
         id="checkout-rut"
         label="Rut empresa"
@@ -112,6 +112,6 @@ export default function BillingData({
         <option value="providencia">Providencia</option>
         <option value="las_condes">Las Condes</option>
       </Select>
-    </form>
+    </div>
   );
 }
