@@ -24,7 +24,7 @@ export default function PaymentMethod({ value, onChange }: PaymentMethodProps) {
                   group relative flex items-center gap-4 px-5 py-2.5
                   rounded-xl border border-gray-400 bg-white cursor-pointer
                   transition-all duration-200 hover:bg-gray-50 focus:outline-none
-                 data-checked:border-secondary data-checked:ring-1 data-checked:ring-secondary
+                  data-checked:border-secondary data-checked:ring-1 data-checked:ring-secondary
                   data-focus:ring-1 data-focus:ring-offset-1 data-focus:ring-secondary
                 `}
               >

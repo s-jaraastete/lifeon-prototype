@@ -86,7 +86,7 @@ const CartProductPlan = ({ items, onRemove }: CartProductPlanProps) => {
                         </div>
                       </>
                     ) : (
-                      <div className='text-sm'>
+                      <div className='text-sm text-black'>
                         {formatApiAmount(selectedPriceOption?.amount)}
                         {" "}
                         {item.currency}

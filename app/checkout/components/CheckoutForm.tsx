@@ -6,10 +6,10 @@ import type { FormFields } from "@/hooks/useFormValidation";
 import useFormValidation from "@/hooks/useFormValidation";
 import { useCart } from "@/providers/CartProvider";
 import CheckoutCollapse from "./CheckoutCollapse";
-import CheckoutTotals from "./CheckoutTotals";
 import PersonalData from "./form/PersonalData";
 import BillingData from "./form/BillingData";
 import PaymentMethod from "./form/PaymentMethod";
+import CheckoutTotals from './CheckoutTotals';
 
 type SectionId = "personal" | "billing" | "payment";
 
@@ -85,7 +85,10 @@ export default function CheckoutForm() {
   if (!isHydrated) return null;
 
   return (
-    <form className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <form 
+      className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8" 
+      onSubmit={(e) => e.preventDefault()}
+    >
       <div className="lg:col-span-2 flex flex-col gap-5.5">
         <CheckoutCollapse
           title="Datos personales"

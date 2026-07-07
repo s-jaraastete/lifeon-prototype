@@ -99,7 +99,7 @@ const CartResume = () => {
                 <div className="flex flex-col gap-6">
                   <DiscountCoupon />
 
-                  <div className="border border-gray-500 rounded-2xl bg-white p-6">
+                  <div className="border border-gray-500 rounded-[22px] bg-white p-6">
                     <SelectSuscription
                       value={selectedBillingPeriod}
                       onValueChange={handleBillingPeriodChange}

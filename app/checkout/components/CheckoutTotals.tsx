@@ -65,7 +65,7 @@ const CheckoutTotals = ({ plan, paymentMethodId }: CheckoutTotalsProps) => {
 
       <hr className="border-stroke my-5.5" />
       <div className="flex flex-col gap-3 text-base">
-        <div className="flex justify-between items-baseline gap-8 text-black">
+        <div className="flex justify-between gap-8 text-black">
           <span>Subtotal</span>
           <div className="text-right">
             <span>
@@ -81,7 +81,7 @@ const CheckoutTotals = ({ plan, paymentMethodId }: CheckoutTotalsProps) => {
           </div>
         </div>
         {discountAmount !== undefined && (
-          <div className="flex justify-between items-baseline gap-8 text-black">
+          <div className="flex justify-between gap-8 text-black">
             <span>Descuento</span>
             <div className="text-right">
               <span>
@@ -98,7 +98,7 @@ const CheckoutTotals = ({ plan, paymentMethodId }: CheckoutTotalsProps) => {
           </div>
         )}
         <hr className="border-stroke my-2" />
-        <div className="flex justify-between items-baseline">
+        <div className="flex justify-between">
           <span className="text-black">Total a pagar</span>
           <div className="flex flex-col items-end">
             <span className="text-black">
@@ -119,7 +119,7 @@ const CheckoutTotals = ({ plan, paymentMethodId }: CheckoutTotalsProps) => {
 
       {paymentMethodId && (
         <>
-          <div className="flex justify-between items-baseline mt-5.5">
+          <div className="flex justify-between items-center mt-5.5">
             <span className="text-black">Método de pago</span>
             {paymentMethodIcon}
           </div>
