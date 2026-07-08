@@ -16,7 +16,7 @@ import { LuChevronRight, LuShoppingCart } from 'react-icons/lu'
 
 
 const CartResume = () => {
-  const { items, isHydrated, removeItem, updateItemBillingPeriod } = useCart()
+  const { items, couponPreview, isHydrated, removeItem, updateItemBillingPeriod } = useCart()
 
   const isCartEmpty = items.length === 0
   const initialPlan = items[0] ?? null
@@ -25,6 +25,7 @@ const CartResume = () => {
     (priceOption) => priceOption.is_active && priceOption.billing_period === selectedBillingPeriod,
   )
   const trialDays = selectedPriceOption?.trial_days ?? 30
+  const recurringPrice = couponPreview?.total ?? initialPlan?.price
   const yearlyPriceOption = initialPlan?.priceOptions.find(
     (priceOption) => priceOption.is_active && priceOption.billing_period === 'yearly',
   )
@@ -112,7 +113,7 @@ const CartResume = () => {
                     {initialPlan?.selectedBillingPeriod === 'yearly' ? (
                       <p className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
                         Tu prueba de {trialDays}{" "} días comienza hoy por 0 UF y tu primer periodo 
-                        facturado se iniciará el {getCurrentDate()}{" "} por {formatApiAmount(initialPlan.price)}{" "} UF anual (ahorrando 4,5 UF en total).
+                        facturado se iniciará el {getCurrentDate()}{" "} por {formatApiAmount(recurringPrice)}{" "} UF anual.
                         El botón &apos;Ir a pagar&apos; te redirigirá de forma segura para 
                         inscribir tu método de pago y sellar tu activación, pero hoy 
                         recibirás un comprobante por $0 CLP. 
@@ -121,7 +122,7 @@ const CartResume = () => {
                     ) : (
                       <p className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
                         Tu prueba de {trialDays}{" "} días comienza hoy por 0 UF y tu primer periodo
-                        facturado se iniciará el {getCurrentDate()}{" "} por {formatApiAmount(initialPlan.price)}{" "} UF mensual.
+                        facturado se iniciará el {getCurrentDate()}{" "} por {formatApiAmount(recurringPrice)}{" "} UF mensual.
                         El botón &apos;Ir a pagar&apos; te redirigirá de forma segura para
                         inscribir tu método de pago y sellar tu activación, pero hoy
                         recibirás un comprobante por $0 CLP.

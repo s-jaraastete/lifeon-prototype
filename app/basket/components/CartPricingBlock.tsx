@@ -1,6 +1,6 @@
 "use client";
 
-import { type CartItem } from '@/providers/CartProvider'
+import { type CartItem, useCart } from '@/providers/CartProvider'
 import {
   REFERENCE_CURRENCY,
   formatApiAmount,
@@ -14,11 +14,15 @@ import {
 
 
 const CartPricingBlock = ({ plan }: { plan: CartItem }) => {
+  const { couponPreview } = useCart()
   const selectedPriceOption = getActivePriceOption(plan, plan.selectedBillingPeriod)
   const discountAmount = getDiscountAmount(selectedPriceOption)
   const discountLabel = getDiscountLabel(selectedPriceOption)
   const referencePrice = getReferencePrice(plan.selectedBillingPeriod)
-  const totalDueToday = getTotalDueToday(selectedPriceOption)
+  const baseTotalDueToday = getTotalDueToday(selectedPriceOption)
+  const totalDueToday = selectedPriceOption?.trial_days
+    ? baseTotalDueToday
+    : couponPreview?.total ?? baseTotalDueToday
   const referenceFinalPrice = selectedPriceOption?.trial_days
     ? '0'
     : getReferenceFinalPrice(plan.selectedBillingPeriod)
@@ -57,6 +61,21 @@ const CartPricingBlock = ({ plan }: { plan: CartItem }) => {
                   ({discountLabel})
                 </span>
               )}
+            </div>
+          </div>
+        )}
+        {couponPreview && (
+          <div className="flex justify-between items-baseline gap-8 text-black">
+            <span>Cupón</span>
+            <div className="text-right">
+              <span>
+                - {formatApiAmount(couponPreview.discount_total)}
+                {" "}
+                {couponPreview.currency}
+              </span>
+              <span className="text-secondary-text ml-1.5">
+                ({couponPreview.coupon_code})
+              </span>
             </div>
           </div>
         )}

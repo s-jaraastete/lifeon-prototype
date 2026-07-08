@@ -119,4 +119,4 @@ const useBasePackCart = (slug: string): UseBasePackCartResult => {
   }
 }
 
-export default useBasePackCart
+export default useBasePackCart;

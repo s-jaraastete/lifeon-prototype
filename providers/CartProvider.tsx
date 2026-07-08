@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react'
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 
 
 export type CartBillingPeriod = 'monthly' | 'yearly'
@@ -37,17 +37,33 @@ export type CartItem = {
   packModules: CartModule[]
 }
 
+export type CartCouponPreview = {
+  coupon_code: string
+  coupon_name: string
+  discount_type: 'percentage' | 'fixed_amount'
+  discount_value: number
+  subtotal: number
+  discount_total: number
+  total: number
+  currency: 'UF' | 'CLP' | 'USD'
+}
+
 type CartContextValue = {
   items: CartItem[]
+  couponCode: string | null
+  couponPreview: CartCouponPreview | null
   isHydrated: boolean
   addItem: (item: CartItem) => void
   updateItemBillingPeriod: (id: string, billingPeriod: CartBillingPeriod) => void
   removeItem: (id: string) => void
   clearCart: () => void
   hasItem: (id: string) => boolean
+  applyCouponPreview: (preview: CartCouponPreview) => void
+  clearCouponPreview: () => void
 }
 
 const CART_STORAGE_KEY = 'lifeon-cart-items'
+const CART_COUPON_STORAGE_KEY = 'lifeon-cart-coupon'
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
 
@@ -87,6 +103,7 @@ const normalizeCartItem = (item: CartItem): CartItem => {
 
 const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([])
+  const [couponPreview, setCouponPreview] = useState<CartCouponPreview | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
 
   useEffect(() => {
@@ -95,10 +112,17 @@ const CartProvider = ({ children }: { children: ReactNode }) => {
       if (storedItems) {
         const parsedItems = JSON.parse(storedItems) as CartItem[]
         const normalizedItems = parsedItems.map(normalizeCartItem)
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setItems(normalizedItems)
+      }
+
+      const storedCoupon = window.localStorage.getItem(CART_COUPON_STORAGE_KEY)
+      if (storedCoupon) {
+        setCouponPreview(JSON.parse(storedCoupon) as CartCouponPreview)
       }
     } catch {
       window.localStorage.removeItem(CART_STORAGE_KEY)
+      window.localStorage.removeItem(CART_COUPON_STORAGE_KEY)
     } finally {
       setIsHydrated(true)
     }
@@ -108,6 +132,17 @@ const CartProvider = ({ children }: { children: ReactNode }) => {
     if (!isHydrated) return
     window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
   }, [items, isHydrated])
+
+  useEffect(() => {
+    if (!isHydrated) return
+
+    if (!couponPreview) {
+      window.localStorage.removeItem(CART_COUPON_STORAGE_KEY)
+      return
+    }
+
+    window.localStorage.setItem(CART_COUPON_STORAGE_KEY, JSON.stringify(couponPreview))
+  }, [couponPreview, isHydrated])
 
   const addItem = (item: CartItem) => {
     setItems((currentItems) => {
@@ -119,6 +154,7 @@ const CartProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const updateItemBillingPeriod = (id: string, billingPeriod: CartBillingPeriod) => {
+    setCouponPreview(null)
     setItems((currentItems) => currentItems.map((item) => {
       if (item.id !== id) {
         return item
@@ -136,17 +172,40 @@ const CartProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const removeItem = (id: string) => {
+    setCouponPreview(null)
     setItems((currentItems) => currentItems.filter((item) => item.id !== id))
   }
 
   const clearCart = () => {
+    setCouponPreview(null)
     setItems([])
   }
 
   const hasItem = (id: string) => items.some((item) => item.id === id)
+  const couponCode = couponPreview?.coupon_code ?? null
+  const applyCouponPreview = useCallback((preview: CartCouponPreview) => {
+    setCouponPreview(preview)
+  }, [])
+  const clearCouponPreview = useCallback(() => {
+    setCouponPreview(null)
+  }, [])
 
   return (
-    <CartContext.Provider value={{ items, isHydrated, addItem, updateItemBillingPeriod, removeItem, clearCart, hasItem }}>
+    <CartContext.Provider
+      value={{
+        items,
+        couponCode,
+        couponPreview,
+        isHydrated,
+        addItem,
+        updateItemBillingPeriod,
+        removeItem,
+        clearCart,
+        hasItem,
+        applyCouponPreview,
+        clearCouponPreview,
+      }}
+    >
       {children}
     </CartContext.Provider>
   )

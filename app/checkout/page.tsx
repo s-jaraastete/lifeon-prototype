@@ -1,3 +1,4 @@
+import EjemploUso from './components/actions/EjemploUso';
 import CheckoutSections from './components/CheckoutSections';
 
 const CheckoutPage = () => {
@@ -11,6 +12,7 @@ const CheckoutPage = () => {
         </div>
         <div>{/* Sidebar */}</div>
       </div>
+      <EjemploUso />
     </div>
   );
 };
