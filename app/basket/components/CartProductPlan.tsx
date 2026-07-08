@@ -1,7 +1,7 @@
 "use client";
 
 import { type CartItem } from '@/providers/CartProvider'
-import { REFERENCE_CURRENCY, formatApiAmount, getActivePriceOption, getReferencePrice } from './pricingHelpers';
+import { REFERENCE_CURRENCY, formatApiAmount, getActivePriceOption, getReferencePrice } from '@/utils/pricingHelpers';
 
 // Icons
 import { LuBotMessageSquare, LuFileSearch2, LuTable, LuTrash2 } from 'react-icons/lu';

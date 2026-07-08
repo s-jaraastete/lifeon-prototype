@@ -9,7 +9,7 @@ import CartPricingBlock from './CartPricingBlock'
 import DiscountCoupon from './DiscountCoupon'
 import Listbox from '@/app/components/ui/Listbox'
 import { getCurrentDate } from '@/utils/currentDate';
-import { formatApiAmount } from './pricingHelpers';
+import { formatApiAmount } from '@/utils/pricingHelpers';
 
 // Icons
 import { LuChevronRight, LuShoppingCart } from 'react-icons/lu'

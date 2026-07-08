@@ -10,7 +10,7 @@ import {
   getReferenceFinalPrice,
   getReferencePrice,
   getTotalDueToday,
-} from './pricingHelpers'
+} from '@/utils/pricingHelpers'
 
 
 const CartPricingBlock = ({ plan }: { plan: CartItem }) => {

@@ -8,7 +8,7 @@ import {
   getReferenceFinalPrice,
   getReferencePrice,
   getTotalDueToday,
-} from '../../basket/components/pricingHelpers';
+} from '@/utils/pricingHelpers';
 import { getDateAfterDays } from '@/utils/currentDate';
 import { PAYMENT_METHODS } from './form/PaymentMethod';
 
