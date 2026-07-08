@@ -117,11 +117,15 @@ const CheckoutTotals = ({ plan, paymentMethodId }: CheckoutTotalsProps) => {
         </div>
       </div>
 
-      {paymentMethodId && (
-        <>
-          <div className="flex justify-between items-center mt-5.5">
+      <div
+        className={`
+          grid transition-[grid-template-rows,opacity] duration-300 ease-in-out 
+          ${paymentMethodId ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}
+        `}>
+        <div className="overflow-hidden">
+          <div className="flex justify-between mt-5.5">
             <span className="text-black">Método de pago</span>
-            {paymentMethodIcon}
+            {paymentMethodId && paymentMethodIcon}
           </div>
           {trialDays > 0 && (
             <>
@@ -140,8 +144,8 @@ const CheckoutTotals = ({ plan, paymentMethodId }: CheckoutTotalsProps) => {
               </p>
             </>
           )}
-        </>
-      )}
+        </div>
+      </div>
     </>
   )
 }
