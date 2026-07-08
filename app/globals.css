@@ -58,3 +58,7 @@ body {
 .hero-slider-progress {
   animation: hero-slider-progress var(--hero-slider-progress-duration) linear forwards;
 }
+
+:focus-visible {
+  outline-color: var(--color-secondary);
+}

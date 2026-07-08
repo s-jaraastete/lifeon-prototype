@@ -32,7 +32,9 @@ const CheckoutCollapse = ({
     {() => (
       <div className={`border border-gray-400 rounded-[22px] ${className}`}>
         <DisclosureButton
+          type="button"
           onClick={() => onToggle?.()}
+          onKeyDown={(e) => e.key === "Enter" && onToggle?.()}
           className={`flex w-full justify-between p-7.5 transition rounded-[22px] focus-visible:ring-1 focus-visible:ring-gray ${
             locked
               ? "cursor-default pointer-events-none"

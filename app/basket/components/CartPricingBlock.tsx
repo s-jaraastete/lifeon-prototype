@@ -10,7 +10,7 @@ import {
   getReferenceFinalPrice,
   getReferencePrice,
   getTotalDueToday,
-} from './pricingHelpers'
+} from '@/utils/pricingHelpers'
 
 
 const CartPricingBlock = ({ plan }: { plan: CartItem }) => {
@@ -29,7 +29,7 @@ const CartPricingBlock = ({ plan }: { plan: CartItem }) => {
 
   return (
     <>
-      <h4 className="font-semibold text-lg">Total</h4>
+      <h4 className="font-semibold text-lg mt-5.5">Total</h4>
       <hr className="border-stroke my-5.5" />
       <div className="flex flex-col gap-3 text-base">
         <div className="flex justify-between items-baseline gap-8 text-black">

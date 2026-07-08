@@ -7,9 +7,9 @@ import { CartBillingPeriod, useCart } from '@/providers/CartProvider'
 import CartProductPlan from './CartProductPlan'
 import CartPricingBlock from './CartPricingBlock'
 import DiscountCoupon from './DiscountCoupon'
-import SelectSuscription from './SelectSuscription'
+import Listbox from '@/app/components/ui/Listbox'
 import { getCurrentDate } from '@/utils/currentDate';
-import { formatApiAmount } from './pricingHelpers';
+import { formatApiAmount } from '@/utils/pricingHelpers';
 
 // Icons
 import { LuChevronRight, LuShoppingCart } from 'react-icons/lu'
@@ -100,8 +100,8 @@ const CartResume = () => {
                 <div className="flex flex-col gap-6">
                   <DiscountCoupon />
 
-                  <div className="border border-gray-500 rounded-2xl bg-white p-6">
-                    <SelectSuscription
+                  <div className="border border-gray-500 rounded-[22px] bg-white p-6">
+                    <Listbox
                       value={selectedBillingPeriod}
                       onValueChange={handleBillingPeriodChange}
                       options={suscriptionOptions}

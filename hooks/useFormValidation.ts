@@ -22,6 +22,7 @@ export type FormFields = {
   address?: string;
   region?: string;
   comuna?: string;
+  payment_method?: string;
 };
 
 export type FormErrors = {
@@ -43,6 +44,7 @@ export default function useFormValidation(form: FormFields) {
     if ('address' in form) newErrors.address = validateBusinessField(form.address ?? '');
     if ('region' in form) newErrors.region = validateRequired(form.region ?? '');
     if ('comuna' in form) newErrors.comuna = validateRequired(form.comuna ?? '');
+    if ('payment_method' in form) newErrors.payment_method = validateRequired(form.payment_method ?? '');
     return newErrors;
   }, [form]);
 
