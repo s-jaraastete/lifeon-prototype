@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Radio, RadioGroup, Field, Label } from "@headlessui/react";
 
 export type PaymentMethodData = {
@@ -13,16 +14,24 @@ export const PAYMENT_METHODS: PaymentMethodData[] = [
     id: "webpay",
     title: "Tarjeta débito o crédito (Transbank)",
     icon: (
-      <span className="text-[#c01861] font-bold text-xs">webpay.cl</span>
+      <Image
+        src={`/svg/webpay.svg`}
+        alt={"logo webpay"}
+        width={66}
+        height={18}
+      />
     ),
   },
   {
     id: "transfer",
     title: "Transferencia bancaria",
     icon: (
-      <div className="text-[8px] leading-tight text-center font-medium text-gray-600">
-        TRANSFE<br />RENCIA
-      </div>
+      <Image
+        src={`/svg/transfer.svg`}
+        alt={"logo transferencia bancaria"}
+        width={40}
+        height={27}
+      />
     ),
   },
 ]
