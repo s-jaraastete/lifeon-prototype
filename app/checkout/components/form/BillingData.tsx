@@ -1,8 +1,20 @@
 "use client";
 
 import TextInput from "@/app/components/ui/TextInput";
-import Select from "@/app/components/ui/Select";
+import Listbox from "@/app/components/ui/Listbox";
 import type { FormFields, FormErrors } from "@/hooks/useFormValidation";
+
+const REGION_OPTIONS = [
+  { value: "metropolitana", label: "Región Metropolitana" },
+  { value: "valparaiso", label: "Región de Valparaíso" },
+  { value: "biobio", label: "Región del Biobío" },
+];
+
+const COMUNA_OPTIONS = [
+  { value: "santiago", label: "Santiago centro" },
+  { value: "valparaiso", label: "Valparaíso" },
+  { value: "concepcion", label: "Concepción" },
+];
 
 type BillingDataProps = {
   values: FormFields;
@@ -86,32 +98,26 @@ export default function BillingData({
           }
         />
       </div>
-      <Select
+      <Listbox
         id="checkout-region"
         label="Región"
         placeholder="Selecciona una región"
+        options={REGION_OPTIONS}
         value={values.region ?? ""}
-        onChange={(e) => onFieldChange("region", e.target.value)}
-        onBlur={() => onFieldBlur("region")}
+        onValueChange={(v) => onFieldChange("region", v)}
+        onFocus={() => onFieldBlur("region")}
         error={touched.region ? (errors.region ?? undefined) : undefined}
-      >
-        <option value="metropolitana">Región Metropolitana</option>
-        <option value="valparaiso">Región de Valparaíso</option>
-        <option value="biobio">Región del Biobío</option>
-      </Select>
-      <Select
+      />
+      <Listbox
         id="checkout-comuna"
-        label="Comuna"
+        label="Comuna o ciudad"
         placeholder="Selecciona una comuna"
+        options={COMUNA_OPTIONS}
         value={values.comuna ?? ""}
-        onChange={(e) => onFieldChange("comuna", e.target.value)}
-        onBlur={() => onFieldBlur("comuna")}
+        onValueChange={(v) => onFieldChange("comuna", v)}
+        onFocus={() => onFieldBlur("comuna")}
         error={touched.comuna ? (errors.comuna ?? undefined) : undefined}
-      >
-        <option value="santiago">Santiago</option>
-        <option value="providencia">Providencia</option>
-        <option value="las_condes">Las Condes</option>
-      </Select>
+      />
     </div>
   );
 }

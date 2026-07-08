@@ -77,8 +77,6 @@ export default function CheckoutForm() {
   const isPaymentCompleted = PAYMENT_FIELDS.every(
     (f) => touched[f] && errors[f] == null,
   );
-  const isBillingUnlocked = isPersonalCompleted;
-  const isPaymentUnlocked = isBillingCompleted;
 
   const isButtonDisabled = !(isPersonalCompleted && isBillingCompleted && isPaymentCompleted);
 
@@ -110,7 +108,6 @@ export default function CheckoutForm() {
           active={activeSection === "billing"}
           onToggle={() => toggle("billing")}
           completed={isBillingCompleted}
-          locked={!isBillingUnlocked}
         >
           <BillingData
             values={form}
@@ -126,7 +123,6 @@ export default function CheckoutForm() {
           active={activeSection === "payment"}
           onToggle={() => toggle("payment")}
           completed={isPaymentCompleted}
-          locked={!isPaymentUnlocked}
         >
           <PaymentMethod
             value={form.payment_method ?? ""}

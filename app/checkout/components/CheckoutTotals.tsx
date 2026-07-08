@@ -10,7 +10,7 @@ import {
   getTotalDueToday,
 } from '../../basket/components/pricingHelpers';
 import { getDateAfterDays } from '@/utils/currentDate';
-import { PAYMENT_METHODS } from './form/paymentMethodsData';
+import { PAYMENT_METHODS } from './form/PaymentMethod';
 
 type CheckoutTotalsProps = {
   plan: CartItem | null;

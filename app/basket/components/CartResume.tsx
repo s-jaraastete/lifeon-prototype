@@ -7,7 +7,7 @@ import { CartBillingPeriod, useCart } from '@/providers/CartProvider'
 import CartProductPlan from './CartProductPlan'
 import CartPricingBlock from './CartPricingBlock'
 import DiscountCoupon from './DiscountCoupon'
-import SelectSuscription from './SelectSuscription'
+import Listbox from '@/app/components/ui/Listbox'
 import { getCurrentDate } from '@/utils/currentDate';
 import { formatApiAmount } from './pricingHelpers';
 
@@ -100,7 +100,7 @@ const CartResume = () => {
                   <DiscountCoupon />
 
                   <div className="border border-gray-500 rounded-[22px] bg-white p-6">
-                    <SelectSuscription
+                    <Listbox
                       value={selectedBillingPeriod}
                       onValueChange={handleBillingPeriodChange}
                       options={suscriptionOptions}
