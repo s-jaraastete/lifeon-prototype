@@ -4,12 +4,6 @@ import TextInput from "@/app/components/ui/TextInput";
 import Listbox from "@/app/components/ui/Listbox";
 import type { FormFields, FormErrors } from "@/hooks/useFormValidation";
 
-const REGION_OPTIONS = [
-  { value: "7", label: "Región Metropolitana" },
-  { value: "5", label: "Región de Valparaíso" },
-  { value: "8", label: "Región del Biobío" },
-];
-
 const COMUNA_OPTIONS = [
   { value: "131", label: "Santiago centro" },
   { value: "55", label: "Valparaíso" },
@@ -17,6 +11,7 @@ const COMUNA_OPTIONS = [
 ];
 
 type BillingDataProps = {
+  regions: Region[];
   values: FormFields;
   errors: FormErrors;
   touched: Record<string, boolean | undefined>;
@@ -25,12 +20,19 @@ type BillingDataProps = {
 };
 
 export default function BillingData({
+  regions,
   values,
   errors,
   touched,
   onFieldChange,
   onFieldBlur,
 }: BillingDataProps) {
+
+  const regionOptions = regions.map((r) => ({
+    value: String(r.id),
+    label: r.name,
+  }));
+
   return (
     <div className="grid lg:grid-cols-2 gap-5.5">
       <TextInput
@@ -102,7 +104,7 @@ export default function BillingData({
         id="checkout-region"
         label="Región"
         placeholder="Selecciona una región"
-        options={REGION_OPTIONS}
+        options={regionOptions}
         value={values.region ?? ""}
         onValueChange={(v) => onFieldChange("region", v)}
         onFocus={() => onFieldBlur("region")}

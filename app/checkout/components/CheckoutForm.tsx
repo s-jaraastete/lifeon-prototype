@@ -33,7 +33,7 @@ const PAYMENT_FIELDS: (keyof FormFields)[] = [
   "payment_method",
 ];
 
-export default function CheckoutForm() {
+export default function CheckoutForm({ regions }: { regions: Region[] }) {
   const { items, isHydrated, couponCode } = useCart();
   const plan = items[0] ?? null;
 
@@ -167,6 +167,7 @@ export default function CheckoutForm() {
           completed={isBillingCompleted}
         >
           <BillingData
+            regions={regions}
             values={form}
             errors={errors}
             touched={touched}
