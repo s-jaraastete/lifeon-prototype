@@ -34,7 +34,7 @@ const PAYMENT_FIELDS: (keyof FormFields)[] = [
 ];
 
 export default function CheckoutForm({ regions }: { regions: Region[] }) {
-  const { items, isHydrated, couponCode } = useCart();
+  const { items, isHydrated, couponCode, couponPreview } = useCart();
   const plan = items[0] ?? null;
 
   const [activeSection, setActiveSection] = useState<SectionId | null>("personal");
@@ -192,6 +192,7 @@ export default function CheckoutForm({ regions }: { regions: Region[] }) {
         <div className="border border-gray-400 rounded-[22px] p-5">
           <CheckoutTotals
             plan={plan}
+            couponPreview={couponPreview}
             paymentMethodId={form.payment_method ?? ""}
           />
 

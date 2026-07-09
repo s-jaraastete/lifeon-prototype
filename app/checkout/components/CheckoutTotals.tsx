@@ -1,4 +1,4 @@
-import type { CartItem } from '@/providers/CartProvider';
+import type { CartCouponPreview, CartItem } from '@/providers/CartProvider';
 import {
   REFERENCE_CURRENCY,
   formatApiAmount,
@@ -15,9 +15,10 @@ import { PAYMENT_METHODS } from './form/PaymentMethod';
 type CheckoutTotalsProps = {
   plan: CartItem | null;
   paymentMethodId: string;
+  couponPreview?: CartCouponPreview | null;
 };
 
-const CheckoutTotals = ({ plan, paymentMethodId }: CheckoutTotalsProps) => {
+const CheckoutTotals = ({ plan, paymentMethodId, couponPreview }: CheckoutTotalsProps) => {
   const selectedPriceOption = getActivePriceOption(plan, plan?.selectedBillingPeriod ?? 'monthly');
   const trialDays = selectedPriceOption?.trial_days ?? 30;
 
@@ -25,7 +26,10 @@ const CheckoutTotals = ({ plan, paymentMethodId }: CheckoutTotalsProps) => {
   const discountLabel = getDiscountLabel(selectedPriceOption);
   const billingPeriod = plan?.selectedBillingPeriod ?? 'monthly';
   const referencePrice = getReferencePrice(billingPeriod);
-  const totalDueToday = getTotalDueToday(selectedPriceOption);
+  const baseTotalDueToday = getTotalDueToday(selectedPriceOption)
+  const totalDueToday = selectedPriceOption?.trial_days
+    ? baseTotalDueToday
+    : couponPreview?.total ?? baseTotalDueToday
   const referenceFinalPrice = selectedPriceOption?.trial_days
     ? '0'
     : getReferenceFinalPrice(billingPeriod);
@@ -94,6 +98,21 @@ const CheckoutTotals = ({ plan, paymentMethodId }: CheckoutTotalsProps) => {
                   ({discountLabel})
                 </span>
               )}
+            </div>
+          </div>
+        )}
+        {couponPreview && (
+          <div className="flex justify-between gap-8 text-black">
+            <span>Cupón</span>
+            <div className="text-right">
+              <span>
+                - {formatApiAmount(couponPreview.discount_total)}
+                {" "}
+                {couponPreview.currency}
+              </span>
+              <span className="text-secondary-text ml-1.5">
+                ({couponPreview.coupon_code})
+              </span>
             </div>
           </div>
         )}

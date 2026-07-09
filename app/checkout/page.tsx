@@ -2,6 +2,7 @@ import axiosServerManager from '@/lib/axios_server_manager';
 import CheckoutForm from './components/CheckoutForm';
 
 const CheckoutPage = async () => {
+  // TODO: Cambiar a getServerData
   const response = await axiosServerManager('/regions/all/?page_size=20', null, {
     useAccessToken: false,
     method: 'get',
