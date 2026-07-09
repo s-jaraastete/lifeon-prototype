@@ -84,7 +84,7 @@ const Listbox = ({
             >
               <ListboxOptions
                 anchor="bottom"
-                className="mt-1 rounded-xl bg-white outline-0 ring-1 ring-gray-400 focus-visible:ring-gray-600 w-(--button-width)"
+                className="mt-1 rounded-xl bg-white outline-0 ring-1 ring-gray-400 focus-visible:ring-gray-600 w-(--button-width) max-h-48! overflow-y-auto"
               >
                 {options.map((option) => (
                   <ListboxOption
