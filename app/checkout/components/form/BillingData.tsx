@@ -1,14 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import TextInput from "@/app/components/ui/TextInput";
 import Listbox from "@/app/components/ui/Listbox";
+import Autocomplete from "@/app/components/ui/Autocomplete";
 import type { FormFields, FormErrors } from "@/hooks/useFormValidation";
-
-const COMUNA_OPTIONS = [
-  { value: "131", label: "Santiago centro" },
-  { value: "55", label: "Valparaíso" },
-  { value: "81", label: "Concepción" },
-];
 
 type BillingDataProps = {
   regions: Region[];
@@ -27,6 +23,7 @@ export default function BillingData({
   onFieldChange,
   onFieldBlur,
 }: BillingDataProps) {
+  const [selectedCommune, setSelectedCommune] = useState<Commune | null>(null);
 
   const regionOptions = regions.map((r) => ({
     value: String(r.id),
@@ -106,20 +103,40 @@ export default function BillingData({
         placeholder="Selecciona una región"
         options={regionOptions}
         value={values.region ?? ""}
-        onValueChange={(v) => onFieldChange("region", v)}
+        onValueChange={(v) => {
+          onFieldChange("region", v);
+          setSelectedCommune(null);
+          onFieldChange("comuna", "");
+        }}
         onFocus={() => onFieldBlur("region")}
         error={touched.region ? (errors.region ?? undefined) : undefined}
       />
-      <Listbox
-        id="checkout-comuna"
-        label="Comuna o ciudad"
-        placeholder="Selecciona una comuna"
-        options={COMUNA_OPTIONS}
-        value={values.comuna ?? ""}
-        onValueChange={(v) => onFieldChange("comuna", v)}
-        onFocus={() => onFieldBlur("comuna")}
-        error={touched.comuna ? (errors.comuna ?? undefined) : undefined}
-      />
+      <div className="flex flex-col gap-2.5">
+        <label className="text-lg font-medium leading-6">Comuna o ciudad</label>
+        {values.region ? (
+          <Autocomplete<Commune>
+            endpoint={`/communes/all/?region=${values.region}`}
+            queryKey={["communes", values.region]}
+            label="name"
+            placeholder="Busca una comuna o ciudad"
+            selected={selectedCommune}
+            setSelected={(commune) => {
+              setSelectedCommune(commune);
+              onFieldChange("comuna", commune ? String(commune.id) : "");
+            }}
+            item={(commune) => <span>{commune.name}</span>}
+            useAccessToken={false}
+            enableAutocomplete
+          />
+        ) : (
+          <div className="w-full py-3 px-5 rounded-xl ring-1 ring-gray-400 text-gray-700 bg-gray-50 cursor-not-allowed">
+            Selecciona una región primero
+          </div>
+        )}
+        {/* {touched.comuna && errors.comuna && (
+          <p className="text-sm text-primary leading-tight">{errors.comuna}</p>
+        )} */}
+      </div>
     </div>
   );
 }

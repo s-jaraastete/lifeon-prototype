@@ -37,6 +37,7 @@ type AutocompleteProps<T extends InterfaceWithId> = (MultipleAutocompleteProps<T
   queryKey: string[],
   label?: keyof T
   domain?: string,
+  useAccessToken?: boolean,
   onClose?: () => void
   enableAutocomplete?: boolean
   optionsHeight?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
@@ -118,7 +119,7 @@ const Autocomplete = <T extends InterfaceWithId, >(props: AutocompleteProps<T>) 
     queryKey: props.queryKey,
     queryFn: async ({pageParam="1"}) => (await axiosFetcher(
       `${props.endpoint}${filterSeparator}&page=${pageParam}&search=${query}`,
-      {useAccessToken: true, domain: props.domain}
+      {useAccessToken: props.useAccessToken ?? true, domain: props.domain}
     )).data
   })
   const data: T[] = rData.fdata ?? []
