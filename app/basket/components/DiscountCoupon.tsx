@@ -1,7 +1,7 @@
 'use client'
 
 import TextInput from '@/app/components/ui/TextInput';
-import { getActivePriceOption } from '@/app/basket/components/pricingHelpers';
+import { getActivePriceOption } from '@/utils/pricingHelpers';
 import axiosManager from '@/lib/axios_manager';
 import { useCart, type CartCouponPreview } from '@/providers/CartProvider';
 import { useMutation } from '@tanstack/react-query';
