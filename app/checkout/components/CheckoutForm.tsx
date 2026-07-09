@@ -10,6 +10,7 @@ import PersonalData from "./form/PersonalData";
 import BillingData from "./form/BillingData";
 import PaymentMethod from "./form/PaymentMethod";
 import CheckoutTotals from './CheckoutTotals';
+import createOrderCheckout from './actions/create_order_checkout';
 
 type SectionId = "personal" | "billing" | "payment";
 
@@ -33,7 +34,7 @@ const PAYMENT_FIELDS: (keyof FormFields)[] = [
 ];
 
 export default function CheckoutForm() {
-  const { items, isHydrated } = useCart();
+  const { items, isHydrated, couponCode } = useCart();
   const plan = items[0] ?? null;
 
   const [activeSection, setActiveSection] = useState<SectionId | null>("personal");
@@ -54,6 +55,10 @@ export default function CheckoutForm() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const { errors } = useFormValidation(form);
 
+  const [isPending, setIsPending] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+
   const handleFieldChange = (field: keyof FormFields, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (!touched[field]) {
@@ -66,6 +71,58 @@ export default function CheckoutForm() {
 
   const toggle = (section: SectionId) => {
     setActiveSection((prev) => (prev === section ? null : section));
+  };
+
+  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isButtonDisabled) return;
+
+    setIsPending(true);
+    setMessage(null);
+    setOrderNumber(null);
+
+    try {
+      const payload: CheckoutOrderPayload = {
+        company: {
+          name: form.business_name ?? '',
+          company_rut: form.rut ?? '',
+          business_activity: form.business_line,
+          billing_email: form.billing_email ?? '',
+          billing_address: form.address,
+          region_id: Number(form.region),
+          commune_id: Number(form.comuna),
+        },
+        contact: {
+          first_name: form.first_name ?? '',
+          last_name: form.last_name ?? '',
+          email: form.email ?? '',
+          phone: form.phone,
+        },
+        pack_id: Number(plan?.id),
+        billing_period: plan?.selectedBillingPeriod ?? 'monthly',
+        coupon_code: couponCode,
+        payment_method: 'webpay',
+      };
+
+      const response = await createOrderCheckout(
+        payload,
+        null,
+        new FormData(event.currentTarget)
+      );
+
+      if (response.status === 'success') {
+        setOrderNumber(response.data?.order_number ?? null);
+        setMessage(null);
+        console.log('Orden creada:', response.data?.order_number);
+        return;
+      }
+
+      setMessage('No se pudo crear la orden.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Ocurrió un error inesperado.');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const isPersonalCompleted = PERSONAL_FIELDS.every(
@@ -85,7 +142,7 @@ export default function CheckoutForm() {
   return (
     <form 
       className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8" 
-      onSubmit={(e) => e.preventDefault()}
+      onSubmit={handleSubmit}
     >
       <div className="lg:col-span-2 flex flex-col gap-5.5">
         <CheckoutCollapse
@@ -138,19 +195,20 @@ export default function CheckoutForm() {
           />
 
           <button
-            disabled={isButtonDisabled}
+            disabled={isButtonDisabled || isPending}
             type="submit"
             className={`
               w-full font-medium mt-10.5 px-6 py-3 rounded-[14px] transition duration-200
               ${
-                isButtonDisabled
+                isButtonDisabled || isPending
                   ? "text-secondary-text bg-gray-300"
                   : "text-white bg-primary hover:bg-red-600 cursor-pointer"
               }
             `}
           >
-            Finalizar y pagar
+            {isPending ? 'Creando orden...' : 'Finalizar y pagar'}
           </button>
+          {message && <p className="text-sm mt-2 text-red-500">{message}</p>}
         </div>
       </div>
     </form>

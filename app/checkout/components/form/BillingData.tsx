@@ -5,15 +5,15 @@ import Listbox from "@/app/components/ui/Listbox";
 import type { FormFields, FormErrors } from "@/hooks/useFormValidation";
 
 const REGION_OPTIONS = [
-  { value: "metropolitana", label: "Región Metropolitana" },
-  { value: "valparaiso", label: "Región de Valparaíso" },
-  { value: "biobio", label: "Región del Biobío" },
+  { value: "7", label: "Región Metropolitana" },
+  { value: "5", label: "Región de Valparaíso" },
+  { value: "8", label: "Región del Biobío" },
 ];
 
 const COMUNA_OPTIONS = [
-  { value: "santiago", label: "Santiago centro" },
-  { value: "valparaiso", label: "Valparaíso" },
-  { value: "concepcion", label: "Concepción" },
+  { value: "131", label: "Santiago centro" },
+  { value: "55", label: "Valparaíso" },
+  { value: "81", label: "Concepción" },
 ];
 
 type BillingDataProps = {
