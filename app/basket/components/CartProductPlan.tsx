@@ -10,9 +10,10 @@ import { LuBotMessageSquare, LuFileSearch2, LuTable, LuTrash2 } from 'react-icon
 type CartProductPlanProps = {
   items: CartItem[]
   onRemove: (id: string) => void
+  ufValue: number
 }
 
-const CartProductPlan = ({ items, onRemove }: CartProductPlanProps) => {
+const CartProductPlan = ({ items, onRemove, ufValue }: CartProductPlanProps) => {
   const basePackCards = (
     <div className="group flex">
       <div className="w-8 h-8 rounded-[10px] border-2 border-white bg-white overflow-hidden relative z-10">
@@ -42,7 +43,7 @@ const CartProductPlan = ({ items, onRemove }: CartProductPlanProps) => {
           && selectedPriceOption?.original_amount !== null
           && selectedPriceOption?.original_amount !== undefined
 
-        const referencePrice = getReferencePrice(item.selectedBillingPeriod)
+        const referencePrice = getReferencePrice(item.selectedBillingPeriod, ufValue)
 
         return (
           <div key={item.id} className="border border-gray-500 rounded-[22px] bg-white p-7.5">

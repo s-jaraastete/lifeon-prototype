@@ -16,23 +16,24 @@ type CheckoutTotalsProps = {
   plan: CartItem | null;
   paymentMethodId: string;
   couponPreview?: CartCouponPreview | null;
+  ufValue: number;
 };
 
-const CheckoutTotals = ({ plan, paymentMethodId, couponPreview }: CheckoutTotalsProps) => {
+const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: CheckoutTotalsProps) => {
   const selectedPriceOption = getActivePriceOption(plan, plan?.selectedBillingPeriod ?? 'monthly');
   const trialDays = selectedPriceOption?.trial_days ?? 30;
 
   const discountAmount = getDiscountAmount(selectedPriceOption);
   const discountLabel = getDiscountLabel(selectedPriceOption);
   const billingPeriod = plan?.selectedBillingPeriod ?? 'monthly';
-  const referencePrice = getReferencePrice(billingPeriod);
+  const referencePrice = getReferencePrice(billingPeriod, ufValue);
   const baseTotalDueToday = getTotalDueToday(selectedPriceOption)
   const totalDueToday = selectedPriceOption?.trial_days
     ? baseTotalDueToday
     : couponPreview?.total ?? baseTotalDueToday
   const referenceFinalPrice = selectedPriceOption?.trial_days
     ? '0'
-    : getReferenceFinalPrice(billingPeriod);
+    : getReferenceFinalPrice(billingPeriod, ufValue);
 
   const paymentMethodIcon = PAYMENT_METHODS.find(
     (m) => m.id === paymentMethodId,

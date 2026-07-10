@@ -2,17 +2,15 @@ import { CartBillingPeriod, CartItem, CartPriceOption } from '@/providers/CartPr
 
 export const REFERENCE_CURRENCY = 'CLP' as const
 
-const REFERENCE_VALUES: Record<CartBillingPeriod, {
-  referencePrice: string
-  referenceFinalPrice?: string
-}> = {
-  monthly: {
-    referencePrice: '95.125',
-  },
-  yearly: {
-    referencePrice: '970.275',
-    referenceFinalPrice: '970.275',
-  },
+const REFERENCE_MULTIPLIERS: Record<CartBillingPeriod, number> = {
+  monthly: 2.5,
+  yearly: 25.5,
+}
+
+const formatReferenceAmount = (value: number) => {
+  return new Intl.NumberFormat('es-CL', {
+    maximumFractionDigits: 0,
+  }).format(Math.trunc(value))
 }
 
 export const getActivePriceOption = (
@@ -27,12 +25,16 @@ export const getActivePriceOption = (
     ?? item.priceOptions.find((priceOption) => priceOption.is_active)
 }
 
-export const getReferencePrice = (billingPeriod: CartBillingPeriod) => {
-  return REFERENCE_VALUES[billingPeriod].referencePrice
+export const getReferencePrice = (billingPeriod: CartBillingPeriod, ufValue: number) => {
+  return formatReferenceAmount(REFERENCE_MULTIPLIERS[billingPeriod] * ufValue)
 }
 
-export const getReferenceFinalPrice = (billingPeriod: CartBillingPeriod) => {
-  return REFERENCE_VALUES[billingPeriod].referenceFinalPrice
+export const getReferenceFinalPrice = (billingPeriod: CartBillingPeriod, ufValue: number) => {
+  if (billingPeriod !== 'yearly') {
+    return undefined
+  }
+
+  return getReferencePrice(billingPeriod, ufValue)
 }
 
 export const getDiscountAmount = (priceOption: CartPriceOption | undefined) => {

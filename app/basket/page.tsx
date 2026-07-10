@@ -1,10 +1,13 @@
+import getUF from '@/utils/getUF';
 import CartResume from './components/CartResume';
 
 
-const BasketPage = () => {
+const BasketPage = async () => {
+  const ufInfo = await getUF()
+  
   return (
     <>
-      <CartResume />
+      <CartResume ufValue={ufInfo.value} />
     </>
   )
 };

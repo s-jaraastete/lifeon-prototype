@@ -15,7 +15,11 @@ import { formatApiAmount } from '@/utils/pricingHelpers';
 import { LuChevronRight, LuShoppingCart } from 'react-icons/lu'
 
 
-const CartResume = () => {
+type CartResumeProps = {
+  ufValue: number
+}
+
+const CartResume = ({ ufValue }: CartResumeProps) => {
   const { items, couponPreview, isHydrated, removeItem, updateItemBillingPeriod } = useCart()
 
   const isCartEmpty = items.length === 0
@@ -85,6 +89,7 @@ const CartResume = () => {
                   <CartProductPlan
                     items={items}
                     onRemove={removeItem}
+                    ufValue={ufValue}
                   />
 
                   <div className="bg-gray-200 p-5 rounded-[22px]">
@@ -108,7 +113,7 @@ const CartResume = () => {
                       label="Suscripción"
                     />
 
-                    {initialPlan && <CartPricingBlock plan={initialPlan} />}
+                    {initialPlan && <CartPricingBlock plan={initialPlan} ufValue={ufValue} />}
 
                     {initialPlan?.selectedBillingPeriod === 'yearly' ? (
                       <p className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">

@@ -13,19 +13,19 @@ import {
 } from '@/utils/pricingHelpers'
 
 
-const CartPricingBlock = ({ plan }: { plan: CartItem }) => {
+const CartPricingBlock = ({ plan, ufValue }: { plan: CartItem; ufValue: number }) => {
   const { couponPreview } = useCart()
   const selectedPriceOption = getActivePriceOption(plan, plan.selectedBillingPeriod)
   const discountAmount = getDiscountAmount(selectedPriceOption)
   const discountLabel = getDiscountLabel(selectedPriceOption)
-  const referencePrice = getReferencePrice(plan.selectedBillingPeriod)
+  const referencePrice = getReferencePrice(plan.selectedBillingPeriod, ufValue)
   const baseTotalDueToday = getTotalDueToday(selectedPriceOption)
   const totalDueToday = selectedPriceOption?.trial_days
     ? baseTotalDueToday
     : couponPreview?.total ?? baseTotalDueToday
   const referenceFinalPrice = selectedPriceOption?.trial_days
     ? '0'
-    : getReferenceFinalPrice(plan.selectedBillingPeriod)
+    : getReferenceFinalPrice(plan.selectedBillingPeriod, ufValue)
 
   return (
     <>

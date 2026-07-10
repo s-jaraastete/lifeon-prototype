@@ -33,7 +33,12 @@ const PAYMENT_FIELDS: (keyof FormFields)[] = [
   "payment_method",
 ];
 
-export default function CheckoutForm({ regions }: { regions: Region[] }) {
+type CheckoutFormProps = {
+  regions: Region[]
+  ufValue: number
+}
+
+export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
   const { items, isHydrated, couponCode, couponPreview } = useCart();
   const plan = items[0] ?? null;
 
@@ -194,6 +199,7 @@ export default function CheckoutForm({ regions }: { regions: Region[] }) {
             plan={plan}
             couponPreview={couponPreview}
             paymentMethodId={form.payment_method ?? ""}
+            ufValue={ufValue}
           />
 
           <button
