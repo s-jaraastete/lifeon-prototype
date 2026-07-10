@@ -1,8 +1,8 @@
 "use client"
 
 import React, {ReactNode, useCallback, useEffect, useRef, useState} from "react";
-import { Combobox, ComboboxButton, ComboboxOption, ComboboxInput, ComboboxOptions } from '@headlessui/react'
-import {CheckCircleIcon, ChevronDownIcon, PlusCircleIcon} from "@heroicons/react/24/solid";
+import { Combobox, ComboboxButton, ComboboxOption, ComboboxInput, ComboboxOptions, Transition } from '@headlessui/react'
+import { LuChevronDown, LuCircleCheck, LuCirclePlus } from "react-icons/lu";
 import useCustomInfiniteQuery from "@/hooks/useCustomInfiniteQuery";
 import axiosFetcher from "@/lib/axios_fetcher";
 import useDebounce from "@/hooks/useDebounce";
@@ -38,6 +38,7 @@ type AutocompleteProps<T extends InterfaceWithId> = (MultipleAutocompleteProps<T
   label?: keyof T
   domain?: string,
   useAccessToken?: boolean,
+  searchParam?: string,
   onClose?: () => void
   enableAutocomplete?: boolean
   optionsHeight?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
@@ -118,7 +119,7 @@ const Autocomplete = <T extends InterfaceWithId, >(props: AutocompleteProps<T>) 
   const rData = useCustomInfiniteQuery({
     queryKey: props.queryKey,
     queryFn: async ({pageParam="1"}) => (await axiosFetcher(
-      `${props.endpoint}${filterSeparator}&page=${pageParam}&search=${query}`,
+      `${props.endpoint}${filterSeparator}&page=${pageParam}&${props.searchParam ?? "search"}=${query}`,
       {useAccessToken: props.useAccessToken ?? true, domain: props.domain}
     )).data
   })
@@ -221,10 +222,10 @@ const Autocomplete = <T extends InterfaceWithId, >(props: AutocompleteProps<T>) 
         as="div"
         ref={(node) => { controlRef.current = node }}
         className={clsx(
-          'relative w-full cursor-text transition duration-200 ring-1 ring-slate-200 rounded-md bg-white dark:bg-transparent',
-          'hover:bg-zinc-100 dark:hover:bg-zinc-700/50 dark:ring-zinc-600',
-          'focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-primary-600',
-          props.multiple ? 'flex min-h-10 flex-wrap items-center gap-1 px-2 py-1 pr-10' : ''
+          'w-full cursor-text transition duration-200 ring-1 rounded-xl bg-white',
+          'ring-gray-400 focus-within:ring-1 focus-within:ring-gray-600 focus:outline-none',
+          'flex items-center justify-between gap-2',
+          props.multiple ? 'flex-wrap min-h-10 gap-1 px-2 py-1 pr-10' : 'py-3 px-5'
         )}
       >
         {props.multiple && props.selected.length > 0 && props.selected.map(item => (
@@ -242,9 +243,9 @@ const Autocomplete = <T extends InterfaceWithId, >(props: AutocompleteProps<T>) 
         <ComboboxInput
           placeholder={getPlaceholder()}
           className={clsx(
-            'appearance-none leading-6 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-200',
+            'appearance-none leading-normal placeholder-gray-700',
             'focus:outline-hidden bg-transparent',
-            props.multiple ? 'min-w-40 flex-1 py-1 pr-7' : 'w-full rounded-md py-2 px-2 pr-9'
+            props.multiple ? 'min-w-40 flex-1 py-1 pr-7' : 'flex-1 py-0'
           )}
           displayValue={(item: typeof props.multiple extends true ? T[] : (T | null)) => {
             if (props.multiple) return query
@@ -261,81 +262,91 @@ const Autocomplete = <T extends InterfaceWithId, >(props: AutocompleteProps<T>) 
           autoComplete={props.enableAutocomplete ? 'on' : 'off'}
         />
         {rData.isFetching ? 
-          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5">
+          <span className="pointer-events-none flex items-center justify-center shrink-0">
             <Spinner/>
           </span>
           :
-          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5">
-            <ChevronDownIcon className="size-4 fill-slate-400" />
+          <span className="pointer-events-none flex items-center justify-center shrink-0">
+            <LuChevronDown className="w-5 h-5 text-gray-700 shrink-0" />
           </span>
         }
       </ComboboxButton>
-      <ComboboxOptions
-        portal
-        ref={optionsRef}
-        transition
-        onScroll={(event) => {
-          optionsScrollTopRef.current = event.currentTarget.scrollTop
-        }}
-        onMouseDown={(e) => e.preventDefault()}
-        style={optionsLayout ? {
-          position: 'fixed',
-          left: optionsLayout.left,
-          width: optionsLayout.width,
-          maxHeight: optionsLayout.maxHeight,
-          ...(optionsLayout.top !== undefined
-            ? { top: optionsLayout.top }
-            : { bottom: optionsLayout.bottom }),
-        } : undefined}
-        className={clsx(
-          'border p-1 empty:invisible overflow-y-auto rounded-md bg-white dark:bg-zinc-800 py-1 text-base shadow-lg ring-1 ring-black/5',
-          'focus:outline-hidden sm:text-sm z-50',
-          'transition duration-200 ease-in data-leave:data-closed:opacity-0',
-          'dark:border-zinc-600',
-        )}
+      <Transition
+        show={open}
+        enter="transition duration-200 ease-out"
+        enterFrom="opacity-0 -translate-y-2"
+        enterTo="opacity-100 translate-y-0"
+        leave="transition duration-150 ease-in"
+        leaveFrom="opacity-100 translate-y-0"
+        leaveTo="opacity-0 -translate-y-2"
       >
-      {data.length === 0 ? (
-          <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
-            Sin resultados.
-          </div>
-        ) : (
-          data.map(item => (
-            <ComboboxOption
-              key={item.id}
-              value={item}
-              className={clsx(
-                'group flex cursor-default items-start gap-2 rounded-lg py-1.5 px-3 select-none data-focus:bg-primary-100 dark:data-focus:bg-primary-800',
-                'data-focus:text-primary-700 dark:data-focus:text-white transition duration-100 cursor-pointer',
-              )}
-            >
-              <CheckCircleIcon className={clsx(
-                'invisible size-4 group-data-selected:visible group-data-selected:fill-primary-600 mt-1',
-                'dark:group-data-selected:fill-primary-300 dark:group-data-selected:focus:fill-primary-100'
-              )} />
-              <div className={clsx(
-                'text-sm/6 group-data-selected:text-primary-600 dark:group-data-selected:text-primary-300 w-full'
-              )}>
-                {props.item(item)}
-              </div>
-            </ComboboxOption>
-          ))
-        )
-      }
-      {props.onCreate && query.length > 0 && (
-        <button
-          type="button"
-          className="flex w-full cursor-pointer items-start gap-2 rounded-lg py-1.5 px-3 select-none hover:bg-primary-100 dark:hover:bg-primary-800 hover:text-primary-700 dark:hover:text-white transition duration-100 text-left"
-          onMouseDown={(e) => { e.preventDefault(); handleCreate() }}
+        <ComboboxOptions
+          portal
+          ref={optionsRef}
+          onScroll={(event) => {
+            optionsScrollTopRef.current = event.currentTarget.scrollTop
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+          style={optionsLayout ? {
+            position: 'fixed',
+            left: optionsLayout.left,
+            width: optionsLayout.width,
+            maxHeight: optionsLayout.maxHeight,
+            ...(optionsLayout.top !== undefined
+              ? { top: optionsLayout.top }
+              : { bottom: optionsLayout.bottom }),
+          } : undefined}
+          className={clsx(
+            'overflow-y-auto rounded-xl bg-white py-2 ring-1 ring-gray-400',
+            'focus:outline-hidden z-50',
+            '[&::-webkit-scrollbar]:w-3',
+            '[&::-webkit-scrollbar-track]:my-1.5',
+            '[&::-webkit-scrollbar-thumb]:rounded-full',
+            '[&::-webkit-scrollbar-thumb]:bg-gray-500',
+            '[&::-webkit-scrollbar-thumb]:border-2',
+            '[&::-webkit-scrollbar-thumb]:border-solid',
+            '[&::-webkit-scrollbar-thumb]:border-transparent',
+            '[&::-webkit-scrollbar-thumb]:bg-clip-padding',
+          )}
         >
-          <PlusCircleIcon className="size-4 mt-1 shrink-0 fill-primary-600 dark:fill-primary-300" />
-          <div className="text-sm/6 text-primary-600 dark:text-primary-300 w-full">
-            Crear &ldquo;{query}&rdquo;
-          </div>
-        </button>
-      )}
-      <div ref={rData.ref}/>
-      {rData.isFetching && <div className='p-4 flex justify-center gap-2'><Spinner/><span className='font-semibold'>Cargando...</span></div>}
-      </ComboboxOptions>
+        {data.length === 0 ? (
+            <div className="cursor-default select-none py-3 px-5 text-gray-700">
+              Sin resultados.
+            </div>
+          ) : (
+            data.map(item => (
+              <ComboboxOption
+                key={item.id}
+                value={item}
+                className={clsx(
+                  'group flex cursor-pointer items-start gap-2 py-3 px-5 select-none data-focus:bg-gray-200',
+                  'text-base text-black',
+                )}
+              >
+                <LuCircleCheck className="invisible size-4 group-data-selected:visible text-primary-text mt-1 shrink-0" />
+                <div className="w-full">
+                  {props.item(item)}
+                </div>
+              </ComboboxOption>
+            ))
+          )
+        }
+        {props.onCreate && query.length > 0 && (
+          <button
+            type="button"
+            className="flex w-full cursor-pointer items-start gap-2 rounded-lg py-1.5 px-3 select-none hover:bg-primary-100 dark:hover:bg-primary-800 hover:text-primary-700 dark:hover:text-white transition duration-100 text-left"
+            onMouseDown={(e) => { e.preventDefault(); handleCreate() }}
+          >
+            <LuCirclePlus className="size-4 mt-1 shrink-0 text-primary-600 dark:text-primary-300" />
+            <div className="text-sm/6 text-primary-600 dark:text-primary-300 w-full">
+              Crear &ldquo;{query}&rdquo;
+            </div>
+          </button>
+        )}
+        <div ref={rData.ref}/>
+        {rData.isFetching && <div className='p-4 flex justify-center gap-2'><Spinner/><span className='font-semibold'>Cargando...</span></div>}
+        </ComboboxOptions>
+      </Transition>
       </>
       )}
     </Combobox>

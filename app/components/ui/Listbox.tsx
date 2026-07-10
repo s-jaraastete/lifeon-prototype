@@ -8,6 +8,7 @@ import {
   Transition,
 } from "@headlessui/react";
 import { LuChevronDown } from "react-icons/lu";
+import clsx from "clsx";
 
 type Option = {
   value: string;
@@ -61,14 +62,16 @@ const Listbox = ({
             <ListboxButton
               id={id}
               onFocus={onFocus}
-              className={`
-                appearance-none w-full py-3 px-5 leading-normal cursor-pointer
-                transition duration-200 focus:ring-1 focus:outline-none
-                rounded-xl ring-1 flex items-center justify-between gap-2
-                ${error ? "ring-primary focus:ring-primary" : "ring-gray-400 focus:ring-gray-600"}
-              `}
+              className={clsx(
+                "appearance-none w-full py-3 px-5 leading-normal cursor-pointer",
+                "transition duration-200 focus:ring-1 focus:outline-none",
+                "rounded-xl ring-1 flex items-center justify-between gap-2",
+                error
+                  ? "ring-primary focus:ring-primary"
+                  : "ring-gray-400 focus:ring-gray-600"
+              )}
             >
-              <span className={`text-left ${selected ? "" : "text-gray-700"}`}>
+              <span className={clsx("text-left", selected ? "" : "text-gray-700")}>
                 {selected ? selected.label : (placeholder ?? "Seleccione")}
               </span>
               <LuChevronDown className="w-5 h-5 text-gray-700 shrink-0" />
@@ -84,7 +87,19 @@ const Listbox = ({
             >
               <ListboxOptions
                 anchor="bottom"
-                className="mt-1 rounded-xl bg-white outline-0 ring-1 ring-gray-400 focus-visible:ring-gray-600 w-(--button-width) max-h-48! overflow-y-auto"
+                className={clsx(
+                  "mt-1 rounded-xl bg-white outline-0 ring-1 ring-gray-400",
+                  "focus-visible:ring-gray-600 w-(--button-width) max-h-60!",
+                  "overflow-y-auto",
+                  "[&::-webkit-scrollbar]:w-3",
+                  "[&::-webkit-scrollbar-track]:my-1.5",
+                  "[&::-webkit-scrollbar-thumb]:rounded-full",
+                  "[&::-webkit-scrollbar-thumb]:bg-gray-500",
+                  "[&::-webkit-scrollbar-thumb]:border-2",
+                  "[&::-webkit-scrollbar-thumb]:border-solid",
+                  "[&::-webkit-scrollbar-thumb]:border-transparent",
+                  "[&::-webkit-scrollbar-thumb]:bg-clip-padding",
+                )}
               >
                 {options.map((option) => (
                   <ListboxOption
