@@ -71,7 +71,7 @@ const Listbox = ({
                   : "ring-gray-400 focus:ring-gray-600"
               )}
             >
-              <span className={clsx("text-left", selected ? "" : "text-gray-700")}>
+              <span className={clsx("text-left truncate min-w-0", selected ? "" : "text-gray-700")}>
                 {selected ? selected.label : (placeholder ?? "Seleccione")}
               </span>
               <LuChevronDown className="w-5 h-5 text-gray-700 shrink-0" />

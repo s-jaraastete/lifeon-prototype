@@ -6,6 +6,7 @@ import { Radio, RadioGroup, Field, Label } from "@headlessui/react";
 export type PaymentMethodData = {
   id: string
   title: string
+  description: string
   icon: React.ReactNode
 }
 
@@ -13,6 +14,10 @@ export const PAYMENT_METHODS: PaymentMethodData[] = [
   {
     id: "webpay",
     title: "Tarjeta débito o crédito (Transbank)",
+    description:
+      `Serás redirigido de forma segura a la plataforma oficial de
+      Webpay Transbank para completar tu transacción. Una vez aprobado el pago,
+      volverás automáticamente a LifeOn para activar tu cuenta.`,
     icon: (
       <Image
         src={`/svg/webpay.svg`}
@@ -25,6 +30,10 @@ export const PAYMENT_METHODS: PaymentMethodData[] = [
   {
     id: "transfer",
     title: "Transferencia bancaria",
+    description:
+      `Al confirmar tu pedido, te mostraremos los datos
+      bancarios de LifeOn y te enviaremos una copia a tu correo.
+      Deberás transferir el monto total en un plazo no mayor a 1 hora.`,
     icon: (
       <Image
         src={`/svg/transfer.svg`}
@@ -34,7 +43,7 @@ export const PAYMENT_METHODS: PaymentMethodData[] = [
       />
     ),
   },
-]
+];
 
 type PaymentMethodProps = {
   value: string;
@@ -42,6 +51,8 @@ type PaymentMethodProps = {
 };
 
 export default function PaymentMethod({ value, onChange }: PaymentMethodProps) {
+  const selectedMethod = PAYMENT_METHODS.find((m) => m.id === value);
+
   return (
     <div className="w-full">
       <RadioGroup value={value} onChange={onChange}>
@@ -54,7 +65,7 @@ export default function PaymentMethod({ value, onChange }: PaymentMethodProps) {
               <Radio
                 value={method.id}
                 className={`
-                  group relative flex items-center gap-4 px-5 py-2.5
+                  group flex items-center gap-4 px-5 py-2.5
                   rounded-xl border border-gray-400 bg-white cursor-pointer
                   transition-all duration-200 hover:bg-gray-50 focus:outline-none
                   data-checked:ring-2 data-checked:ring-secondary focus:ring-secondary
@@ -76,6 +87,11 @@ export default function PaymentMethod({ value, onChange }: PaymentMethodProps) {
             </Field>
           ))}
         </div>
+        {selectedMethod && (
+          <p className="text-primary-text text-sm mt-5.5">
+            {selectedMethod.description}
+          </p>
+        )}
       </RadioGroup>
     </div>
   );

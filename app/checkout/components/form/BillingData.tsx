@@ -120,7 +120,7 @@ export default function BillingData({
             endpoint={`/communes/all/?region=${values.region}`}
             queryKey={["communes", values.region]}
             label="name"
-            placeholder="Busca una comuna o ciudad"
+            placeholder="Selecciona una comuna o ciudad"
             selected={selectedCommune}
             setSelected={(commune) => {
               setSelectedCommune(commune);
