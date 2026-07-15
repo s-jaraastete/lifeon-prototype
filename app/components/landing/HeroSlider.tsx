@@ -50,7 +50,7 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
 
   return (
     <div
-      className={className ?? "relative w-full min-h-[calc(100vh-70px)] overflow-hidden bg-gray-200"}
+      className={className ?? "relative w-full min-h-[calc(100vh-160px)] lg:min-h-[calc(100vh-70px)] overflow-hidden bg-gray-200"}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       aria-roledescription="carousel"
@@ -69,7 +69,7 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
       ))}
 
       {/* Indicators: light bar with active segment */}
-      <div className="absolute left-1/2 bottom-20 -translate-x-1/2 flex gap-3 items-center z-20">
+      <div className="absolute left-1/2 bottom-8 lg:bottom-20 -translate-x-1/2 flex gap-3 items-center z-20">
         {slides.map((_, i) => {
           const active = i === idx
             if (active) {

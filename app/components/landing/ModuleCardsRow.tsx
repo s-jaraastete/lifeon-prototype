@@ -38,7 +38,7 @@ const ModuleCardsRow = ({ isActive }: { isActive: boolean }) => {
     : '-space-x-2.5 group-hover:space-x-4'
 
   return (
-    <div className={`flex items-center justify-center transition-all duration-300 ${gapClass}`}>
+    <div className={`hidden md:flex items-center justify-center transition-all duration-300 ${gapClass}`}>
       {cards.map((card, index) => (
         <ModuleCard
           key={index}
