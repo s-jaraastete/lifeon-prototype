@@ -1,18 +1,20 @@
-import { LuBotMessageSquare, LuFileSearch2, LuRefreshCcw, LuSearch, LuTable } from "react-icons/lu";
+import Image from "next/image";
+import { LuFileSearch2, LuRefreshCcw, LuSearch, LuTable } from "react-icons/lu";
 
 export type EcosystemItem = {
-  icon: React.ReactNode;
+  icon: (size?: number) => React.ReactNode;
   title: string;
   description: string;
   href: string;
   bgColor: string;
   textColor: string;
   available: boolean;
+  chipText?: string;
 };
 
 export const ecosystemItems: EcosystemItem[] = [
   {
-    icon: <LuTable size={24} className="text-black" />,
+    icon: (size = 24) => <LuTable size={size} className="text-black" />,
     title: "MIPER",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
@@ -22,7 +24,7 @@ export const ecosystemItems: EcosystemItem[] = [
     available: true,
   },
   {
-    icon: <LuFileSearch2 size={24} className="text-black" />,
+    icon: (size = 24) => <LuFileSearch2 size={size} className="text-black" />,
     title: "Programa y Documentación Preventiva",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
@@ -32,17 +34,30 @@ export const ecosystemItems: EcosystemItem[] = [
     available: true,
   },
   {
-    icon: <LuBotMessageSquare size={24} className="text-black" />,
+    icon: (size = 24) => (
+      <div 
+        className="flex items-center justify-center overflow-hidden" 
+        style={{ width: size, height: size }}
+      >
+        <Image 
+          src="/svg/apr-icon.svg" 
+          width={size}
+          height={size} 
+          alt="APR Virtual"
+        />
+      </div>
+    ),
     title: "APR Virtual",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
     href: "/modulos/",
-    bgColor: "bg-[rgb(0,199,189)]",
+    bgColor: "bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
     textColor: "text-black",
     available: true,
+    chipText: "IA",
   },
   {
-    icon: <LuRefreshCcw size={24} className="text-gray-700" />,
+    icon: (size = 24) => <LuRefreshCcw size={size} className="text-gray-700" />,
     title: "Gestión del cambio",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
@@ -52,7 +67,7 @@ export const ecosystemItems: EcosystemItem[] = [
     available: false,
   },
   {
-    icon: <LuSearch size={24} className="text-gray-700" />,
+    icon: (size = 24) => <LuSearch size={size} className="text-gray-700" />,
     title: "Módulo 5",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
@@ -62,7 +77,7 @@ export const ecosystemItems: EcosystemItem[] = [
     available: false,
   },
   {
-    icon: <LuSearch size={24} className="text-gray-700" />,
+    icon: (size = 24) => <LuSearch size={size} className="text-gray-700" />,
     title: "Módulo 6",
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",

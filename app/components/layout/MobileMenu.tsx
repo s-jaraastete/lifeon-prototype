@@ -86,7 +86,7 @@ const MobileMenu = ({ isOpen, onClose }: {
                     >
                       <DisclosurePanel
                         static
-                        className="flex flex-col gap-4 text-base text-primary-text py-5"
+                        className="flex flex-col text-base text-primary-text bg-gray-100 -mx-4 px-4"
                       >
                         {ecosystemItems.map((item, idx) => (
                           <Link
@@ -94,18 +94,23 @@ const MobileMenu = ({ isOpen, onClose }: {
                             href={item.href}
                             onClick={onClose}
                             className={clsx(
-                              "flex items-center gap-3",
+                              "flex items-center gap-2.5 text-lg py-3.75",
                               pathname.startsWith("/modulos") && "text-primary",
                             )}
                           >
                             <div
-                              className={clsx("p-2 rounded-lg", item.bgColor)}
+                              className={clsx("p-1.5 rounded-lg", item.bgColor)}
                             >
-                              {item.icon}
+                              {item.icon(18)}
                             </div>
                             {item.title}
+                            {item.chipText && (
+                              <span className="text-[10px] font-medium bg-[#DBEAFE] text-[#155DFC] px-1.5 py-0.5 rounded-lg">
+                                {item.chipText}
+                              </span>
+                            )}
                             {!item.available && (
-                              <span className="text-[10px] text-secondary bg-teal-50 px-2 rounded-full">
+                              <span className="text-xs text-secondary bg-teal-50 px-2.5 rounded-[10px]">
                                 Próximamente
                               </span>
                             )}

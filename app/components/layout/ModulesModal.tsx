@@ -47,10 +47,10 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
                 <div className="flex items-start justify-center gap-4">
                   <div className={`flex items-center gap-2.5 p-4 mt-1 rounded-2xl justify-center ${item.bgColor}`}>
                     {item.available ? (
-                      item.icon
+                      item.icon()
                     ) : (
                       <>
-                        <span className="block group-hover:hidden">{item.icon}</span>
+                        <span className="block group-hover:hidden">{item.icon()}</span>
                         <LuLock size={24} className="hidden group-hover:block text-gray-700" />
                       </>
                     )}
@@ -61,10 +61,17 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
                         Próximamente disponible
                       </span>
                     )}
-                    <p className={`text-lg font-medium ${item.textColor} w-60`}>
-                      {item.title}
-                    </p>
-                    <p className={`text-sm leading-relaxed ${item.textColor}`}>
+                    <div className="flex items-center gap-2 max-w-65">
+                      <p className={`text-lg font-medium ${item.textColor}`}>
+                        {item.title}
+                      </p>
+                      {item.chipText && (
+                        <span className="text-[10px] font-medium bg-[#DBEAFE] text-[#155DFC] px-1.5 py-0.5 rounded-lg">
+                          IA
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-sm leading-relaxed ${!item.available ? "text-secondary-text" : "text-primary-text"}`}>
                       {item.description}
                     </p>
                   </div>
