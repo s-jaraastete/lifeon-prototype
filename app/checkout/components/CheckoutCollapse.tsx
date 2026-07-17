@@ -35,13 +35,13 @@ const CheckoutCollapse = ({
           type="button"
           onClick={() => onToggle?.()}
           onKeyDown={(e) => e.key === "Enter" && onToggle?.()}
-          className={`flex w-full justify-between p-7.5 transition rounded-[22px] focus-visible:ring-1 focus-visible:ring-gray ${
+          className={`flex w-full justify-between p-5 lg:p-7.5 transition rounded-[22px] focus-visible:ring-1 focus-visible:ring-gray ${
             locked
               ? "cursor-default pointer-events-none"
               : "cursor-pointer hover:bg-gray-50"
           }`}
         >
-          <span className="text-2xl text-black font-semibold leading-7.5 text-left">
+          <span className="text-lg lg:text-2xl text-black font-semibold leading-7.5 text-left">
             {title}
           </span>
 
@@ -77,7 +77,7 @@ const CheckoutCollapse = ({
             className="grid"
           >
             <div className="overflow-hidden">
-              <div className="p-7.5 pt-2 text-primary-text">
+              <div className="p-5.5 lg:p-7.5 pt-2 text-primary-text">
                 {children}
               </div>
             </div>

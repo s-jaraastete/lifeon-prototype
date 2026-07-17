@@ -62,3 +62,13 @@ body {
 :focus-visible {
   outline-color: var(--color-secondary);
 }
+
+@utility custom-hover-border-gradient {
+  transition: all 0.2s ease;
+  &:hover {
+    border-color: transparent !important;
+    background: 
+      linear-gradient(white, white) padding-box, 
+      linear-gradient(180deg, #BDE7FF 0%, #ADF2D3 100%) border-box !important;
+  }
+}

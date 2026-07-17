@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { LuChevronLeft } from 'react-icons/lu';
 import getUF from '@/utils/getUF';
 import axiosServerManager from '@/lib/axios_server_manager';
 import CheckoutForm from './components/CheckoutForm';
@@ -14,8 +16,17 @@ const CheckoutPage = async () => {
   const regions: Region[] = response?.results ?? [];
 
   return (
-    <div className="max-w-325 mx-auto py-12.5 px-4 lg:px-0">
-      <h1 className="text-[40px] leading-12 font-semibold mb-8">Checkout</h1>
+    <div className="max-w-325 mx-auto py-8 lg:py-12.5 px-4 lg:px-0">
+      <div className="flex items-center gap-3 mb-8">
+        <Link
+          href="/basket"
+          className="flex items-center justify-center"
+          aria-label="Volver al inicio"
+        >
+          <LuChevronLeft className="w-7.5 h-7.5" />
+        </Link>
+        <h1 className="text-[28px] lg:text-[40px] leading-12 font-semibold">Checkout</h1>
+      </div>
 
       <CheckoutForm regions={regions} ufValue={ufInfo.value} />
       

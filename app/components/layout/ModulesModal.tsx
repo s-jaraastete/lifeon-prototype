@@ -5,77 +5,14 @@ import Link from "next/link";
 import Modal from "../ui/Modal";
 
 // Icons
-import { LuBotMessageSquare, LuFileSearch2, LuRefreshCcw, LuSearch, LuTable, LuLock, LuChevronRight } from "react-icons/lu";
-
+import { LuLock, LuChevronRight } from "react-icons/lu";
+import { ecosystemItems } from "../ModulesEcosystem";
 
 interface EcosystemProps {
   open: boolean;
   onClose: () => void;
   isHome: boolean;
 }
-
-const ecosystemItems = [
-  {
-    icon: <LuTable size={24} className="text-black" />,
-    title: "MIPER",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
-    href: "/modulos/",
-    bgColor: "bg-purple-300",
-    textColor: "text-black",
-    available: true,
-  },
-  {
-    icon: <LuFileSearch2 size={24} className="text-black" />,
-    title: "Programa y Documentación Preventiva",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
-    href: "/modulos/",
-    bgColor: "bg-sky-300",
-    textColor: "text-black",
-    available: true,
-  },
-  {
-    icon: <LuBotMessageSquare size={24} className="text-black" />,
-    title: "APR Virtual",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
-    href: "/modulos/",
-    bgColor: "bg-[rgb(0,199,189)]",
-    textColor: "text-black",
-    available: true,
-  },
-  {
-    icon: <LuRefreshCcw size={24} className="text-gray-700" />,
-    title: "Gestión del cambio",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
-    href: "/modulos/",
-    bgColor: "bg-gray-300",
-    textColor: "text-gray-700",
-    available: false,
-  },
-  {
-    icon: <LuSearch size={24} className="text-gray-700" />,
-    title: "Módulo 5",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
-    href: "/modulos/",
-    bgColor: "bg-gray-300",
-    textColor: "text-gray-700",
-    available: false,
-  },
-  {
-    icon: <LuSearch size={24} className="text-gray-700" />,
-    title: "Módulo 6",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
-    href: "/modulos/",
-    bgColor: "bg-gray-300",
-    textColor: "text-gray-700",
-    available: false,
-  },
-];
 
 const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
   return (
@@ -110,10 +47,10 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
                 <div className="flex items-start justify-center gap-4">
                   <div className={`flex items-center gap-2.5 p-4 mt-1 rounded-2xl justify-center ${item.bgColor}`}>
                     {item.available ? (
-                      item.icon
+                      item.icon()
                     ) : (
                       <>
-                        <span className="block group-hover:hidden">{item.icon}</span>
+                        <span className="block group-hover:hidden">{item.icon()}</span>
                         <LuLock size={24} className="hidden group-hover:block text-gray-700" />
                       </>
                     )}
@@ -124,10 +61,17 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
                         Próximamente disponible
                       </span>
                     )}
-                    <p className={`text-lg font-medium ${item.textColor} w-60`}>
-                      {item.title}
-                    </p>
-                    <p className={`text-sm leading-relaxed ${item.textColor}`}>
+                    <div className="flex items-center gap-2 max-w-65">
+                      <p className={`text-lg font-medium ${item.textColor}`}>
+                        {item.title}
+                      </p>
+                      {item.chipText && (
+                        <span className="text-[10px] font-medium bg-[#DBEAFE] text-[#155DFC] px-1.5 py-0.5 rounded-lg">
+                          IA
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-sm leading-relaxed ${!item.available ? "text-secondary-text" : "text-primary-text"}`}>
                       {item.description}
                     </p>
                   </div>

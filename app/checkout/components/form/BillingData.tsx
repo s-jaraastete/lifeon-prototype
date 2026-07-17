@@ -13,6 +13,7 @@ type BillingDataProps = {
   touched: Record<string, boolean | undefined>;
   onFieldChange: (field: keyof FormFields, value: string) => void;
   onFieldBlur: (field: keyof FormFields) => void;
+  onFieldReset: (field: keyof FormFields) => void;
 };
 
 export default function BillingData({
@@ -22,6 +23,7 @@ export default function BillingData({
   touched,
   onFieldChange,
   onFieldBlur,
+  onFieldReset,
 }: BillingDataProps) {
   const [selectedCommune, setSelectedCommune] = useState<Commune | null>(null);
 
@@ -106,7 +108,7 @@ export default function BillingData({
         onValueChange={(v) => {
           onFieldChange("region", v);
           setSelectedCommune(null);
-          onFieldChange("comuna", "");
+          onFieldReset("comuna");
         }}
         onFocus={() => onFieldBlur("region")}
         error={touched.region ? (errors.region ?? undefined) : undefined}
@@ -118,7 +120,7 @@ export default function BillingData({
             endpoint={`/communes/all/?region=${values.region}`}
             queryKey={["communes", values.region]}
             label="name"
-            placeholder="Busca una comuna o ciudad"
+            placeholder="Selecciona una comuna o ciudad"
             selected={selectedCommune}
             setSelected={(commune) => {
               setSelectedCommune(commune);
@@ -126,6 +128,7 @@ export default function BillingData({
             }}
             item={(commune) => <span>{commune.name}</span>}
             useAccessToken={false}
+            searchParam="s__name"
             enableAutocomplete
           />
         ) : (
@@ -133,9 +136,9 @@ export default function BillingData({
             Selecciona una región primero
           </div>
         )}
-        {/* {touched.comuna && errors.comuna && (
+        {touched.comuna && errors.comuna && (
           <p className="text-sm text-primary leading-tight">{errors.comuna}</p>
-        )} */}
+        )}
       </div>
     </div>
   );

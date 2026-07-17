@@ -12,13 +12,13 @@ const HeroSection = () => {
   const slides = [
     { id: 1, content: 
     <div className="relative h-full min-h-[calc(100vh-70px)] overflow-hidden">
-      <div className="relative z-10 mx-auto flex h-full max-w-325 items-center">
-        <div className="max-w-195">
-          <div className="flex flex-col gap-4">
-            <h1 className="text-4xl font-semibold leading-tight md:text-5xl lg:text-6xl">Gestión de riesgos inteligente, accesible y 100% auditable.</h1>
-            <p className='text-base text-primary-text leading-6 md:text-[22px] md:leading-7'>Estandariza la seguridad de tu empresa. Adopta los altos estándares de la industria en una plataforma intuitiva que evoluciona con tu negocio, activando soluciones a tu propio ritmo.</p>
+      <div className="relative z-10 mx-auto flex h-full max-w-325 items-center pb-30 lg:pb-0">
+        <div className="w-full lg:max-w-150 xl:max-w-195 px-4 xl:px-0">
+          <div className="flex flex-col gap-5.5 lg:gap-4">
+            <h1 className="text-[40px] font-semibold leading-tight md:text-5xl lg:text-6xl">Gestión de riesgos inteligente, accesible y 100% auditable.</h1>
+            <p className='text-xl text-primary-text leading-6 md:text-[22px] md:leading-7'>Estandariza la seguridad de tu empresa. Adopta los altos estándares de la industria en una plataforma intuitiva que evoluciona con tu negocio, activando soluciones a tu propio ritmo.</p>
           </div>
-          <div className="flex flex-col gap-4 mt-10 sm:flex-row">
+          <div className="flex flex-col gap-2.5 lg:gap-4 mt-10 sm:flex-row">
             <StartTrialButton
               slug="paquete-base-esencial"
               className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25"
@@ -34,7 +34,7 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
-      <div className="pointer-events-none absolute left-[48%] top-1/2 hidden w-[clamp(54rem,58vw,120rem)] translate-y-[-53%] md:block lg:left-[50%] xl:left-[58%]">
+      <div className="pointer-events-none absolute left-[48%] top-1/2 hidden w-[clamp(54rem,58vw,120rem)] translate-y-[-53%] lg:block lg:left-[50%] xl:left-[58%]">
         <Image
           src="/images/hero-section-1.png"
           alt="Hero Section 1"
@@ -47,19 +47,19 @@ const HeroSection = () => {
     </div> },
 
     { id: 2, content: (isActive: boolean) => (
-    <div className="flex flex-col max-w-325 mx-auto items-center justify-center h-[90vh]">
+    <div className="flex flex-col max-w-325 mx-auto items-center justify-center h-[90vh] px-4 xl:px-0 pb-30 lg:pb-0">
       <div className="flex flex-col items-center justify-center gap-7.5 group">
         <ModuleCardsRow isActive={isActive} />
-        <div className="flex flex-col gap-4 w-264">
-          <h1 className="text-4xl font-semibold leading-tight text-center md:text-5xl lg:text-6xl">
-            Software modular:<br /> Comienza hoy con nuestro<br/> <span className="text-secondary">Paquete Base Esencial</span>
+        <div className="flex flex-col gap-5.5 lg:gap-4 items-center w-full lg:w-260">
+          <h1 className="text-[40px] font-semibold leading-tight lg:text-center md:text-5xl lg:text-6xl lg:w-220">
+            Software modular: Comienza hoy con nuestro <span className="text-secondary">Paquete Base Esencial</span>
           </h1>
-          <p className='text-base text-primary-text leading-6 text-center md:text-[22px] md:leading-7'>
+          <p className='text-xl text-primary-text leading-6 lg:text-center md:text-[22px] md:leading-7'>
             Digitaliza tu prevención de riesgos con tres herramientas robustas e integradas: MIPER, Control Documental y Asistente Virtual de Prevención. Una solución potente que mantiene la flexibilidad de sumar módulos especializados a medida que tu operación crezca.
           </p>
         </div>
       </div>
-      <div className="flex flex-col gap-4 mt-10 sm:flex-row">
+      <div className="flex flex-col justify-center gap-2.5 lg:gap-4 mt-10 sm:flex-row w-full">
         <StartTrialButton
           slug="paquete-base-esencial"
           className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25"
@@ -77,8 +77,8 @@ const HeroSection = () => {
     ) },
 
     { id: 3, content: 
-    <div className="flex max-w-325 justify-center items-center mx-auto h-[90vh] gap-2.5">
-      <div className="relative h-120 w-126 shrink-0">
+    <div className="flex max-w-325 justify-center items-center mx-auto h-[90vh] gap-2.5 pb-30 lg:pb-0">
+      <div className="relative h-120 w-126 shrink-0 hidden lg:block">
         <div className="absolute left-0 top-5 h-70 w-100 overflow-hidden rounded-3xl">
           <Image 
             src="/images/hero-section-2.0.png" 
@@ -98,15 +98,15 @@ const HeroSection = () => {
           />
         </div>
       </div>
-      <div className='w-250'>
+      <div className='w-full lg:w-250 px-4 xl:px-0'>
         <div className="w-full">
-          <div className="flex flex-col gap-4">
-            <h1 className="text-4xl font-semibold leading-tight md:text-5xl lg:text-6xl">
+          <div className="flex flex-col gap-5.5 lg:gap-4">
+            <h1 className="text-[40px] font-semibold leading-tight md:text-5xl lg:text-6xl">
               Excelencia industrial accesible para <span className="text-secondary">pequeñas</span> y <span className="text-secondary">grandes</span> empresas
             </h1>
-            <p className='text-base text-primary-text leading-6 md:text-[22px] md:leading-7'>Democratizamos la seguridad de alto nivel. Implementa MIPER, Control Documental y Asistente Virtual de Prevención, y protege a tus trabajadores sin el presupuesto de una gran minera.</p>
+            <p className='text-xl text-primary-text leading-6 md:text-[22px] md:leading-7'>Democratizamos la seguridad de alto nivel. Implementa MIPER, Control Documental y Asistente Virtual de Prevención, y protege a tus trabajadores sin el presupuesto de una gran minera.</p>
           </div>
-          <div className="flex flex-col gap-4 mt-10 sm:flex-row">
+          <div className="flex flex-col gap-2.5 lg:gap-4 mt-10 sm:flex-row">
             <StartTrialButton
               slug="paquete-base-esencial"
               className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25"

@@ -34,10 +34,15 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
   const referenceFinalPrice = selectedPriceOption?.trial_days
     ? '0'
     : getReferenceFinalPrice(billingPeriod, ufValue);
+  const hasYearlyDiscount = billingPeriod === 'yearly'
+    && Boolean(selectedPriceOption?.discount_percentage)
+    && selectedPriceOption?.original_amount !== null
+    && selectedPriceOption?.original_amount !== undefined
 
   const paymentMethodIcon = PAYMENT_METHODS.find(
     (m) => m.id === paymentMethodId,
   )?.icon;
+
 
   return (
     <>
@@ -53,12 +58,24 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
             <p className="text-sm">({plan?.description})</p>
           </div>
           <div className="flex flex-col items-end text-nowrap text-sm">
+            {hasYearlyDiscount && (
+              <div className="text-sm">
+                <span className="line-through font-light text-secondary-text pe-2">
+                  {formatApiAmount(selectedPriceOption?.original_amount)}
+                  {" "}
+                  {plan?.currency}
+                </span>
+                <span className="bg-secondary font-medium leading-5 text-white rounded-[14px] px-2 py-0.5 text-xs">
+                  -{selectedPriceOption?.discount_percentage}%
+                </span>
+              </div>
+            )}
             <div>
               {formatApiAmount(selectedPriceOption?.amount)}
               {" "}
               {plan?.currency}
               {" "}
-              por {plan?.selectedBillingPeriod === 'monthly' ? 'mes' : 'año'}
+              por {plan?.selectedBillingPeriod === 'monthly' ? 'mes' : 'el año'}
             </div>
             <div className="text-primary-text">
               (Ref: ${referencePrice}
@@ -151,16 +168,32 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
             <>
               <hr className="border-stroke my-10.5" />
               <p className="bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
-                Para activar tus {trialDays} días de acceso gratuito es
-                necesario configurar tu método de pago. Hoy se realizará una
-                validación por $0 {REFERENCE_CURRENCY} en tu cuenta para
-                verificar la tarjeta. Los cobros recurrentes de{" "}
-                {formatApiAmount(selectedPriceOption?.amount)} {plan?.currency}{" "}
-                {plan?.selectedBillingPeriod === 'monthly' ? 'mensuales' : 'anuales'}{" "}
-                se ejecutarán de forma automática a partir del{" "}
-                {getDateAfterDays(trialDays)}. Recuerda que no tienes contratos de amarre
-                y puedes cancelar cuando quieras desde tu panel para evitar
-                futuros cargos.
+              {hasYearlyDiscount ? (
+                <>
+                  Para activar tus {trialDays} días de acceso gratuito es
+                  necesario configurar tu método de pago. Hoy se realizará una
+                  validación por $0 {REFERENCE_CURRENCY} en tu cuenta para
+                  verificar la tarjeta. El cobro diferido de{" "}
+                  {formatApiAmount(selectedPriceOption?.amount)} {plan?.currency}{" "}
+                  por el año completo se ejecutará de forma automática el{" "}
+                  {getDateAfterDays(trialDays)} solo si decides continuar con
+                  el servicio y no cancelas previamente desde tu panel de
+                  configuración.
+                </>
+              ) : (
+                <>
+                  Para activar tus {trialDays} días de acceso gratuito es
+                  necesario configurar tu método de pago. Hoy se realizará una
+                  validación por $0 {REFERENCE_CURRENCY} en tu cuenta para
+                  verificar la tarjeta. Los cobros recurrentes de{" "}
+                  {formatApiAmount(selectedPriceOption?.amount)} {plan?.currency}{" "}
+                  {plan?.selectedBillingPeriod === 'monthly' ? 'mensuales' : 'anuales'}{" "}
+                  se ejecutarán de forma automática a partir del{" "}
+                  {getDateAfterDays(trialDays)}. Recuerda que no tienes contratos de amarre
+                  y puedes cancelar cuando quieras desde tu panel para evitar
+                  futuros cargos.
+                </>
+              )}
               </p>
             </>
           )}

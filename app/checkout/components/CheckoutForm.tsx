@@ -73,6 +73,9 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
   const handleFieldBlur = (field: keyof FormFields) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
+  const handleFieldReset = (field: keyof FormFields) => {
+    setForm((prev) => ({ ...prev, [field]: "" }));
+  };
 
   const toggle = (section: SectionId) => {
     setActiveSection((prev) => (prev === section ? null : section));
@@ -178,6 +181,7 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
             touched={touched}
             onFieldChange={handleFieldChange}
             onFieldBlur={handleFieldBlur}
+            onFieldReset={handleFieldReset}
           />
         </CheckoutCollapse>
 

@@ -32,7 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <ReactQueryProvider>
             <CartProvider>
               <Header />
-              <main>
+              <main className="pt-[72px] lg:pt-0">
                 {children}
               </main>
               <Footer />
