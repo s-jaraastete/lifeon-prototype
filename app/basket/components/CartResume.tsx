@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -12,7 +13,7 @@ import { getCurrentDate } from '@/utils/currentDate';
 import { formatApiAmount } from '@/utils/pricingHelpers';
 
 // Icons
-import { LuChevronRight, LuShoppingCart } from 'react-icons/lu'
+import { LuChevronLeft, LuChevronRight, LuShoppingCart } from 'react-icons/lu'
 
 
 type CartResumeProps = {
@@ -20,6 +21,7 @@ type CartResumeProps = {
 }
 
 const CartResume = ({ ufValue }: CartResumeProps) => {
+  const [isCouponOpen, setIsCouponOpen] = useState(false)
   const { items, couponPreview, isHydrated, removeItem, updateItemBillingPeriod } = useCart()
 
   const isCartEmpty = items.length === 0
@@ -56,11 +58,20 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
   }
 
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-white px-4 xl:px-0">
       <div className="max-w-325 mx-auto">
-        <div className="bg-white py-12.5">
+        <div className="bg-white py-8 lg:py-12.5">
           <div>
-            <h1 className="text-[40px] leading-12 font-semibold mb-8">Carrito de compras</h1>
+            <div className="flex items-center gap-3 mb-8">
+              <Link
+                href="/"
+                className="flex items-center justify-center"
+                aria-label="Volver al inicio"
+              >
+                <LuChevronLeft className="w-7.5 h-7.5" />
+              </Link>
+              <h1 className="text-[28px] lg:text-[40px] leading-12 font-semibold">Carrito de compras</h1>
+            </div>
 
             {isHydrated && isCartEmpty && (
               <div className="h-120 flex flex-col items-center justify-center mb-10">
@@ -92,7 +103,7 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                     ufValue={ufValue}
                   />
 
-                  <div className="bg-gray-200 p-5 rounded-[22px]">
+                  <div className="hidden lg:block bg-gray-200 p-5 rounded-[22px]">
                     <h4 className="font-medium text-lg leading-6.5 text-black">
                       Próximamente más módulos para sumar a tu Paquete Base
                     </h4>
@@ -103,7 +114,9 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                 </div>
 
                 <div className="flex flex-col gap-6">
-                  <DiscountCoupon />
+                  <div className="hidden lg:block">
+                    <DiscountCoupon />
+                  </div>
 
                   <div className="border border-gray-500 rounded-[22px] bg-white p-6">
                     <Listbox
@@ -112,6 +125,25 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                       options={suscriptionOptions}
                       label="Suscripción"
                     />
+
+                    <div className="lg:hidden">
+                      {isCouponOpen ? (
+                        <div className="mt-7.5">
+                          <DiscountCoupon />
+                        </div>
+                      ) : (
+                        <p className="mt-7.5 text-black">
+                          ¿Tienes un cupón?{' '}
+                          <button
+                            type="button"
+                            onClick={() => setIsCouponOpen(true)}
+                            className="text-primary underline cursor-pointer"
+                          >
+                            Agregar
+                          </button>
+                        </p>
+                      )}
+                    </div>
 
                     {initialPlan && <CartPricingBlock plan={initialPlan} ufValue={ufValue} />}
 
@@ -149,7 +181,7 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                       </button>
                     </Link>
 
-                    <div className="mt-4 flex items-center justify-end">
+                    <div className="mt-4 flex items-center justify-center lg:justify-end">
                       <Image
                         src="/images/pay_methods.png"
                         alt="Payment Method"

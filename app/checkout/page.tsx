@@ -14,7 +14,7 @@ const CheckoutPage = async () => {
   const regions: Region[] = response?.results ?? [];
 
   return (
-    <div className="max-w-325 mx-auto py-12.5 px-4 lg:px-0">
+    <div className="max-w-325 mx-auto py-8 lg:py-12.5 px-4 lg:px-0">
       <div className="flex items-center gap-3 mb-8">
         <Link
           href="/basket"
@@ -23,7 +23,7 @@ const CheckoutPage = async () => {
         >
           <LuChevronLeft className="w-7.5 h-7.5" />
         </Link>
-        <h1 className="text-[40px] leading-12 font-semibold">Checkout</h1>
+        <h1 className="text-[28px] lg:text-[40px] leading-12 font-semibold">Checkout</h1>
       </div>
 
       <CheckoutForm regions={regions} ufValue={ufInfo.value} />

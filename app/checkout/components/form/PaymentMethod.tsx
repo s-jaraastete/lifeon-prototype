@@ -13,7 +13,7 @@ export type PaymentMethodData = {
 export const PAYMENT_METHODS: PaymentMethodData[] = [
   {
     id: "webpay",
-    title: "Tarjeta débito o crédito (Transbank)",
+    title: "Tarjeta débito o crédito",
     description:
       `Serás redirigido de forma segura a la plataforma oficial de
       Webpay Transbank para completar tu transacción. Una vez aprobado el pago,
@@ -65,7 +65,7 @@ export default function PaymentMethod({ value, onChange }: PaymentMethodProps) {
               <Radio
                 value={method.id}
                 className={`
-                  group flex items-center gap-4 px-5 py-2.5
+                  group flex items-center gap-2 lg:gap-4 px-5 py-2.5
                   rounded-xl border border-gray-400 bg-white cursor-pointer
                   transition-all duration-200 hover:bg-gray-50 focus:outline-none
                   data-checked:ring-2 data-checked:ring-secondary focus:ring-secondary
@@ -77,18 +77,18 @@ export default function PaymentMethod({ value, onChange }: PaymentMethodProps) {
                 >
                   {method.icon}
                 </div>
-                <span className="text-primary-text text-lg leading-6.5">
+                <span className="text-primary-text text-sm lg:text-lg leading-6.5">
                   {method.title}
                 </span>
                 {value === method.id &&
-                  <span className="text-secondary text-sm ms-auto">Seleccionado</span>
+                  <span className="text-secondary text-[10px] lg:text-sm font-medium lg:font-normal ms-auto">Seleccionado</span>
                 }
               </Radio>
             </Field>
           ))}
         </div>
         {selectedMethod && (
-          <p className="text-primary-text text-sm mt-5.5">
+          <p className="hidden lg:block text-primary-text text-sm mt-5.5">
             {selectedMethod.description}
           </p>
         )}
