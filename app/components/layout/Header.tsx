@@ -7,13 +7,15 @@ import { usePathname } from "next/navigation";
 
 import ShoppingCart from "../shopping/ShoppingCart";
 import ModulesModal from "./ModulesModal";
+import MobileMenu from "./MobileMenu";
 
 // Icons
-import { LuChevronDown, LuUserRound } from "react-icons/lu";
+import { LuChevronDown, LuMenu, LuUserRound, LuX } from "react-icons/lu";
 
 
 const Header = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const isHome = pathname === "/";
 
@@ -37,8 +39,35 @@ const Header = () => {
   return (
     <>
       <div className="sticky top-0 w-full z-999 flex flex-col">
-        <header className="hidden lg:block w-full border-b border-gray-400 left-0 z-100 top-0 ">
-          <div className="bg-white">
+        {/* Mobile header */}
+        <header className="lg:hidden w-full bg-white">
+          <div className="flex justify-between px-4 py-4.5">
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                className="cursor-pointer"
+              >
+                {isMenuOpen ? (
+                  <LuX className="w-7 h-7 text-secondary" />
+                ) : (
+                  <LuMenu className="w-7 h-7 text-secondary" />
+                )}
+              </button>
+              <Link href="/">
+                <p className="text-3xl font-semibold text-primary">
+                  Life
+                  <span className="text-secondary font-extrabold">On</span>
+                </p>
+              </Link>
+            </div>
+            <div className="">
+              <ShoppingCart />
+            </div>
+          </div>
+        </header>
+        <header className="hidden lg:block w-full border-b border-gray-400 left-0 z-100 top-0">
+          <div className="bg-white px-4 xl:px-0">
             <div className="max-w-325 mx-auto py-4 flex justify-between items-center">
               {pathname === "/basket" || pathname === "/checkout" ? (
                 <Link href="/" className="flex items-center py-1">
@@ -144,6 +173,10 @@ const Header = () => {
 
       {/* Modals */}
       <div className="relative z-990">
+        <MobileMenu
+          isOpen={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+        />
         <ModulesModal
           open={activeModal === "modules"}
           onClose={() => setActiveModal(null)}
