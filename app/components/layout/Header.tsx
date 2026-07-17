@@ -38,11 +38,15 @@ const Header = () => {
 
   return (
     <>
-      <div className="sticky top-0 w-full z-999 flex flex-col">
-        {/* Mobile header */}
-        <header className="lg:hidden w-full bg-white">
-          <div className="flex justify-between px-4 py-4.5">
-            <div className="flex items-center gap-2.5">
+      {/* Mobile header */}
+      <header className="lg:hidden fixed top-0 w-full z-999 bg-white">
+        <div
+          className={`
+            flex justify-between items-center px-4 py-4.5
+            ${!isMenuOpen ? "border-b border-gray-400" : ""}
+          `}>
+          <div className="flex items-center gap-2.5">
+            {pathname !== "/basket" && pathname !== "/checkout" && (
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
@@ -54,23 +58,39 @@ const Header = () => {
                   <LuMenu className="w-7 h-7 text-secondary" />
                 )}
               </button>
-              <Link href="/">
-                <p className="text-3xl font-semibold text-primary">
-                  Life
-                  <span className="text-secondary font-extrabold">On</span>
-                </p>
-              </Link>
-            </div>
+            )}
+            <Link href="/">
+              <p className="text-3xl font-semibold text-primary">
+                Life
+                <span className="text-secondary font-extrabold">On</span>
+              </p>
+            </Link>
+          </div>
+          {pathname !== "/basket" && pathname !== "/checkout" && (
             <div className="">
               <ShoppingCart />
             </div>
-          </div>
-        </header>
-        <header className="hidden lg:block w-full border-b border-gray-400 left-0 z-100 top-0">
-          <div className="bg-white px-4 xl:px-0">
-            <div className="max-w-325 mx-auto py-4 flex justify-between items-center">
-              {pathname === "/basket" || pathname === "/checkout" ? (
-                <Link href="/" className="flex items-center py-1">
+          )}
+        </div>
+      </header>
+      {/* Desktop header */}
+      <header className="hidden lg:block sticky top-0 w-full z-999 bg-white border-b border-gray-400">
+        <div className="px-4 xl:px-0">
+          <div className="max-w-325 mx-auto py-4 flex justify-between items-center">
+            {pathname === "/basket" || pathname === "/checkout" ? (
+              <Link href="/" className="flex items-center py-1">
+                {/* <Image
+                    src="/"
+                    alt="LifeOn"
+                    width={120}
+                    height={40}
+                    className="w-30 h-10"
+                  /> */}
+                <p className="text-3xl font-semibold text-primary">Life<span className="text-secondary font-extrabold">On</span></p>
+              </Link>
+            ):(
+              <>
+                <Link href="/" className="flex items-center">
                   {/* <Image
                     src="/"
                     alt="LifeOn"
@@ -80,96 +100,83 @@ const Header = () => {
                   /> */}
                   <p className="text-3xl font-semibold text-primary">Life<span className="text-secondary font-extrabold">On</span></p>
                 </Link>
-              ):(
-                <>
-                  <Link href="/" className="flex items-center">
-                    {/* <Image
-                      src="/"
-                      alt="LifeOn"
-                      width={120}
-                      height={40}
-                      className="w-30 h-10"
-                    /> */}
-                    <p className="text-3xl font-semibold text-primary">Life<span className="text-secondary font-extrabold">On</span></p>
-                  </Link>
 
-                  <nav aria-label="Main" className="flex items-center gap-6">
-                    <ul className="hidden md:flex gap-10 text-primary-text">
-                      {mainLinks.map((link) => {
-                        let isActive = false;
+                <nav aria-label="Main" className="flex items-center gap-6">
+                  <ul className="hidden md:flex gap-10 text-primary-text">
+                    {mainLinks.map((link) => {
+                      let isActive = false;
 
-                        if (
-                          link.name === "Software" &&
-                          (pathname === "/")
-                        ) {
-                          isActive = true;
-                        } else if (
-                          link.name === "Módulos" &&
-                          pathname.startsWith("/modulos")
-                        ) {
-                          isActive = true;
-                        } else if (
-                          link.name === "Recursos" &&
-                          (pathname === "/recursos")
-                        ) {
-                          isActive = true;
-                        } else if (
-                          link.name === "Contacto" &&
-                          pathname === "/contacto"
-                        ) {
-                          isActive = true;
-                        } 
-                        return (
-                          <li
-                            key={link.name}
-                            className={`transition-colors hover:text-primary ${
-                              isActive ? "text-primary font-semibold" : ""
-                            }`}
-                          >
-                            {link.modal && link.href ? (
-                              <button
-                                onClick={() => toggleModal(link.modal!)}
-                                className="cursor-pointer flex items-center gap-1"
-                              >
-                                {link.name}
-                                <LuChevronDown className="w-4 h-4" />
-                              </button>
-                            ) : link.modal ? (
-                              <button
-                                onClick={() => toggleModal(link.modal!)}
-                                className="cursor-pointer flex items-center gap-1"
-                              >
-                                {link.name}
-                                <LuChevronDown className="w-4 h-4" />
-                              </button>
-                            ) : (
-                              <a href={link.href}>{link.name}</a>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </nav>
+                      if (
+                        link.name === "Software" &&
+                        (pathname === "/")
+                      ) {
+                        isActive = true;
+                      } else if (
+                        link.name === "Módulos" &&
+                        pathname.startsWith("/modulos")
+                      ) {
+                        isActive = true;
+                      } else if (
+                        link.name === "Recursos" &&
+                        (pathname === "/recursos")
+                      ) {
+                        isActive = true;
+                      } else if (
+                        link.name === "Contacto" &&
+                        pathname === "/contacto"
+                      ) {
+                        isActive = true;
+                      } 
+                      return (
+                        <li
+                          key={link.name}
+                          className={`transition-colors hover:text-primary ${
+                            isActive ? "text-primary font-semibold" : ""
+                          }`}
+                        >
+                          {link.modal && link.href ? (
+                            <button
+                              onClick={() => toggleModal(link.modal!)}
+                              className="cursor-pointer flex items-center gap-1"
+                            >
+                              {link.name}
+                              <LuChevronDown className="w-4 h-4" />
+                            </button>
+                          ) : link.modal ? (
+                            <button
+                              onClick={() => toggleModal(link.modal!)}
+                              className="cursor-pointer flex items-center gap-1"
+                            >
+                              {link.name}
+                              <LuChevronDown className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <a href={link.href}>{link.name}</a>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </nav>
 
-                  <div className="flex items-center gap-8">
-                    <ShoppingCart />
+                <div className="flex items-center gap-8">
+                  <ShoppingCart />
 
-                    <div className="flex items-center gap-3">
-                      {/* <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
-                        Pruébalo gratis
-                      </button> */}
-                      <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
-                        <LuUserRound className="w-5 h-5 inline-block mr-1" />
-                        Acceder
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    {/* <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
+                      Pruébalo gratis
+                    </button> */}
+                    <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
+                      <LuUserRound className="w-5 h-5 inline-block mr-1" />
+                      Acceder
+                    </button>
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
-        </header>
-      </div>
+        </div>
+      </header>
 
       {/* Modals */}
       <div className="relative z-990">
