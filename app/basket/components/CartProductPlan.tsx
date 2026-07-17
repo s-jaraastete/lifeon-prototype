@@ -1,10 +1,11 @@
 "use client";
 
+import Image from 'next/image';
 import { type CartItem } from '@/providers/CartProvider'
 import { REFERENCE_CURRENCY, formatApiAmount, getActivePriceOption, getReferencePrice } from '@/utils/pricingHelpers';
 
 // Icons
-import { LuBotMessageSquare, LuFileSearch2, LuTable, LuTrash2 } from 'react-icons/lu';
+import { LuFileSearch2, LuTable, LuTrash2 } from 'react-icons/lu';
 
 
 type CartProductPlanProps = {
@@ -27,8 +28,13 @@ const CartProductPlan = ({ items, onRemove, ufValue }: CartProductPlanProps) => 
         </div>
       </div>
       <div className="w-8 h-8 rounded-[10px] border-2 border-white bg-white overflow-hidden relative z-30 -ml-4">
-        <div className="w-full h-full bg-[#00C7BE]/40 flex items-center justify-center">
-          <LuBotMessageSquare size={16} />
+        <div className="w-full h-full bg-linear-to-b from-[#BDE7FF] to-[#ADF2D3] flex items-center justify-center">
+          <Image 
+            src="/svg/apr-icon.svg" 
+            width={16}
+            height={16} 
+            alt="APR Virtual"
+          />
         </div>
       </div>
     </div>

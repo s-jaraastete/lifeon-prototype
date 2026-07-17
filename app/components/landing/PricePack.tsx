@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Switch from '../ui/Switch';
 import StartTrialButton from '../shopping/StartTrialButton';
 
 // Icons
-import { LuBotMessageSquare, LuFileSearch2, LuTable } from 'react-icons/lu';
+import { LuFileSearch2, LuTable } from 'react-icons/lu';
 
 
 const PricePack = () => {
@@ -25,8 +26,13 @@ const PricePack = () => {
               <LuFileSearch2 className="text-xl text-black" />
             </div>
             <div className="hidden md:group-hover:flex items-center text-lg text-black">+</div>
-            <div className="rounded-xl p-3 border-2 border-white bg-[rgb(0,199,189)] transform -translate-x-1/1 group-hover:translate-x-0 transition-transform duration-300">
-              <LuBotMessageSquare className="text-xl text-black" />
+            <div className="rounded-xl p-3 border-2 border-white bg-linear-to-b from-[#BDE7FF] to-[#ADF2D3] transform -translate-x-1/1 group-hover:translate-x-0 transition-transform duration-300">
+              <Image 
+                src="/svg/apr-icon.svg" 
+                width={20}
+                height={20} 
+                alt="APR Virtual"
+              />
             </div>
           </div>
         </div>

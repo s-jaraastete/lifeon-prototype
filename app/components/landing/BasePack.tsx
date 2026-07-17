@@ -1,8 +1,9 @@
 import React from 'react'
 import CardPack from './CardPack';
 import PricePack from './PricePack';
+import Image from 'next/image';
 // Icons
-import { LuBotMessageSquare, LuFileSearch2, LuTable } from 'react-icons/lu';
+import { LuFileSearch2, LuTable } from 'react-icons/lu';
 
 
 const BasePack = () => {
@@ -33,14 +34,25 @@ const BasePack = () => {
     },
     {
       chip: "Incluído en Paquete Base Esencial",
-      icon: <LuBotMessageSquare size={24} className="text-black" />,
-      bgIcon: "bg-[rgb(0,199,189)]",
+      icon: (
+        <div className="flex items-center justify-center overflow-hidden h-6 w-6">
+          <Image 
+            src="/svg/apr-icon.svg" 
+            width={24}
+            height={24} 
+            alt="APR Virtual"
+          />
+        </div>
+      ),
+      bgIcon: "bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
+      chipText: "IA",
       title: "APR Virtual",
       description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
       details: ["Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet"],
-      borderButtonColor: "border-[rgb(0,199,189)]",
-      hoverButton: "hover:bg-[rgb(0,199,189)]",
-      hoverBorderCard: "hover:border-[rgb(0,199,189)]"
+      borderButtonColor: "border-[#99E9E5]",
+      hoverButton: "hover:bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
+      hoverBorderCard: "custom-hover-border-gradient",
+      titleChip: "IA",
     },
   ];
 
@@ -66,6 +78,7 @@ const BasePack = () => {
                 hoverButton={card.hoverButton}
                 hoverBorderCard={card.hoverBorderCard}
                 titleStart={card.titleStart}
+                titleChip={card.titleChip}
               />
               {index < CardData.length - 1 && (
                 <div className="hidden lg:flex items-center justify-center text-5xl text-teal-300">+</div>

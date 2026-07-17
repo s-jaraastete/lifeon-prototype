@@ -13,9 +13,10 @@ type CardPackProps = {
   hoverButton?: string;
   hoverBorderCard?: string;
   titleStart?: boolean;
+  titleChip?: string;
 }
 
-const CardPack = ({ chip, icon, bgIcon, title, description, details, borderButtonColor, hoverButton, hoverBorderCard, titleStart = false }: CardPackProps) => {
+const CardPack = ({ chip, icon, bgIcon, title, description, details, borderButtonColor, hoverButton, hoverBorderCard, titleStart = false, titleChip }: CardPackProps) => {
   return (
     <div className={`border-2 border-gray-300 rounded-3xl p-6 w-full h-138.25 flex flex-col ${hoverBorderCard} transition duration-200`}>
       <div className="w-57">
@@ -25,7 +26,14 @@ const CardPack = ({ chip, icon, bgIcon, title, description, details, borderButto
         <div className={`w-12 h-12 flex items-center justify-center ${bgIcon} rounded-2xl mt-4`}>
         {icon}
         </div>
-        <h3 className="text-xl font-semibold text-black w-50 mt-3">{title}</h3>
+        <h3 className="text-xl font-semibold text-black w-50 mt-3">
+          {title}
+          {titleChip && (
+            <span className="ml-2 text-[10px] font-medium bg-[#DBEAFE] text-[#155DFC] px-1.5 py-0.5 rounded-lg align-middle">
+              {titleChip}
+            </span>
+          )}
+        </h3>
       </div>
       <p className="text-primary-text mt-5">{description}</p>
 
