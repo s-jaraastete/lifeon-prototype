@@ -1,6 +1,8 @@
 import getUF from '@/utils/getUF';
 import axiosServerManager from '@/lib/axios_server_manager';
 import CheckoutForm from './components/CheckoutForm';
+import OneclickInscriptionButton from './components/OneclickInscriptionButton';
+
 
 const CheckoutPage = async () => {
   const ufInfo = await getUF()
@@ -16,6 +18,12 @@ const CheckoutPage = async () => {
       <h1 className="text-[40px] leading-12 font-semibold mb-8">Checkout</h1>
 
       <CheckoutForm regions={regions} ufValue={ufInfo.value} />
+      
+      {/* TESTING ONECLICK INSCRIPTION */}
+      {/* <OneclickInscriptionButton
+        subscriptionId={5}
+        requestedById={2}
+      /> */}
     </div>
   );
 };
