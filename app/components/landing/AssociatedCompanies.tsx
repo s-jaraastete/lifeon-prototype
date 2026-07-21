@@ -44,25 +44,25 @@ const AssociatedCompanies = () => {
   ]
   
   return (
-    <section className="w-full pb-15">
+    <section className="w-full pb-15 px-4 xl:px-0">
       <div className="max-w-325 mx-auto h-[50vh] flex flex-col justify-center items-center gap-8">
-        <h2 className="text-3xl font-semibold text-center mb-8 mx-30">
+        <h2 className="text-[24px] lg:text-3xl font-semibold text-center mb-8 lg:mx-30">
           +1.700 empresas usan LifeOn para simplificar el cumplimiento normativo y la gestión de riesgos.
         </h2>
-        <div className="flex gap-20 justify-between">
-          <p className='font-bold text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block'>
+        <div className="w-full flex overflow-x-auto hide-scrollbar gap-10 px-4 lg:px-0 -mx-4 lg:mx-0 lg:gap-20 lg:justify-between">
+          <p className='font-bold text-3xl lg:text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block shrink-0 min-w-[85%] lg:min-w-0'>
             ESCONDIDA | BHP
           </p>
-          <p className='font-bold text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block'>
+          <p className='font-bold text-3xl lg:text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block shrink-0 min-w-[85%] lg:min-w-0'>
             SPENCE | BHP
           </p>
-          <p className='font-bold text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block'>
+          <p className='font-bold text-3xl lg:text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block shrink-0 min-w-[85%] lg:min-w-0'>
             CERRO COLORADO | BHP
           </p>
         </div>
       </div>
       <div className="max-w-325 mx-auto">
-        <h2 className="text-5xl font-semibold text-center mb-10 mx-30">
+        <h2 className="text-[30px] lg:text-5xl font-semibold text-center mb-10 lg:mx-30">
           Diseñado para <span className="text-secondary">proteger</span> tu capital, tu talento y tu operación
         </h2>
         <div className="flex flex-col lg:flex-row gap-6 justify-center">
