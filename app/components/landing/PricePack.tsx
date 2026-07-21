@@ -14,21 +14,22 @@ const PricePack = () => {
   
   return (
   <section className="border-2 border-gray-300 rounded-3xl p-6 w-full">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center">
+    <div className="flex flex-col-reverse lg:flex-row items-start lg:items-center justify-between">
+      <div className="flex items-center mt-5.5 lg:mt-0">
         <div className="group inline-flex items-center">
           <div className="flex items-center transition-all duration-300 group-hover:gap-2 gap-0">
             <div className="rounded-xl p-3 border-2 border-white bg-purple-300 transform transition-transform duration-300">
-              <LuTable className="text-xl text-black" />
+              <LuTable className="text-xs lg:text-xl text-black" />
             </div>
             <div className="hidden md:group-hover:flex items-center text-lg text-black">+</div>
             <div className="rounded-xl p-3 border-2 border-white bg-sky-300 transform -translate-x-1/2 group-hover:translate-x-0 transition-transform duration-300">
-              <LuFileSearch2 className="text-xl text-black" />
+              <LuFileSearch2 className="text-xs lg:text-xl text-black" />
             </div>
             <div className="hidden md:group-hover:flex items-center text-lg text-black">+</div>
             <div className="rounded-xl p-3 border-2 border-white bg-linear-to-b from-[#BDE7FF] to-[#ADF2D3] transform -translate-x-1/1 group-hover:translate-x-0 transition-transform duration-300">
               <Image 
-                src="/svg/apr-icon.svg" 
+                src="/svg/apr-icon.svg"
+                className="h-3 w-3 lg:h-5 lg:w-5"
                 width={20}
                 height={20} 
                 alt="APR Virtual"
@@ -37,7 +38,7 @@ const PricePack = () => {
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-between w-full lg:w-auto gap-2">
         <p className="text-primary-text">
           Anual (Ahorra un <span className="font-semibold text-secondary">15%</span> con un compromiso de un año)
         </p>
@@ -68,7 +69,7 @@ const PricePack = () => {
     <div className="mt-5">
       <StartTrialButton
         slug="paquete-base-esencial"
-        className="w-59.25 bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer"
+        className="w-full lg:w-59.25 bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer"
         pendingText="Preparando prueba..."
       >
         Comienza ahora

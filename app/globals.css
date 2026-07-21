@@ -63,6 +63,14 @@ body {
   outline-color: var(--color-secondary);
 }
 
+@utility hide-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @utility custom-hover-border-gradient {
   transition: all 0.2s ease;
   &:hover {
