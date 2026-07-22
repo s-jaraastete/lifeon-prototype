@@ -2,6 +2,7 @@ import React from 'react'
 
 // Icons
 import { LuAward, LuCircleCheck, LuMonitorSmartphone } from 'react-icons/lu';
+import SwiperCarousel from '../ui/SwiperCarousel';
 
 
 interface InfoCardProps {
@@ -25,6 +26,8 @@ const InfoCard = ({ title, description, icon }: InfoCardProps) => {
 };
 
 const AssociatedCompanies = () => {
+  const companyNames = ["ESCONDIDA | BHP", "SPENCE | BHP", "CERRO COLORADO | BHP"]
+
   const cardData = [
     {
       title: "Cumplimiento normativo sin dolores de cabeza",
@@ -49,16 +52,28 @@ const AssociatedCompanies = () => {
         <h2 className="text-[24px] lg:text-3xl font-semibold text-center mb-8 lg:mx-30">
           +1.700 empresas usan LifeOn para simplificar el cumplimiento normativo y la gestión de riesgos.
         </h2>
-        <div className="w-full flex overflow-x-auto hide-scrollbar gap-10 px-4 lg:px-0 -mx-4 lg:mx-0 lg:gap-20 lg:justify-between">
-          <p className='font-bold text-3xl lg:text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block shrink-0 min-w-[85%] lg:min-w-0'>
-            ESCONDIDA | BHP
-          </p>
-          <p className='font-bold text-3xl lg:text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block shrink-0 min-w-[85%] lg:min-w-0'>
-            SPENCE | BHP
-          </p>
-          <p className='font-bold text-3xl lg:text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block shrink-0 min-w-[85%] lg:min-w-0'>
-            CERRO COLORADO | BHP
-          </p>
+        <div className="hidden lg:flex gap-20 justify-between">
+          {companyNames.map((name, index) => (
+            <p key={index} className='font-bold text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block'>
+              {name}
+            </p>
+          ))}
+        </div>
+        <div className="lg:hidden w-full">
+          <SwiperCarousel
+            slideTransitionSpeed={5000}
+            slideOnScreenTime={0}
+            linear={true}
+            uniformGap={40}
+          >
+            {[...companyNames, ...companyNames, ...companyNames].map((name, index) => (
+              <div key={index} className="w-full flex justify-center">
+                <p className='font-bold text-3xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom text-center'>
+                  {name}
+                </p>
+              </div>
+            ))}
+          </SwiperCarousel>
         </div>
       </div>
       <div className="max-w-325 mx-auto">
