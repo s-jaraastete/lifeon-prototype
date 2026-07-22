@@ -32,8 +32,7 @@ const CheckoutPage = async () => {
       
       {/* TESTING ONECLICK INSCRIPTION */}
       {/* <OneclickInscriptionButton
-        subscriptionId={5}
-        requestedById={2}
+        subscriptionPublicId="969fa9ee-79b6-4cb0-950d-25e9ad57e001"
       /> */}
     </div>
   );

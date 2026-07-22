@@ -3,20 +3,20 @@
 import { useState } from 'react';
 
 interface OneclickStartResponse {
-  inscription_id: number;
+  inscription_public_id: string;
+  subscription_public_id: string;
+  status: 'redirect_ready';
   token: string;
   url_webpay: string;
-  status: 'redirect_ready';
+  expires_at: string;
 }
 
 interface OneclickInscriptionButtonProps {
-  subscriptionId: number;
-  requestedById: number;
+  subscriptionPublicId: string;
 }
 
 const OneclickInscriptionButton = ({
-  subscriptionId,
-  requestedById,
+  subscriptionPublicId,
 }: OneclickInscriptionButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,16 +27,13 @@ const OneclickInscriptionButton = ({
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_HOST}/oneclick/inscription/start/`,
+        `${process.env.NEXT_PUBLIC_BACKEND_HOST}/subscriptions/${subscriptionPublicId}/oneclick/inscription/start/`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            subscription: subscriptionId,
-            requested_by: requestedById,
-          }),
+          body: JSON.stringify({}),
         }
       );
 
@@ -56,6 +53,7 @@ const OneclickInscriptionButton = ({
         token: data.token,
         urlWebpay: data.url_webpay,
       });
+
     } catch (error) {
       console.error(error);
 
@@ -99,7 +97,7 @@ const OneclickInscriptionButton = ({
         type="button"
         onClick={handleInscription}
         disabled={isLoading}
-        className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50 transition hover:bg-blue-600 cursor-pointer"
+        className="cursor-pointer rounded bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600 disabled:opacity-50"
       >
         {isLoading
           ? 'Redirigiendo a Transbank...'
@@ -109,6 +107,7 @@ const OneclickInscriptionButton = ({
       {error && <p>{error}</p>}
     </div>
   );
-}
+};
 
 export default OneclickInscriptionButton;
+
