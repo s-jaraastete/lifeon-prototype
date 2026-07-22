@@ -50,7 +50,7 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
 
   return (
     <div
-      className={className ?? "relative w-full min-h-[calc(100vh-160px)] lg:min-h-[calc(100vh-70px)] overflow-hidden bg-gray-200"}
+      className={className ?? "relative w-full min-h-[calc(100vh-79.5px)] sm:min-h-[calc(100vh-160px)] lg:min-h-[calc(100vh-70px)] overflow-hidden bg-gray-200"}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       aria-roledescription="carousel"

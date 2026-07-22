@@ -16,7 +16,7 @@ const CheckoutPage = async () => {
   const regions: Region[] = response?.results ?? [];
 
   return (
-    <div className="max-w-325 mx-auto py-8 lg:py-12.5 px-4 lg:px-0">
+    <div className="max-w-325 mx-auto py-8 lg:py-12.5 px-4 xl:px-0">
       <div className="flex items-center gap-3 mb-8">
         <Link
           href="/basket"

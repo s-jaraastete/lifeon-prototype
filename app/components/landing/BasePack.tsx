@@ -1,97 +1,81 @@
-import React from 'react'
-import CardPack from './CardPack';
-import PricePack from './PricePack';
 import Image from 'next/image';
-// Icons
 import { LuFileSearch2, LuTable } from 'react-icons/lu';
+import PricePack from './PricePack';
+import BasePackSlider from './BasePackSlider';
 
+export const CardData = [
+  {
+    chip: "Incluído en Paquete Base Esencial",
+    icon: <LuTable size={24} className="text-black" />,
+    bgIcon: "bg-purple-300",
+    title: "MIPER",
+    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+    details: ["Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet"],
+    borderButtonColor: "border-purple-300",
+    hoverButton: "hover:bg-purple-300",
+    hoverBorderCard: "hover:border-purple-300"
+  },
+  {
+    chip: "Incluído en Paquete Base Esencial",
+    icon: <LuFileSearch2 size={24} className="text-black" />,
+    bgIcon: "bg-sky-300",
+    title: "Programa y Documentación Preventiva",
+    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+    details: ["Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet"],
+    borderButtonColor: "border-sky-300",
+    hoverButton: "hover:bg-sky-300",
+    hoverBorderCard: "hover:border-sky-300",
+    titleStart: true
+  },
+  {
+    chip: "Incluído en Paquete Base Esencial",
+    icon: (
+      <div className="flex items-center justify-center overflow-hidden h-6 w-6">
+        <Image 
+          src="/svg/apr-icon.svg" 
+          width={24}
+          height={24} 
+          alt="APR Virtual"
+        />
+      </div>
+    ),
+    bgIcon: "bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
+    title: "APR Virtual",
+    titleChip: "IA",
+    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+    details: ["Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet"],
+    borderButtonColor: "border-[rgb(0,199,189)]",
+    hoverButton: "hover:border-transparent hover:bg-[linear-gradient(white,white)_padding-box,linear-gradient(180deg,#BDE7FF_0%,#ADF2D3_100%)_border-box]",
+    hoverBorderCard: "custom-hover-border-gradient"
+  },
+];
 
 const BasePack = () => {
-
-  const CardData = [
-    {
-      chip: "Incluído en Paquete Base Esencial",
-      icon: <LuTable size={24} className="text-black" />,
-      bgIcon: "bg-purple-300",
-      title: "MIPER",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
-      details: ["Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet"],
-      borderButtonColor: "border-purple-300",
-      hoverButton: "hover:bg-purple-300",
-      hoverBorderCard: "hover:border-purple-300"
-    },
-    {
-      chip: "Incluído en Paquete Base Esencial",
-      icon: <LuFileSearch2 size={24} className="text-black" />,
-      bgIcon: "bg-sky-300",
-      title: "Programa y Documentación Preventiva",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
-      details: ["Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet"],
-      borderButtonColor: "border-sky-300",
-      hoverButton: "hover:bg-sky-300",
-      hoverBorderCard: "hover:border-sky-300",
-      titleStart: true
-    },
-    {
-      chip: "Incluído en Paquete Base Esencial",
-      icon: (
-        <div className="flex items-center justify-center overflow-hidden h-6 w-6">
-          <Image 
-            src="/svg/apr-icon.svg" 
-            width={24}
-            height={24} 
-            alt="APR Virtual"
-          />
-        </div>
-      ),
-      bgIcon: "bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
-      chipText: "IA",
-      title: "APR Virtual",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
-      details: ["Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet"],
-      borderButtonColor: "border-[#99E9E5]",
-      hoverButton: "hover:bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
-      hoverBorderCard: "custom-hover-border-gradient",
-      titleChip: "IA",
-    },
-  ];
-
   return (
-    <section className="w-full py-15">
+    <section className="w-full py-15 px-4 xl:px-0">
       <div className="max-w-325 mx-auto">
-        <div className="flex flex-col items-center justify-center gap-4">
-          <h3 className="text-2xl font-semibold text-secondary">PAQUETE BASE ESENCIAL</h3>
-          <h2 className="text-5xl font-semibold text-black">La solución que tu empresa necesita hoy</h2>
-          <p className='text-lg text-center mx-30'>Comienza con el paquete de módulos fundamentales para fortalecer la gestión de seguridad y operación de tu organización. Una base sólida que evoluciona junto a tu empresa dentro de un único ecosistema integrado.</p>
+        <div className="flex flex-col items-center justify-center gap-2.5">
+          <h3 className="lg:text-2xl font-semibold text-secondary">PAQUETE BASE ESENCIAL</h3>
+          <h2 className="text-3xl lg:text-5xl font-semibold text-black text-center">La solución que tu empresa necesita hoy</h2>
+          <p className='lg:text-lg text-center lg:mx-30'>
+            Comienza con el paquete de módulos fundamentales para fortalecer la gestión
+            de seguridad y operación de tu organización. Una base sólida que evoluciona
+            junto a tu empresa dentro de un único ecosistema integrado.
+          </p>
         </div>
-        <div className="flex flex-col lg:flex-row justify-between items-center gap-2 mt-10">
-          {CardData.map((card, index) => (
-            <React.Fragment key={index}>
-              <CardPack 
-                chip={card.chip}
-                icon={card.icon}
-                bgIcon={card.bgIcon}
-                title={card.title}
-                description={card.description}
-                details={card.details}
-                borderButtonColor={card.borderButtonColor}
-                hoverButton={card.hoverButton}
-                hoverBorderCard={card.hoverBorderCard}
-                titleStart={card.titleStart}
-                titleChip={card.titleChip}
-              />
-              {index < CardData.length - 1 && (
-                <div className="hidden lg:flex items-center justify-center text-5xl text-teal-300">+</div>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
+        
+        <BasePackSlider cardData={CardData} />
+
         <div className="mt-6">
           <PricePack />
         </div>
-        <div className="mt-4">
-          <p className="text-xs text-secondary-text font-light text-justify">
-            *Se requiere ingresar un método de pago válido para activar tus 30 días de acceso gratuito, realizándose un cobro inicial de $0 CLP hoy. Puedes cancelar la renovación de tu cuenta o cambiar de plan en cualquier momento desde tu panel de configuración antes del día 30 para evitar cualquier cargo automático. Si decides continuar, la facturación (mensual o anual según tu selección) comenzará a regir a partir del día 31, calculándose el valor de la UF según la tasa oficial del día de cobro.
+        <div className="mt-5.5">
+          <p className="text-[10px] lg:text-xs text-secondary-text font-light text-justify">
+            *Se requiere ingresar un método de pago válido para activar tus 30 días de acceso gratuito,
+            realizándose un cobro inicial de $0 CLP hoy. Puedes cancelar la renovación de tu cuenta o
+            cambiar de plan en cualquier momento desde tu panel de configuración antes del día 30 para
+            evitar cualquier cargo automático. Si decides continuar, la facturación (mensual o anual según tu selección)
+            comenzará a regir a partir del día 31, calculándose el valor de la UF según la tasa oficial del día de cobro.
           </p>
         </div>
       </div>

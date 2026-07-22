@@ -12,7 +12,7 @@ const HeroSection = () => {
   const slides = [
     { id: 1, content: 
     <div className="relative h-full min-h-[calc(100vh-70px)] overflow-hidden">
-      <div className="relative z-10 mx-auto flex h-full max-w-325 items-center pb-30 lg:pb-0">
+      <div className="relative z-10 mx-auto flex h-full max-w-325 items-center pb-20 lg:pb-0">
         <div className="w-full lg:max-w-150 xl:max-w-195 px-4 xl:px-0">
           <div className="flex flex-col gap-5.5 lg:gap-4">
             <h1 className="text-[40px] font-semibold leading-tight md:text-5xl lg:text-6xl">Gestión de riesgos inteligente, accesible y 100% auditable.</h1>
@@ -47,7 +47,7 @@ const HeroSection = () => {
     </div> },
 
     { id: 2, content: (isActive: boolean) => (
-    <div className="flex flex-col max-w-325 mx-auto items-center justify-center h-[90vh] px-4 xl:px-0 pb-30 lg:pb-0">
+    <div className="flex flex-col max-w-325 mx-auto items-center justify-center h-full px-4 xl:px-0 pb-20 lg:pb-0">
       <div className="flex flex-col items-center justify-center gap-7.5 group">
         <ModuleCardsRow isActive={isActive} />
         <div className="flex flex-col gap-5.5 lg:gap-4 items-center w-full lg:w-260">
@@ -77,7 +77,7 @@ const HeroSection = () => {
     ) },
 
     { id: 3, content: 
-    <div className="flex max-w-325 justify-center items-center mx-auto h-[90vh] gap-2.5 pb-30 lg:pb-0">
+    <div className="flex max-w-325 justify-center items-center mx-auto h-[90vh] gap-2.5 pb-20 lg:pb-0">
       <div className="relative h-120 w-126 shrink-0 hidden lg:block">
         <div className="absolute left-0 top-5 h-70 w-100 overflow-hidden rounded-3xl">
           <Image 
