@@ -48,7 +48,7 @@ const AssociatedCompanies = () => {
   
   return (
     <section className="w-full pb-15 px-4 xl:px-0">
-      <div className="max-w-325 mx-auto h-[50vh] flex flex-col justify-center items-center gap-8">
+      <div className="max-w-325 mx-auto lg:h-[50vh] my-15 lg:my-0 flex flex-col justify-center items-center gap-8">
         <h2 className="text-[24px] lg:text-3xl font-semibold text-center mb-8 lg:mx-30">
           +1.700 empresas usan LifeOn para simplificar el cumplimiento normativo y la gestión de riesgos.
         </h2>

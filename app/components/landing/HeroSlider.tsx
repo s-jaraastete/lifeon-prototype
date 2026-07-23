@@ -19,6 +19,7 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
   const [idx, setIdx] = useState(0)
   const paused = useRef(false)
   const timer = useRef<number | null>(null)
+  const touchStartX = useRef(0)
   const progressStyle = {
     "--hero-slider-progress-duration": `${intervalMs}ms`,
   } as CSSProperties
@@ -48,19 +49,45 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
     if (pauseOnHover) paused.current = false
   }
 
+  const restartAutoplay = () => {
+    if (slides.length <= 1) return
+    if (timer.current) {
+      clearInterval(timer.current)
+      timer.current = null
+    }
+    timer.current = window.setInterval(() => {
+      if (!paused.current) setIdx((i) => (i + 1) % slides.length)
+    }, intervalMs)
+  }
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 30) {
+      if (diff > 0) setIdx((i) => (i + 1) % slides.length)
+      else setIdx((i) => (i - 1 + slides.length) % slides.length)
+      restartAutoplay()
+    }
+  }
+
   return (
     <div
-      className={className ?? "relative w-full min-h-[calc(100vh-79.5px)] sm:min-h-[calc(100vh-160px)] lg:min-h-[calc(100vh-70px)] overflow-hidden bg-gray-200"}
+      className={className ?? "relative w-full grid place-items-center touch-pan-y lg:min-h-[calc(100vh-70px)] overflow-hidden bg-gray-200"}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
       aria-roledescription="carousel"
       aria-live="polite"
     >
       {slides.map((s, i) => (
         <div
           key={s.id}
-          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-            i === idx ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+          className={`col-start-1 row-start-1 transition-opacity duration-700 ease-in-out ${
+            i === idx ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
           aria-hidden={i === idx ? "false" : "true"}
         >
