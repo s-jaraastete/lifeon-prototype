@@ -304,7 +304,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
   };
 
   return (
-    <div className="flex w-full max-w-137.5 flex-col rounded-2xl bg-white p-6">
+    <div className="flex w-full max-w-137.5 mx-auto lg:mx-0 flex-col rounded-2xl bg-white p-6">
       {step === "overview" && (
         <div className="flex min-h-95 flex-col justify-between gap-22">
           <div className="flex flex-col gap-8">

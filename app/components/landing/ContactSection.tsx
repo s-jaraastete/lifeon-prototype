@@ -30,8 +30,8 @@ const ContactSection = ({ allSlots = [], title, description, padding = true }: C
       <div
         className={`w-full max-w-325 min-h-162.5 flex flex-col items-start gradient-deg1 gap-15 rounded-3xl bg-gray-200 lg:flex-row ${padding ? "px-5 py-7.5 lg:p-10" : "0"}`}
       >
-        <div className="flex flex-col items-start justify-between flex-1 gap-10 lg:min-h-142.5 ">
-          <div className="flex flex-col items-start gap-10 w-full max-w-140">
+        <div className="flex flex-col items-start justify-between flex-1 gap-10 lg:min-h-142.5">
+          <div className="flex flex-col items-start gap-10 w-full lg:max-w-140">
             <div className="flex flex-col items-start gap-2.5">
               <h2 className="text-[30px] lg:text-5xl font-semibold max-w-137.5 leading-tight lg:leading-12">
                 {title}
