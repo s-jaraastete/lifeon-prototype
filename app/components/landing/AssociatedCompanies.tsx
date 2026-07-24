@@ -2,7 +2,6 @@ import React from 'react'
 
 // Icons
 import { LuAward, LuCircleCheck, LuMonitorSmartphone } from 'react-icons/lu';
-import SwiperCarousel from '../ui/SwiperCarousel';
 
 
 interface InfoCardProps {
@@ -54,27 +53,24 @@ const AssociatedCompanies = () => {
         </h2>
         <div className="hidden lg:flex gap-20 justify-between">
           {companyNames.map((name, index) => (
-            <p key={index} className='font-bold text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block'>
+            <p key={index} className='font-bold text-4xl cursor-default text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block'>
               {name}
             </p>
           ))}
         </div>
-        <div className="lg:hidden w-full">
-          <SwiperCarousel
-            slideTransitionSpeed={5000}
-            slideOnScreenTime={0}
-            linear={true}
-            uniformGap={40}
-          >
-            {[...companyNames, ...companyNames, ...companyNames].map((name, index) => (
-              <div key={index} className="w-full flex justify-center">
-                <p className='font-bold text-3xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom text-center'>
-                  {name}
-                </p>
-              </div>
-            ))}
-          </SwiperCarousel>
-        </div>
+          <div className="lg:hidden w-full overflow-hidden">
+            <div className="flex animate-marquee w-max">
+              {[0, 1].map((group) => (
+                <div key={group} className="flex gap-10 shrink-0 mx-5">
+                  {companyNames.map((name, index) => (
+                    <p key={index} className='font-bold text-3xl text-gray-600 whitespace-nowrap'>
+                      {name}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
       </div>
       <div className="max-w-325 mx-auto">
         <h2 className="text-[30px] lg:text-5xl font-semibold text-center mb-10 lg:mx-30">

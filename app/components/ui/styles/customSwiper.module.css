@@ -1,9 +1,0 @@
-/*Para cambiar el tipo de transici+on que viene por defecto a linear*/
-.mySwiperOverride :global(.swiper-wrapper) {
-  --swiper-wrapper-transition-timing-function: linear;
-  gap: var(--swiper-gap, 0) !important;
-}
-
-.mySwiperOverride :global(.swiper-slide) {
-  width: auto !important;
-}
