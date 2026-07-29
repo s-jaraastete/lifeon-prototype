@@ -19,17 +19,33 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
   const [idx, setIdx] = useState(0)
   const paused = useRef(false)
   const timer = useRef<number | null>(null)
-  const touchStartX = useRef(0)
+  const slidesRef = useRef<HTMLDivElement>(null)
+  const isScrolling = useRef(false)
   const progressStyle = {
     "--hero-slider-progress-duration": `${intervalMs}ms`,
   } as CSSProperties
+
+  const scrollToSlide = (i: number) => {
+    const child = slidesRef.current?.children[i] as HTMLElement
+    if (child) {
+      isScrolling.current = true
+      child.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" })
+      setTimeout(() => { isScrolling.current = false }, 600)
+    }
+  }
 
   useEffect(() => {
     if (slides.length <= 1) return
     const start = () => {
       stop()
       timer.current = window.setInterval(() => {
-        if (!paused.current) setIdx((i) => (i + 1) % slides.length)
+        if (!paused.current) {
+          setIdx(prev => {
+            const next = (prev + 1) % slides.length
+            setTimeout(() => scrollToSlide(next), 0)
+            return next
+          })
+        }
       }, intervalMs)
     }
     const stop = () => {
@@ -42,13 +58,6 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
     return stop
   }, [slides.length, intervalMs])
 
-  const onMouseEnter = () => {
-    if (pauseOnHover) paused.current = true
-  }
-  const onMouseLeave = () => {
-    if (pauseOnHover) paused.current = false
-  }
-
   const restartAutoplay = () => {
     if (slides.length <= 1) return
     if (timer.current) {
@@ -56,46 +65,65 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
       timer.current = null
     }
     timer.current = window.setInterval(() => {
-      if (!paused.current) setIdx((i) => (i + 1) % slides.length)
+      if (!paused.current) {
+        setIdx(prev => {
+          const next = (prev + 1) % slides.length
+          setTimeout(() => scrollToSlide(next), 0)
+          return next
+        })
+      }
     }, intervalMs)
   }
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-  }
-
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) > 30) {
-      if (diff > 0) setIdx((i) => (i + 1) % slides.length)
-      else setIdx((i) => (i - 1 + slides.length) % slides.length)
+  const onScroll = () => {
+    if (isScrolling.current || !slidesRef.current) return
+    const slideWidth = slidesRef.current.clientWidth
+    const newIdx = Math.round(slidesRef.current.scrollLeft / slideWidth)
+    if (newIdx !== idx) {
+      setIdx(newIdx)
       restartAutoplay()
     }
   }
 
+  const goTo = (i: number) => {
+    scrollToSlide(i)
+    setIdx(i)
+    restartAutoplay()
+  }
+
+  const onMouseEnter = () => {
+    if (pauseOnHover) paused.current = true
+  }
+  const onMouseLeave = () => {
+    if (pauseOnHover) paused.current = false
+  }
+
   return (
     <div
-      className={className ?? "relative w-full grid place-items-center touch-pan-y pt-5 lg:pt-0 lg:min-h-[calc(100vh-70px)] overflow-hidden bg-gray-200"}
+      className={className ?? "relative w-full overflow-hidden bg-gray-200"}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
       aria-roledescription="carousel"
       aria-live="polite"
     >
-      {slides.map((s, i) => (
-        <div
-          key={s.id}
-          className={`col-start-1 row-start-1 transition-opacity duration-700 ease-in-out ${
-            i === idx ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-          aria-hidden={i === idx ? "false" : "true"}
-        >
-          {typeof s.content === 'function' ? s.content(i === idx) : s.content}
-        </div>
-      ))}
+      <div
+        ref={slidesRef}
+        className="w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar flex items-center pt-5 lg:pt-0 lg:grid lg:place-items-center lg:overflow-visible lg:snap-none lg:min-h-[calc(100vh-70px)]"
+        onScroll={onScroll}
+      >
+        {slides.map((s, i) => (
+          <div
+            key={s.id}
+            className={`w-full shrink-0 snap-start lg:col-start-1 lg:row-start-1 lg:transition-opacity lg:duration-700 lg:ease-in-out ${
+              i === idx ? "opacity-100" : "lg:opacity-0 lg:pointer-events-none"
+            }`}
+            aria-hidden={i === idx ? "false" : "true"}
+          >
+            {typeof s.content === 'function' ? s.content(i === idx) : s.content}
+          </div>
+        ))}
+      </div>
 
-      {/* Indicators: light bar with active segment */}
       <div className="absolute left-1/2 bottom-8 lg:bottom-20 -translate-x-1/2 flex gap-3 items-center z-20">
         {slides.map((_, i) => {
           const active = i === idx
@@ -105,7 +133,7 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
                   key={i}
                   type="button"
                   aria-label={`Ir al slide ${i + 1}`}
-                  onClick={() => setIdx(i)}
+                  onClick={() => goTo(i)}
                   className="relative h-2 w-11 rounded-full bg-teal-100 overflow-hidden cursor-pointer"
                 >
                   <span
@@ -122,27 +150,26 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
                 key={i}
                 type="button"
                 aria-label={`Ir al slide ${i + 1}`}
-                onClick={() => setIdx(i)}
+                onClick={() => goTo(i)}
                 className="h-2.5 w-2.5 rounded-full bg-teal-100 transition-colors hover:bg-teal-300 cursor-pointer"
               />
             )
         })}
       </div>
 
-      {/* Optional prev/next buttons */}
       {controls && (
         <>
           <button
             aria-label="Anterior"
             className="absolute left-4 top-1/2 -translate-y-1/2 rounded-md bg-black/40 text-white p-2"
-            onClick={() => setIdx((i) => (i - 1 + slides.length) % slides.length)}
+            onClick={() => goTo((idx - 1 + slides.length) % slides.length)}
           >
             ‹
           </button>
           <button
             aria-label="Siguiente"
             className="absolute right-4 top-1/2 -translate-y-1/2 rounded-md bg-black/40 text-white p-2"
-            onClick={() => setIdx((i) => (i + 1) % slides.length)}
+            onClick={() => goTo((idx + 1) % slides.length)}
           >
             ›
           </button>
