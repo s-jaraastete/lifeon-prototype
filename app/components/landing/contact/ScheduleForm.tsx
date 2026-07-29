@@ -314,7 +314,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               <div className="flex items-start gap-3">
                 <LuClock3 className="mt-0.5 h-6 w-6 text-primary-text" strokeWidth={2} />
                 <div className="flex flex-col">
-                  <span className="text-[18px] font-medium text-black">Duración</span>
+                  <span className="text-[18px] font-medium text-base-black">Duración</span>
                   <span className="text-[18px] text-primary-text">30 minutos</span>
                 </div>
               </div>
@@ -322,7 +322,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               <div className="flex items-start gap-3">
                 <LuVideo className="mt-0.5 h-6 w-6 text-primary-text" strokeWidth={2} />
                 <div className="flex flex-col">
-                  <span className="text-[18px] font-medium text-black">Modalidad</span>
+                  <span className="text-[18px] font-medium text-base-black">Modalidad</span>
                   <span className="text-[18px] text-primary-text">Google Meet (enlace automático)</span>
                 </div>
               </div>
@@ -330,7 +330,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               <div className="flex items-start gap-3">
                 <LuGlobe className="mt-0.5 h-6 w-6 text-primary-text" strokeWidth={2} />
                 <div className="flex flex-col">
-                  <span className="text-[18px] font-medium text-black">Zona horaria</span>
+                  <span className="text-[18px] font-medium text-base-black">Zona horaria</span>
                   <span className="text-[18px] text-primary-text">Detectada automáticamente</span>
                 </div>
               </div>
@@ -361,7 +361,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               <button
                 type="button"
                 onClick={() => setStep("overview")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-black transition-colors hover:bg-[#F6F6F6]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-base-black transition-colors hover:bg-[#F6F6F6]"
               >
                 <LuChevronLeft className="h-5 w-5 cursor-pointer" />
               </button>
@@ -370,7 +370,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
 
             <div className="grid gap-5 md:grid-cols-[1.55fr_1fr] md:items-start">
               <div className="rounded-[10px] border border-gray-400 p-2">
-                <div className="mb-4 flex items-center justify-between gap-4 text-[18px] text-black">
+                <div className="mb-4 flex items-center justify-between gap-4 text-[18px] text-base-black">
                   <button
                     type="button"
                     onClick={handlePrevMonth}
@@ -420,7 +420,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
                             : holiday ? "bg-red-50 text-red-500 cursor-not-allowed"
                             : disabled
                               ? "cursor-not-allowed text-[#C9C9C9]"
-                              : "text-black hover:bg-[#F4F5FB]"
+                              : "text-base-black hover:bg-[#F4F5FB]"
                         }`}
                       >
                         {date.getDate()}
@@ -431,7 +431,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               </div>
 
               <div className="flex flex-col gap-3">
-                <span className="text-[18px] font-semibold text-black">Horarios disponibles:</span>
+                <span className="text-[18px] font-semibold text-base-black">Horarios disponibles:</span>
                 {selectedDate ? (
                   <>
                     {publicSlotsQuery.isFetching && (
@@ -484,7 +484,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               </p>
             )}
 
-            <div className="flex flex-col gap-1 text-black">
+            <div className="flex flex-col gap-1 text-base-black">
               <span className="text-[16px] font-semibold">Detalle de tu cita:</span>
               <span className="text-[16px] text-secondary-text">{meetingDetailLabel}</span>
             </div>
@@ -513,7 +513,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               <button
                 type="button"
                 onClick={() => setStep("datetime")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-black transition-colors hover:bg-[#F6F6F6]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-base-black transition-colors hover:bg-[#F6F6F6]"
               >
                 <LuChevronLeft className="h-5 w-5 cursor-pointer" />
               </button>
@@ -558,7 +558,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               />
             </div>
 
-            <div className="flex flex-col gap-1 text-black">
+            <div className="flex flex-col gap-1 text-base-black">
               <span className="text-[16px] font-semibold">Detalle de tu cita:</span>
               <span className="text-[16px] text-[#656565]">{meetingDetailLabel}</span>
             </div>
@@ -597,7 +597,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
 
           <div className="flex w-full max-w-95 items-start gap-4 rounded-xl bg-[#F6F6F6] px-5 py-4 text-left">
             <LuCalendarDays className="mt-1 h-6 w-6 text-text-secondary" />
-            <div className="flex flex-col gap-1 text-black">
+            <div className="flex flex-col gap-1 text-base-black">
               <span className="text-base text-[#656565]">Fecha y hora</span>
               <span className="text-base font-semibold">{selectedDateLabel}</span>
               <span className="text-base text-[#3C3C3C]">{meetingTimeRange}</span>
