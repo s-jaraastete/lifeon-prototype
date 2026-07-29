@@ -72,7 +72,7 @@ const AssociatedCompanies = () => {
             </div>
           </div>
       </div>
-      <div className="max-w-325 mx-auto">
+      <div className="max-w-325 mx-auto pt-8">
         <h2 className="text-[30px] lg:text-5xl font-semibold text-center mb-10 lg:mx-30">
           Diseñado para <span className="text-secondary">proteger</span> tu capital, tu talento y tu operación
         </h2>

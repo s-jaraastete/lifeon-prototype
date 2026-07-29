@@ -75,7 +75,7 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
 
   return (
     <div
-      className={className ?? "relative w-full grid place-items-center touch-pan-y lg:min-h-[calc(100vh-70px)] overflow-hidden bg-gray-200"}
+      className={className ?? "relative w-full grid place-items-center touch-pan-y pt-5 lg:pt-0 lg:min-h-[calc(100vh-70px)] overflow-hidden bg-gray-200"}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onTouchStart={onTouchStart}

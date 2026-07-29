@@ -94,7 +94,7 @@ const ContactForm = () => {
           onSubmit={handleSubmit}
           className="flex flex-col w-full gap-4 bg-white p-6 rounded-2xl border border-gray-200"
         >
-          <label className="mb-1 text-lg font-bold">Envíanos tu mensaje</label>
+          <label className="mb-1 text-lg font-semibold">Envíanos tu mensaje</label>
           <input
             type="text"
             name="name"
@@ -140,7 +140,7 @@ const ContactForm = () => {
           <button
             type="submit"
             disabled={!isFormValid}
-            className={`w-full rounded-2xl py-3 text-lg font-medium mt-2 transition-colors duration-200 cursor-pointer ${
+            className={`w-full rounded-[14px] py-3 text-lg font-medium mt-2 transition-colors duration-200 cursor-pointer ${
               isFormValid
                 ? 'bg-primary text-white hover:bg-red-700'
                 : 'bg-gray-200 text-gray-500 cursor-not-allowed'
