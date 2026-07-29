@@ -29,10 +29,31 @@ export default function Carousel({
   const [index, setIndex] = useState(initialIndex)
   const pausedRef = useRef(false)
   const timerRef = useRef<number | null>(null)
-  const touchStartX = useRef(0)
+  const slidesRef = useRef<HTMLDivElement>(null)
+  const isScrolling = useRef(false)
 
-  const next = () => setIndex((i) => (i + 1) % slides.length)
-  const prev = () => setIndex((i) => (i - 1 + slides.length) % slides.length)
+  const scrollToSlide = (i: number) => {
+    const el = slidesRef.current
+    if (el) {
+      isScrolling.current = true
+      el.scrollLeft = i * el.clientWidth
+      setTimeout(() => { isScrolling.current = false }, 800)
+    }
+  }
+
+  const next = () => {
+    const nextIdx = (index + 1) % slides.length
+    scrollToSlide(nextIdx)
+    setIndex(nextIdx)
+    restartAutoplay()
+  }
+
+  const prev = () => {
+    const prevIdx = (index - 1 + slides.length) % slides.length
+    scrollToSlide(prevIdx)
+    setIndex(prevIdx)
+    restartAutoplay()
+  }
 
   useEffect(() => {
     if (!autoplay || slides.length <= 1) return
@@ -40,10 +61,17 @@ export default function Carousel({
       stop()
       timerRef.current = window.setInterval(() => {
         if (!pausedRef.current) {
-          setIndex((i) => {
-            const nextIndex = i + 1
-            if (nextIndex >= slides.length) return loop ? 0 : i
-            return nextIndex
+          setIndex(prev => {
+            const nextIdx = prev + 1
+            if (nextIdx >= slides.length) {
+              if (loop) {
+                setTimeout(() => scrollToSlide(0), 0)
+                return 0
+              }
+              return prev
+            }
+            setTimeout(() => scrollToSlide(nextIdx), 0)
+            return nextIdx
           })
         }
       }, intervalMs)
@@ -65,7 +93,11 @@ export default function Carousel({
     if (pauseOnHover) pausedRef.current = false
   }
 
-  const goTo = (i: number) => setIndex(i)
+  const goTo = (i: number) => {
+    scrollToSlide(i)
+    setIndex(i)
+    restartAutoplay()
+  }
 
   const restartAutoplay = () => {
     if (!autoplay || slides.length <= 1) return
@@ -75,50 +107,56 @@ export default function Carousel({
     }
     timerRef.current = window.setInterval(() => {
       if (!pausedRef.current) {
-        setIndex((i) => {
-          const nextIndex = i + 1
-          if (nextIndex >= slides.length) return loop ? 0 : i
-          return nextIndex
+        setIndex(prev => {
+          const nextIdx = prev + 1
+          if (nextIdx >= slides.length) {
+            if (loop) {
+              setTimeout(() => scrollToSlide(0), 0)
+              return 0
+            }
+            return prev
+          }
+          setTimeout(() => scrollToSlide(nextIdx), 0)
+          return nextIdx
         })
       }
     }, intervalMs)
   }
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-  }
-
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) > 30) {
-      if (diff > 0) next()
-      else prev()
+  const onScroll = () => {
+    if (isScrolling.current || !slidesRef.current) return
+    const slideWidth = slidesRef.current.clientWidth
+    const newIdx = Math.round(slidesRef.current.scrollLeft / slideWidth)
+    if (newIdx !== index) {
+      setIndex(newIdx)
       restartAutoplay()
     }
   }
 
   return (
     <div
-      className={`relative w-full touch-pan-y h-full ${className}`}
+      className={`relative w-full h-full overflow-hidden ${className}`}
       role="region"
       aria-roledescription="carousel"
       aria-label="Carousel"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'ArrowLeft') prev()
         if (e.key === 'ArrowRight') next()
       }}
     >
-      <div className="relative w-full grid place-items-center">
+      <div
+        ref={slidesRef}
+        className="w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar scroll-smooth flex items-center lg:grid lg:place-items-center lg:overflow-visible lg:snap-none"
+        onScroll={onScroll}
+      >
         {slides.map((s, i) => (
           <div
             key={i}
-            className={`col-start-1 row-start-1 transition-opacity duration-700 ease-in-out ${
-              i === index ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            className={`w-full shrink-0 snap-start lg:col-start-1 lg:row-start-1 lg:transition-opacity lg:duration-700 lg:ease-in-out ${
+              i === index ? 'opacity-100' : 'lg:opacity-0 lg:pointer-events-none'
             }`}
             aria-hidden={i === index ? 'false' : 'true'}
           >

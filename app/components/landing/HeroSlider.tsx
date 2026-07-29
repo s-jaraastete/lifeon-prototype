@@ -26,11 +26,11 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
   } as CSSProperties
 
   const scrollToSlide = (i: number) => {
-    const child = slidesRef.current?.children[i] as HTMLElement
-    if (child) {
+    const el = slidesRef.current
+    if (el) {
       isScrolling.current = true
-      child.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" })
-      setTimeout(() => { isScrolling.current = false }, 600)
+      el.scrollLeft = i * el.clientWidth
+      setTimeout(() => { isScrolling.current = false }, 800)
     }
   }
 
@@ -108,7 +108,7 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
     >
       <div
         ref={slidesRef}
-        className="w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar flex items-center pt-5 lg:pt-0 lg:grid lg:place-items-center lg:overflow-visible lg:snap-none lg:min-h-[calc(100vh-70px)]"
+        className="w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar scroll-smooth flex items-center pt-5 lg:pt-0 lg:grid lg:place-items-center lg:overflow-visible lg:snap-none lg:min-h-[calc(100vh-70px)]"
         onScroll={onScroll}
       >
         {slides.map((s, i) => (
