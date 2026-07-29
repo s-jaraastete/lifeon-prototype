@@ -6,10 +6,10 @@ const ManagementMap = () => {
     <section className="w-full py-15 px-4 xl:px-0">
       <div className="max-w-325 mx-auto bg-gray-200 px-5 py-10 lg:px-10 rounded-3xl flex flex-col gap-15">
         <div>
-          <h4 className="text-[30px] lg:text-5xl font-semibold text-center lg:mx-30 leading-tight">
+          <h2 className="text-[30px] lg:text-5xl font-semibold text-center lg:mx-30 leading-tight text-base-black">
             Centraliza toda tu gestión preventiva en
             <span className="text-secondary"> una sola plataforma</span>
-          </h4>
+          </h2>
           <p className="lg:text-xl text-primary-text text-center mt-2.5 lg:mt-6 lg:mx-20">
             Olvídate de planillas, correos y documentos dispersos. LifeOn
             conecta personas, procesos y controles para que toda la gestión de

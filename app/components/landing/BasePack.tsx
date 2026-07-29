@@ -56,7 +56,7 @@ const BasePack = () => {
       <div className="max-w-325 mx-auto">
         <div className="flex flex-col items-center justify-center gap-2.5">
           <h3 className="lg:text-2xl font-semibold text-secondary">PAQUETE BASE ESENCIAL</h3>
-          <h2 className="text-3xl lg:text-5xl font-semibold text-black text-center">La solución que tu empresa necesita hoy</h2>
+          <h2 className="text-3xl lg:text-5xl font-semibold text-base-black text-center">La solución que tu empresa necesita hoy</h2>
           <p className='lg:text-lg text-center lg:mx-30'>
             Comienza con el paquete de módulos fundamentales para fortalecer la gestión
             de seguridad y operación de tu organización. Una base sólida que evoluciona

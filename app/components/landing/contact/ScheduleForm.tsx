@@ -308,7 +308,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
       {step === "overview" && (
         <div className="flex min-h-95 flex-col justify-between gap-22">
           <div className="flex flex-col gap-8">
-            <h3 className="text-[24px] font-semibold text-black">Detalles de la sesión</h3>
+            <h3 className="text-[24px] font-semibold text-base-black">Detalles de la sesión</h3>
 
             <div className="flex flex-col gap-6">
               <div className="flex items-start gap-3">
@@ -365,7 +365,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               >
                 <LuChevronLeft className="h-5 w-5 cursor-pointer" />
               </button>
-              <h3 className="text-[18px] font-semibold text-black">Seleccionar fecha y hora</h3>
+              <h3 className="text-[18px] font-semibold text-base-black">Seleccionar fecha y hora</h3>
             </div>
 
             <div className="grid gap-5 md:grid-cols-[1.55fr_1fr] md:items-start">
@@ -517,7 +517,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               >
                 <LuChevronLeft className="h-5 w-5 cursor-pointer" />
               </button>
-              <h3 className="text-[18px] font-semibold text-black">Datos de contacto</h3>
+              <h3 className="text-[18px] font-semibold text-base-black">Datos de contacto</h3>
             </div>
 
             <div className="flex flex-col gap-5">
@@ -589,7 +589,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
           </div>
 
           <div className="flex max-w-95 flex-col gap-4">
-            <h3 className="text-[20px] font-semibold text-black">¡Cita agendada con éxito!</h3>
+            <h3 className="text-[20px] font-semibold text-base-black">¡Cita agendada con éxito!</h3>
             <p className="text-[18px] text-[#656565]">
               Gracias por contactarte con nosotros, en los próximos minutos recibirás un correo con la confirmación y detalles de tu reunión.
             </p>

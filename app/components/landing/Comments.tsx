@@ -52,10 +52,10 @@ const Comments = () => {
     <section className="w-full py-15">
       <div className="bg-gray-200 pt-15 pb-12 lg:py-25 px-4 xl:px-0">
         <div className="max-w-325 mx-auto flex flex-col gap-0">
-          <h3 className="text-[30px] lg:text-5xl font-semibold text-black text-center lg:mx-20">
+          <h2 className="text-[30px] lg:text-5xl font-semibold text-base-black text-center lg:mx-20">
             Empresas que <span className="text-secondary">transforman</span> su
             gestión preventiva con LifeOn
-          </h3>
+          </h2>
           <div className="w-full">
             <div className="lg:hidden">
               <Carousel

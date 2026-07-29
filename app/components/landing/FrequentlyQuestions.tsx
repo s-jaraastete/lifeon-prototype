@@ -10,9 +10,9 @@ const FrequentlyQuestions = ({ items }: FrequentlyQuestion) => {
     <section className="flex flex-col items-center justify-center w-full pb-20 px-4 lg:px-0 lg:pb-25 lg:pt-15">
       <div className="max-w-325 mx-auto w-full flex flex-col gap-5.5 lg:gap-10">
         <div className="flex flex-col justify-center items-center gap-2 text-center" data-aos="fade-up">
-          <h4 className="font-semibold text-[30px] lg:text-5xl leading-tight">
+          <h2 className="font-semibold text-[30px] lg:text-5xl leading-tight text-base-black">
             ¿Tienes dudas? <br /> Te ayudamos a resolverlas
-          </h4>
+          </h2>
           <p className="lg:text-lg text-center text-primary-text">
             Encuentra respuestas a las consultas más comunes sobre LifeOn, sus módulos y su implementación.
           </p>

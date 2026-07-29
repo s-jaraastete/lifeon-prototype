@@ -26,7 +26,7 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
       >
         <div>
           <div className="flex items-center justify-between mb-7.5">
-            <h6 className="text-2xl text-black font-medium">
+            <h6 className="text-2xl text-base-black font-medium">
               Módulos LifeOn
             </h6>
             <Link href="/modulos/" onClick={onClose} className="text-lg text-secondary transition hover:text-teal-700">

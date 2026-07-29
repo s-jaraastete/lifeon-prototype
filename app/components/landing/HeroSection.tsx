@@ -17,7 +17,7 @@ const HeroSection = () => {
           <div className="relative z-10 lg:grid grid-cols-2 h-full max-w-325 mx-auto items-center pt-4 pb-18 lg:pb-0">
             <div className="px-4 xl:px-0">
               <div className="flex flex-col gap-5.5 lg:gap-4">
-                <h1 className="text-[30px] font-semibold leading-tight md:text-5xl lg:text-6xl">
+                <h1 className="text-[30px] font-semibold leading-tight md:text-5xl lg:text-6xl text-base-black">
                   Gestión de riesgos inteligente, accesible y 100% auditable.
                 </h1>
                 <p className="text-lg text-primary-text leading-6 md:text-[22px] md:leading-7">
@@ -65,11 +65,11 @@ const HeroSection = () => {
           <div className="flex flex-col items-center justify-center gap-7.5 group">
             <ModuleCardsRow isActive={isActive} />
             <div className="flex flex-col gap-5.5 lg:gap-4 items-center w-full lg:w-260">
-              <h1 className="text-[30px] font-semibold leading-tight lg:text-center md:text-5xl lg:text-6xl lg:w-220">
+              <h2 className="text-[30px] font-semibold leading-tight lg:text-center md:text-5xl lg:text-6xl lg:w-220 text-base-black">
                 Software modular: Comienza hoy con nuestro{" "}
                 <span className="text-secondary">Paquete Base Esencial</span>
-              </h1>
-              <p className="text-lg text-primary-text leading-6 lg:text-center md:text-[22px] md:leading-7">
+              </h2>
+               <p className="text-lg text-primary-text leading-6 lg:text-center md:text-[22px] md:leading-7">
                 Digitaliza tu prevención de riesgos con tres herramientas
                 robustas e integradas: MIPER, Control Documental y Asistente
                 Virtual de Prevención. Una solución potente que mantiene la
@@ -123,11 +123,11 @@ const HeroSection = () => {
           <div className="w-full lg:w-250 px-4 xl:px-0">
             <div className="w-full">
               <div className="flex flex-col gap-5.5 lg:gap-4">
-                <h1 className="text-[30px] font-semibold leading-tight md:text-5xl lg:text-6xl">
+                <h2 className="text-[30px] font-semibold leading-tight md:text-5xl lg:text-6xl text-base-black">
                   Excelencia industrial accesible para{" "}
                   <span className="text-secondary">pequeñas</span> y{" "}
                   <span className="text-secondary">grandes</span> empresas
-                </h1>
+                </h2>
                 <p className="text-lg text-primary-text leading-6 md:text-[22px] md:leading-7">
                   Democratizamos la seguridad de alto nivel. Implementa MIPER,
                   Control Documental y Asistente Virtual de Prevención, y

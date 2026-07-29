@@ -44,7 +44,7 @@ const Accordion = ({ items, className, onOpenChange }: AccordionProps) => {
               className="flex items-center justify-between w-full p-4 rounded-3xl cursor-pointer hover:bg-gray-50 transition-colors"
             >
               <div className="flex flex-col text-left">
-                <h3 className={`text-base lg:text-lg text-primary-text ${isOpen ? "font-medium text-black" : "font-normal"}`}>
+                <h3 className={`text-base lg:text-lg text-primary-text ${isOpen ? "font-medium text-base-black" : "font-normal"}`}>
                   {item.title}
                 </h3>
                 {item.description && (

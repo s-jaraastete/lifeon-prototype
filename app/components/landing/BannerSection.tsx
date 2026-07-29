@@ -20,9 +20,9 @@ const BannerSection = () => {
 
           <div className="absolute inset-0 p-5 md:p-8 lg:p-10 flex flex-col justify-between">
             <div className="w-160 flex flex-col gap-2.5">
-              <h3 className="text-2xl lg:text-4xl sm:text-4xl md:text-5xl font-semibold text-white leading-tight">
+              <h2 className="text-2xl lg:text-4xl sm:text-4xl md:text-5xl font-semibold text-white leading-tight">
                 Comienza tu mes de <br /> prueba sin costo.
-              </h3>
+              </h2>
               <p className="hidden lg:block lg:text-lg text-white">
                 Prueba LifeOn durante 30 días. Al finalizar el período de prueba, continuarás con la suscripción seleccionada pagando únicamente el valor del paquete contratado.
               </p>

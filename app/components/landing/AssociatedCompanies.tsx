@@ -17,7 +17,7 @@ const InfoCard = ({ title, description, icon }: InfoCardProps) => {
         {icon}
       </div>
       <div className='flex flex-col gap-2'>
-        <h3 className='text-lg font-semibold'>{title}</h3>
+        <h3 className='text-lg font-semibold text-base-black'>{title}</h3>
         <p className='text-primary-text'>{description}</p>
       </div>
     </div>
@@ -48,7 +48,7 @@ const AssociatedCompanies = () => {
   return (
     <section className="w-full pb-15 px-4 xl:px-0">
       <div className="max-w-325 mx-auto lg:h-[50vh] my-15 lg:my-0 flex flex-col justify-center items-center gap-8">
-        <h2 className="text-[24px] lg:text-3xl font-semibold text-center mb-8 lg:mx-30">
+        <h2 className="text-[24px] lg:text-3xl font-semibold text-center mb-8 lg:mx-30 text-base-black">
           +1.700 empresas usan LifeOn para simplificar el cumplimiento normativo y la gestión de riesgos.
         </h2>
         <div className="hidden lg:flex gap-20 justify-between">
@@ -73,7 +73,7 @@ const AssociatedCompanies = () => {
           </div>
       </div>
       <div className="max-w-325 mx-auto pt-8">
-        <h2 className="text-[30px] lg:text-5xl font-semibold text-center mb-10 lg:mx-30">
+        <h2 className="text-[30px] lg:text-5xl font-semibold text-center mb-10 lg:mx-30 text-base-black">
           Diseñado para <span className="text-secondary">proteger</span> tu capital, tu talento y tu operación
         </h2>
         <div className="flex flex-col lg:flex-row gap-6 justify-center">

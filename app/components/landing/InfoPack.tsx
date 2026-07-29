@@ -27,11 +27,11 @@ const InfoPack = () => {
           />
         </div>
         <div className="w-full xl:h-144.5">
-          <h4 className="text-[30px] lg:text-5xl font-semibold text-black leading-tight">
+          <h2 className="text-[30px] lg:text-5xl font-semibold text-base-black leading-tight">
             Con <span className="text-primary">Life</span>
             <span className="text-secondary">On</span> no pagarás por
             herramientas que no usarás
-          </h4>
+          </h2>
           <p className="lg:text-lg text-primary-text mt-2.5">
             Comienza con los módulos esenciales para tu operación y expande tu
             plataforma cuando tu organización lo necesite. A medida que nuevos
