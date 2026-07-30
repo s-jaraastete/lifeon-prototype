@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useLayoutEffect, useEffect, useRef, useState } from 'react'
 import { LuChevronLeft, LuChevronRight } from 'react-icons/lu'
 
 type Props = {
@@ -32,23 +32,87 @@ export default function Carousel({
   const slidesRef = useRef<HTMLDivElement>(null)
   const isScrolling = useRef(false)
 
+  const hasClones = loop && slides.length > 1
+  const displaySlides = hasClones ? [slides[slides.length - 1], ...slides, slides[0]] : slides
+  const offset = hasClones ? 1 : 0
+
+  const jumpTo = (targetScrollLeft: number) => {
+    const el = slidesRef.current
+    if (!el) return
+    isScrolling.current = true
+    el.style.scrollBehavior = 'auto'
+    el.scrollLeft = targetScrollLeft
+    el.style.scrollBehavior = ''
+    setTimeout(() => { isScrolling.current = false }, 50)
+  }
+
   const scrollToSlide = (i: number) => {
     const el = slidesRef.current
     if (el) {
       isScrolling.current = true
-      el.scrollLeft = i * el.clientWidth
+      el.scrollLeft = (i + offset) * el.clientWidth
       setTimeout(() => { isScrolling.current = false }, 800)
     }
   }
 
-  const next = () => {
+  const restartAutoplay = () => {
+    if (!autoplay || slides.length <= 1) return
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+    timerRef.current = window.setInterval(() => {
+      if (!pausedRef.current) {
+        setIndex(prev => {
+          const nextIdx = prev + 1
+          if (nextIdx >= slides.length) {
+            if (loop) {
+              setTimeout(() => scrollToSlide(0), 0)
+              return 0
+            }
+            return prev
+          }
+          setTimeout(() => scrollToSlide(nextIdx), 0)
+          return nextIdx
+        })
+      }
+    }, intervalMs)
+  }
+
+  useLayoutEffect(() => {
+    const el = slidesRef.current
+    if (!el) return
+    if (hasClones) {
+      el.scrollLeft = (initialIndex + 1) * el.clientWidth
+    }
+    const handleScrollEnd = () => {
+      if (isScrolling.current || !hasClones) return
+      const slideWidth = el.clientWidth
+      const rawIdx = Math.round(el.scrollLeft / slideWidth)
+      if (rawIdx === 0) {
+        jumpTo(slides.length * slideWidth)
+        setIndex(slides.length - 1)
+        restartAutoplay()
+        return
+      }
+      if (rawIdx === slides.length + 1) {
+        jumpTo(slideWidth)
+        setIndex(0)
+        restartAutoplay()
+      }
+    }
+    el.addEventListener('scrollend', handleScrollEnd)
+    return () => el.removeEventListener('scrollend', handleScrollEnd)
+  }, [hasClones, initialIndex])
+
+  const nextFn = () => {
     const nextIdx = (index + 1) % slides.length
     scrollToSlide(nextIdx)
     setIndex(nextIdx)
     restartAutoplay()
   }
 
-  const prev = () => {
+  const prevFn = () => {
     const prevIdx = (index - 1 + slides.length) % slides.length
     scrollToSlide(prevIdx)
     setIndex(prevIdx)
@@ -99,35 +163,11 @@ export default function Carousel({
     restartAutoplay()
   }
 
-  const restartAutoplay = () => {
-    if (!autoplay || slides.length <= 1) return
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
-    timerRef.current = window.setInterval(() => {
-      if (!pausedRef.current) {
-        setIndex(prev => {
-          const nextIdx = prev + 1
-          if (nextIdx >= slides.length) {
-            if (loop) {
-              setTimeout(() => scrollToSlide(0), 0)
-              return 0
-            }
-            return prev
-          }
-          setTimeout(() => scrollToSlide(nextIdx), 0)
-          return nextIdx
-        })
-      }
-    }, intervalMs)
-  }
-
   const onScroll = () => {
     if (isScrolling.current || !slidesRef.current) return
-    const slideWidth = slidesRef.current.clientWidth
-    const newIdx = Math.round(slidesRef.current.scrollLeft / slideWidth)
-    if (newIdx !== index) {
+    const rawIdx = Math.round(slidesRef.current.scrollLeft / slidesRef.current.clientWidth)
+    const newIdx = rawIdx - offset
+    if (newIdx >= 0 && newIdx < slides.length && newIdx !== index) {
       setIndex(newIdx)
       restartAutoplay()
     }
@@ -143,8 +183,8 @@ export default function Carousel({
       onMouseLeave={onMouseLeave}
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'ArrowLeft') prev()
-        if (e.key === 'ArrowRight') next()
+        if (e.key === 'ArrowLeft') prevFn()
+        if (e.key === 'ArrowRight') nextFn()
       }}
     >
       <div
@@ -152,13 +192,12 @@ export default function Carousel({
         className="w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar scroll-smooth flex items-center lg:grid lg:place-items-center lg:overflow-visible lg:snap-none"
         onScroll={onScroll}
       >
-        {slides.map((s, i) => (
+        {displaySlides.map((s, i) => (
           <div
             key={i}
             className={`w-full shrink-0 snap-start lg:col-start-1 lg:row-start-1 lg:transition-opacity lg:duration-700 lg:ease-in-out ${
-              i === index ? 'opacity-100' : 'lg:opacity-0 lg:pointer-events-none'
+              i === index + offset ? 'opacity-100' : 'lg:opacity-0 lg:pointer-events-none'
             }`}
-            aria-hidden={i === index ? 'false' : 'true'}
           >
             {s}
           </div>
@@ -169,14 +208,14 @@ export default function Carousel({
         <>
           <button
             aria-label="Anterior"
-            onClick={prev}
+            onClick={prevFn}
             className="absolute left-4 top-30 -translate-y-1/2 rounded-full bg-white p-2 shadow-md hover:bg-gray-200 z-20 transition duration-200 cursor-pointer"
           >
             <LuChevronLeft size={24} className="text-black" />
           </button>
           <button
             aria-label="Siguiente"
-            onClick={next}
+            onClick={nextFn}
             className="absolute right-4 top-30 -translate-y-1/2 rounded-full bg-white p-2 shadow-md hover:bg-gray-200 z-20 transition duration-200 cursor-pointer"
           >
             <LuChevronRight size={24} className="text-black" />

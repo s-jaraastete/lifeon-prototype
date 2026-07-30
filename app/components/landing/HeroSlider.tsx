@@ -1,6 +1,6 @@
 "use client"
 
-import React, { CSSProperties, useEffect, useRef, useState } from "react"
+import React, { CSSProperties, useLayoutEffect, useEffect, useRef, useState } from "react"
 
 type Slide = {
   id: string | number
@@ -25,14 +25,71 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
     "--hero-slider-progress-duration": `${intervalMs}ms`,
   } as CSSProperties
 
+  const hasClones = slides.length > 1
+  const displaySlides = hasClones ? [slides[slides.length - 1], ...slides, slides[0]] : slides
+  const offset = hasClones ? 1 : 0
+
+  const jumpTo = (targetScrollLeft: number) => {
+    const el = slidesRef.current
+    if (!el) return
+    isScrolling.current = true
+    el.style.scrollBehavior = "auto"
+    el.scrollLeft = targetScrollLeft
+    el.style.scrollBehavior = ""
+    setTimeout(() => { isScrolling.current = false }, 50)
+  }
+
   const scrollToSlide = (i: number) => {
     const el = slidesRef.current
     if (el) {
       isScrolling.current = true
-      el.scrollLeft = i * el.clientWidth
+      el.scrollLeft = (i + offset) * el.clientWidth
       setTimeout(() => { isScrolling.current = false }, 800)
     }
   }
+
+  const restartAutoplay = () => {
+    if (slides.length <= 1) return
+    if (timer.current) {
+      clearInterval(timer.current)
+      timer.current = null
+    }
+    timer.current = window.setInterval(() => {
+      if (!paused.current) {
+        setIdx(prev => {
+          const next = (prev + 1) % slides.length
+          setTimeout(() => scrollToSlide(next), 0)
+          return next
+        })
+      }
+    }, intervalMs)
+  }
+
+  useLayoutEffect(() => {
+    const el = slidesRef.current
+    if (!el) return
+    if (hasClones) {
+      el.scrollLeft = el.clientWidth
+    }
+    const handleScrollEnd = () => {
+      if (isScrolling.current || !hasClones) return
+      const slideWidth = el.clientWidth
+      const rawIdx = Math.round(el.scrollLeft / slideWidth)
+      if (rawIdx === 0) {
+        jumpTo(slides.length * slideWidth)
+        setIdx(slides.length - 1)
+        restartAutoplay()
+        return
+      }
+      if (rawIdx === slides.length + 1) {
+        jumpTo(slideWidth)
+        setIdx(0)
+        restartAutoplay()
+      }
+    }
+    el.addEventListener("scrollend", handleScrollEnd)
+    return () => el.removeEventListener("scrollend", handleScrollEnd)
+  }, [hasClones])
 
   useEffect(() => {
     if (slides.length <= 1) return
@@ -58,28 +115,11 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
     return stop
   }, [slides.length, intervalMs])
 
-  const restartAutoplay = () => {
-    if (slides.length <= 1) return
-    if (timer.current) {
-      clearInterval(timer.current)
-      timer.current = null
-    }
-    timer.current = window.setInterval(() => {
-      if (!paused.current) {
-        setIdx(prev => {
-          const next = (prev + 1) % slides.length
-          setTimeout(() => scrollToSlide(next), 0)
-          return next
-        })
-      }
-    }, intervalMs)
-  }
-
   const onScroll = () => {
     if (isScrolling.current || !slidesRef.current) return
-    const slideWidth = slidesRef.current.clientWidth
-    const newIdx = Math.round(slidesRef.current.scrollLeft / slideWidth)
-    if (newIdx !== idx) {
+    const rawIdx = Math.round(slidesRef.current.scrollLeft / slidesRef.current.clientWidth)
+    const newIdx = rawIdx - offset
+    if (newIdx >= 0 && newIdx < slides.length && newIdx !== idx) {
       setIdx(newIdx)
       restartAutoplay()
     }
@@ -111,15 +151,14 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
         className="w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar scroll-smooth flex items-center pt-5 lg:pt-0 lg:grid lg:place-items-center lg:overflow-visible lg:snap-none lg:min-h-[calc(100vh-70px)]"
         onScroll={onScroll}
       >
-        {slides.map((s, i) => (
+        {displaySlides.map((s, i) => (
           <div
-            key={s.id}
+            key={i}
             className={`w-full shrink-0 snap-start lg:col-start-1 lg:row-start-1 lg:transition-opacity lg:duration-700 lg:ease-in-out ${
-              i === idx ? "opacity-100" : "lg:opacity-0 lg:pointer-events-none"
+              i === idx + offset ? "opacity-100" : "lg:opacity-0 lg:pointer-events-none"
             }`}
-            aria-hidden={i === idx ? "false" : "true"}
           >
-            {typeof s.content === 'function' ? s.content(i === idx) : s.content}
+            {typeof s.content === 'function' ? s.content(i === idx + offset) : s.content}
           </div>
         ))}
       </div>
@@ -179,4 +218,4 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
   )
 };
 
-export default HeroSlider;
+export default HeroSlider
