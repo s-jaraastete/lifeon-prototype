@@ -25,7 +25,7 @@ const ContactSection = ({ allSlots = [], title, description, padding = true }: C
   return (
     <section
       id="contacto"
-      className="w-full flex flex-col justify-center items-center gap-2.5 min-h-162.5 px-4 lg:px-25 pb-25"
+      className="w-full flex flex-col justify-center items-center gap-2.5 min-h-162.5 px-4 xl:px-0 pb-25"
     >
       <div
         className={`w-full max-w-325 min-h-162.5 flex flex-col items-start gradient-deg1 gap-15 rounded-3xl bg-gray-200 lg:flex-row ${padding ? "px-5 py-7.5 lg:p-10" : "0"}`}
