@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-
 import type { FormFields } from "@/hooks/useFormValidation";
 import useFormValidation from "@/hooks/useFormValidation";
 import { useCart } from "@/providers/CartProvider";
+import createCheckoutAndStartOneclick from "./actions/create_checkout_and_start_oneclick";
+
 import CheckoutCollapse from "./CheckoutCollapse";
 import PersonalData from "./form/PersonalData";
 import BillingData from "./form/BillingData";
 import PaymentMethod from "./form/PaymentMethod";
 import CheckoutTotals from './CheckoutTotals';
-import createOrderCheckout from './actions/create_order_checkout';
+
 
 type SectionId = "personal" | "billing" | "payment";
 
@@ -81,9 +82,31 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
     setActiveSection((prev) => (prev === section ? null : section));
   };
 
+  const submitToTransbank = ({token, urlWebpay }: {
+    token: string;
+    urlWebpay: string;
+  }) => {
+    const transbankForm = document.createElement('form');
+
+    transbankForm.method = 'POST';
+    transbankForm.action = urlWebpay;
+
+    const tokenInput = document.createElement('input');
+
+    tokenInput.type = 'hidden';
+    tokenInput.name = 'TBK_TOKEN';
+    tokenInput.value = token;
+
+    transbankForm.appendChild(tokenInput);
+    document.body.appendChild(transbankForm);
+
+    transbankForm.submit();
+  };
+
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isButtonDisabled) return;
+
+    if (isButtonDisabled || isPending) return;
 
     setIsPending(true);
     setMessage(null);
@@ -107,28 +130,34 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
           phone: form.phone,
         },
         pack_id: Number(plan?.id),
-        billing_period: plan?.selectedBillingPeriod ?? 'monthly',
+        billing_period:
+          plan?.selectedBillingPeriod ?? 'monthly',
         coupon_code: couponCode,
         payment_method: 'webpay',
       };
 
-      const response = await createOrderCheckout(
-        payload,
-        null,
-        new FormData(event.currentTarget)
+      const result = await createCheckoutAndStartOneclick(
+        payload
       );
 
-      if (response.status === 'success') {
-        setOrderNumber(response.data?.order_number ?? null);
-        setMessage(null);
-        console.log('Orden creada:', response.data?.order_number);
-        return;
-      }
+      setOrderNumber(result.order.order_number);
 
-      setMessage('No se pudo crear la orden.');
+      submitToTransbank({
+        token: result.inscription.token,
+        urlWebpay: result.inscription.url_webpay,
+      });
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Ocurrió un error inesperado.');
-    } finally {
+      console.error(
+        'Error al procesar el checkout:',
+        error
+      );
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Ocurrió un error inesperado.'
+      );
+
       setIsPending(false);
     }
   };
@@ -218,7 +247,7 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
               }
             `}
           >
-            {isPending ? 'Creando orden...' : 'Finalizar y pagar'}
+            {isPending ? 'Redirigiendo a Transbank...' : 'Finalizar y pagar'}
           </button>
           {message && <p className="text-sm mt-2 text-red-500">{message}</p>}
         </div>

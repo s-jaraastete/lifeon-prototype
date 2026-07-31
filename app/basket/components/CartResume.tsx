@@ -5,12 +5,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { CartBillingPeriod, useCart } from '@/providers/CartProvider'
+import { getDateAfterDays } from '@/utils/currentDate';
+import { formatApiAmount } from '@/utils/pricingHelpers';
+
 import CartProductPlan from './CartProductPlan'
 import CartPricingBlock from './CartPricingBlock'
 import DiscountCoupon from './DiscountCoupon'
 import Listbox from '@/app/components/ui/Listbox'
-import { getCurrentDate } from '@/utils/currentDate';
-import { formatApiAmount } from '@/utils/pricingHelpers';
+
 
 // Icons
 import { LuChevronLeft, LuChevronRight, LuShoppingCart } from 'react-icons/lu'
@@ -150,7 +152,7 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                     {initialPlan?.selectedBillingPeriod === 'yearly' ? (
                       <p className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
                         Tu prueba de {trialDays}{" "} días comienza hoy por 0 UF y tu primer periodo 
-                        facturado se iniciará el {getCurrentDate()}{" "} por {formatApiAmount(recurringPrice)}{" "} UF anual.
+                        facturado se iniciará el {getDateAfterDays(30)}{" "} por {formatApiAmount(recurringPrice)}{" "} UF anual.
                         El botón &apos;Ir a pagar&apos; te redirigirá de forma segura para 
                         inscribir tu método de pago y sellar tu activación, pero hoy 
                         recibirás un comprobante por $0 CLP. 
@@ -159,7 +161,7 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                     ) : (
                       <p className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
                         Tu prueba de {trialDays}{" "} días comienza hoy por 0 UF y tu primer periodo
-                        facturado se iniciará el {getCurrentDate()}{" "} por {formatApiAmount(recurringPrice)}{" "} UF mensual.
+                        facturado se iniciará el {getDateAfterDays(30)}{" "} por {formatApiAmount(recurringPrice)}{" "} UF mensual.
                         El botón &apos;Ir a pagar&apos; te redirigirá de forma segura para
                         inscribir tu método de pago y sellar tu activación, pero hoy
                         recibirás un comprobante por $0 CLP.
