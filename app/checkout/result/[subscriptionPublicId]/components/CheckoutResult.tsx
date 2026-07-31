@@ -180,7 +180,7 @@ const CheckoutResult = ({ result }: CheckoutResultProps) => {
               />
             }
             <Link
-              href={`${showSuccessDetails ? "/" : "/bascket"}`}
+              href={`${showSuccessDetails ? "/" : "/basket"}`}
               className={`${showSuccessDetails ? "mt-4" : "mt-0"} inline-flex min-h-11 items-center justify-center w-full  rounded-xl bg-white px-6 font-medium text-primary border-primary border transition duration-200 hover:bg-gray-200 md:w-auto md:mt-8`}
             >
               {showSuccessDetails ? "Volver a Inicio" : "Volver al carrito"} 
