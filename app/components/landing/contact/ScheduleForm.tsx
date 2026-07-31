@@ -416,8 +416,8 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
                         title={holiday ? "Feriado" : undefined}
                         className={`mx-auto flex h-8 w-8 items-center justify-center rounded-[10px] transition-colors 
                           ${isSelected
-                            ? "bg-navy text-white"
-                            : holiday ? "bg-red-50 text-red-500 cursor-not-allowed"
+                            ? "bg-secondary text-white"
+                            : holiday ? "text-primary cursor-not-allowed"
                             : disabled
                               ? "cursor-not-allowed text-[#C9C9C9]"
                               : "text-base-black hover:bg-[#F4F5FB]"
