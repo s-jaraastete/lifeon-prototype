@@ -77,7 +77,7 @@ const Header = () => {
       <header className="hidden lg:block sticky top-0 w-full z-999 bg-white border-b border-gray-400">
         <div className="px-4 xl:px-0">
           <div className="max-w-325 mx-auto py-4 flex justify-between items-center">
-            {pathname === "/basket" || pathname === "/checkout" ? (
+            {pathname === "/basket" || pathname.startsWith("/checkout") ? (
               <Link href="/" className="flex items-center py-1">
                 {/* <Image
                     src="/"

@@ -80,12 +80,70 @@ interface CheckoutOrderPayload {
 }
 
 interface CheckoutOrderResponse {
-	id: number;
+	id?: number;
+	order_public_id?: string;
+  subscription_public_id?: string;
 	order_number: string;
 	status: 'pending_payment' | 'paid' | 'cancelled' | 'expired' | 'failed';
 	subtotal: string;
 	discount_total: string;
 	total: string;
 	currency: 'UF' | 'CLP' | 'USD';
+	uf_value_snapshot: number;
 	payment_method: 'webpay';
+}
+
+interface CheckoutResultData {
+  subscription_public_id: string;
+  order_public_id: string;
+  order_number: string;
+  status: 'trialing' | 'pending_initial_payment' | 'active' | 'pending_payment_method';
+  billing_period: 'monthly' | 'yearly';
+  pack_name: string;
+	pack_description: string;
+  amount_uf: number;
+  amount_clp: number;
+  trial_days: number;
+  trial_ends_at: string | null;
+  next_billing_at: string | null;
+	inscription_status: 'redirect_ready' | 'processing' | 'completed' | 'failed' | 'expired' | null;
+  inscription_error_code: string | null;
+	initial_payment_public_id: string;
+	initial_payment_status: string;
+	initial_payment_attempt_status: string;
+	initial_payment_response_code: number;
+}
+
+interface OneclickStartResponse {
+  inscription_public_id: string;
+  subscription_public_id: string;
+  status: 'redirect_ready';
+  token: string;
+  url_webpay: string;
+  expires_at: string;
+}
+
+interface CheckoutFlowResponse {
+  order: CheckoutOrderResponse;
+  inscription: OneclickStartResponse;
+}
+
+interface RetryInitialPaymentResponse {
+  payment_public_id: string;
+  payment_status: 'paid' | 'failed' | 'pending' | 'processing';
+  payment_attempt_status:
+    | 'approved'
+    | 'rejected'
+    | 'created'
+    | 'processing'
+    | 'error';
+  subscription_public_id: string;
+  subscription_status:
+    | 'pending_initial_payment'
+    | 'active';
+  order_public_id: string;
+  order_number: string;
+  order_status: 'pending_payment' | 'paid' | 'failed';
+  amount_clp: number;
+  provider_response_code: number | null;
 }

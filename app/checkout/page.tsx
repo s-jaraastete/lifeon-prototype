@@ -30,9 +30,9 @@ const CheckoutPage = async () => {
 
       <CheckoutForm regions={regions} ufValue={ufInfo.value} />
       
-      {/* TESTING ONECLICK INSCRIPTION */}
+      {/* TODO: TESTING ONECLICK INSCRIPTION */}
       {/* <OneclickInscriptionButton
-        subscriptionPublicId="969fa9ee-79b6-4cb0-950d-25e9ad57e001"
+        subscriptionPublicId="10cd1c7c-9e8c-4d43-8d0d-fe7d12c33404"
       /> */}
     </div>
   );

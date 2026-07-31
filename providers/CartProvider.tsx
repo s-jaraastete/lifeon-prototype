@@ -176,10 +176,10 @@ const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems((currentItems) => currentItems.filter((item) => item.id !== id))
   }
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCouponPreview(null)
     setItems([])
-  }
+  }, [])
 
   const hasItem = (id: string) => items.some((item) => item.id === id)
   const couponCode = couponPreview?.coupon_code ?? null
