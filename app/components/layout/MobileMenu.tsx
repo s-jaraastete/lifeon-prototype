@@ -46,7 +46,7 @@ const MobileMenu = ({ isOpen, onClose }: {
         leaveFrom="translate-y-0"
         leaveTo="-translate-y-full"
       >
-        <div className="fixed inset-0 top-17.5">
+        <div className="fixed inset-0 top-12">
           <DialogPanel className="bg-white h-min overflow-y-auto p-4 flex flex-col">
             {/* Menu Links */}
             <div className="flex flex-col text-xl font-medium text-primary-text">

@@ -42,7 +42,7 @@ const Header = () => {
       <header className="lg:hidden fixed top-0 w-full z-999 bg-white">
         <div
           className={`
-            flex justify-between items-center px-4 py-4.5
+            flex justify-between items-center px-4 py-2.5 h-16
             ${!isMenuOpen ? "border-b border-gray-400" : ""}
           `}>
           <div className="flex items-center gap-2.5">
