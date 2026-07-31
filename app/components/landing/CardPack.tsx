@@ -26,7 +26,7 @@ const CardPack = ({ chip, icon, bgIcon, title, description, details, borderButto
         <div className={`w-12 h-12 flex items-center justify-center ${bgIcon} rounded-2xl mt-4`}>
         {icon}
         </div>
-        <h3 className="text-xl font-semibold text-black w-50 mt-3">
+        <h3 className="text-xl font-semibold text-base-black w-50 mt-3">
           {title}
           {titleChip && (
             <span className="ml-2 text-[10px] font-medium bg-[#DBEAFE] text-[#155DFC] px-1.5 py-0.5 rounded-lg align-middle">

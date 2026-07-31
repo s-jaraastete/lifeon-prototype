@@ -17,7 +17,7 @@ const InfoCard = ({ title, description, icon }: InfoCardProps) => {
         {icon}
       </div>
       <div className='flex flex-col gap-2'>
-        <h3 className='text-lg font-semibold'>{title}</h3>
+        <h3 className='text-lg font-semibold text-base-black'>{title}</h3>
         <p className='text-primary-text'>{description}</p>
       </div>
     </div>
@@ -25,6 +25,8 @@ const InfoCard = ({ title, description, icon }: InfoCardProps) => {
 };
 
 const AssociatedCompanies = () => {
+  const companyNames = ["ESCONDIDA | BHP", "SPENCE | BHP", "CERRO COLORADO | BHP"]
+
   const cardData = [
     {
       title: "Cumplimiento normativo sin dolores de cabeza",
@@ -45,24 +47,33 @@ const AssociatedCompanies = () => {
   
   return (
     <section className="w-full pb-15 px-4 xl:px-0">
-      <div className="max-w-325 mx-auto h-[50vh] flex flex-col justify-center items-center gap-8">
-        <h2 className="text-[24px] lg:text-3xl font-semibold text-center mb-8 lg:mx-30">
+      <div className="max-w-325 mx-auto lg:h-[50vh] my-15 lg:my-0 flex flex-col justify-center items-center gap-8">
+        <h2 className="text-[24px] lg:text-3xl font-semibold text-center mb-8 lg:mx-30 text-base-black">
           +1.700 empresas usan LifeOn para simplificar el cumplimiento normativo y la gestión de riesgos.
         </h2>
-        <div className="w-full flex overflow-x-auto hide-scrollbar gap-10 px-4 lg:px-0 -mx-4 lg:mx-0 lg:gap-20 lg:justify-between">
-          <p className='font-bold text-3xl lg:text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block shrink-0 min-w-[85%] lg:min-w-0'>
-            ESCONDIDA | BHP
-          </p>
-          <p className='font-bold text-3xl lg:text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block shrink-0 min-w-[85%] lg:min-w-0'>
-            SPENCE | BHP
-          </p>
-          <p className='font-bold text-3xl lg:text-4xl text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block shrink-0 min-w-[85%] lg:min-w-0'>
-            CERRO COLORADO | BHP
-          </p>
+        <div className="hidden lg:flex gap-20 justify-between">
+          {companyNames.map((name, index) => (
+            <p key={index} className='font-bold text-4xl cursor-default text-gray-600 transition duration-300 hover:text-orange-500 hover:scale-110 origin-bottom inline-block'>
+              {name}
+            </p>
+          ))}
         </div>
+          <div className="lg:hidden w-full overflow-hidden">
+            <div className="flex animate-marquee w-max">
+              {[0, 1].map((group) => (
+                <div key={group} className="flex gap-10 shrink-0 mx-5">
+                  {companyNames.map((name, index) => (
+                    <p key={index} className='font-bold text-3xl text-gray-600 whitespace-nowrap'>
+                      {name}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
       </div>
-      <div className="max-w-325 mx-auto">
-        <h2 className="text-[30px] lg:text-5xl font-semibold text-center mb-10 lg:mx-30">
+      <div className="max-w-325 mx-auto pt-8">
+        <h2 className="text-[30px] lg:text-5xl font-semibold text-center mb-10 lg:mx-30 text-base-black">
           Diseñado para <span className="text-secondary">proteger</span> tu capital, tu talento y tu operación
         </h2>
         <div className="flex flex-col lg:flex-row gap-6 justify-center">

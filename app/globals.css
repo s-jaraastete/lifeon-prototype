@@ -2,6 +2,7 @@
 
 body {
   font-family: "Poppins";
+  color: #202124; /* base-black */
 }
 
 @theme {
@@ -11,6 +12,7 @@ body {
   --color-primary-text: #4A4A4A;
   --color-secondary-text: #848484;
   --color-stroke: #EDEDED;
+  --color-base-black: #202124;
 
   --color-teal-50: #F0F9F7;
   --color-teal-100: #CCE8E3;
@@ -78,5 +80,20 @@ body {
     background: 
       linear-gradient(white, white) padding-box, 
       linear-gradient(180deg, #BDE7FF 0%, #ADF2D3 100%) border-box !important;
+  }
+}
+
+@layer components {
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee 14s linear infinite;
   }
 }

@@ -304,48 +304,48 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
   };
 
   return (
-    <div className="flex w-full max-w-137.5 flex-col rounded-2xl bg-white p-6">
+    <div className="flex w-full max-w-137.5 mx-auto lg:mx-0 flex-col rounded-2xl bg-white p-6">
       {step === "overview" && (
         <div className="flex min-h-95 flex-col justify-between gap-22">
           <div className="flex flex-col gap-8">
-            <h3 className="text-[18px] font-bold text-black">Detalles de la sesión</h3>
+            <h3 className="text-[24px] font-semibold text-base-black">Detalles de la sesión</h3>
 
             <div className="flex flex-col gap-6">
               <div className="flex items-start gap-3">
-                <LuClock3 className="mt-0.5 h-6 w-6 text-text-secondary" strokeWidth={2} />
+                <LuClock3 className="mt-0.5 h-6 w-6 text-primary-text" strokeWidth={2} />
                 <div className="flex flex-col">
-                  <span className="text-[18px] font-bold text-black">Duración</span>
-                  <span className="text-[18px] text-text-secondary">30 minutos</span>
+                  <span className="text-[18px] font-medium text-base-black">Duración</span>
+                  <span className="text-[18px] text-primary-text">30 minutos</span>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <LuVideo className="mt-0.5 h-6 w-6 text-text-secondary" strokeWidth={2} />
+                <LuVideo className="mt-0.5 h-6 w-6 text-primary-text" strokeWidth={2} />
                 <div className="flex flex-col">
-                  <span className="text-[18px] font-bold text-black">Modalidad</span>
-                  <span className="text-[18px] text-text-secondary">Google Meet (enlace automático)</span>
+                  <span className="text-[18px] font-medium text-base-black">Modalidad</span>
+                  <span className="text-[18px] text-primary-text">Google Meet (enlace automático)</span>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <LuGlobe className="mt-0.5 h-6 w-6 text-text-secondary" strokeWidth={2} />
+                <LuGlobe className="mt-0.5 h-6 w-6 text-primary-text" strokeWidth={2} />
                 <div className="flex flex-col">
-                  <span className="text-[18px] font-bold text-black">Zona horaria</span>
-                  <span className="text-[18px] text-text-secondary">Detectada automáticamente</span>
+                  <span className="text-[18px] font-medium text-base-black">Zona horaria</span>
+                  <span className="text-[18px] text-primary-text">Detectada automáticamente</span>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col gap-7">
-            <div className="rounded-xl bg-[#F6F6F6] px-4 py-5 text-[18px] text-text-secondary">
+            <div className="rounded-xl bg-[#F6F6F6] px-4 py-5 text-primary-text">
               Recibirás una invitación de calendario inmediatamente después de agendar tu cita
             </div>
 
             <button
               type="button"
               onClick={() => setStep("datetime")}
-              className="flex h-12.5 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-[18px] text-white transition-colors cursor-pointer hover:bg-red-700"
+              className="flex h-12.5 w-full items-center justify-center gap-2 rounded-[14px] bg-primary px-6 text-[18px] text-white transition-colors cursor-pointer hover:bg-red-700"
             >
               <span>Seleccionar fecha</span>
               <LuChevronRight className="h-5 w-5" />
@@ -361,16 +361,16 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               <button
                 type="button"
                 onClick={() => setStep("overview")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-black transition-colors hover:bg-[#F6F6F6]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-base-black transition-colors hover:bg-[#F6F6F6]"
               >
                 <LuChevronLeft className="h-5 w-5 cursor-pointer" />
               </button>
-              <h3 className="text-[18px] font-bold text-black">Seleccionar fecha y hora</h3>
+              <h3 className="text-[18px] font-semibold text-base-black">Seleccionar fecha y hora</h3>
             </div>
 
             <div className="grid gap-5 md:grid-cols-[1.55fr_1fr] md:items-start">
               <div className="rounded-[10px] border border-gray-400 p-2">
-                <div className="mb-4 flex items-center justify-between gap-4 text-[18px] text-black">
+                <div className="mb-4 flex items-center justify-between gap-4 text-[18px] text-base-black">
                   <button
                     type="button"
                     onClick={handlePrevMonth}
@@ -420,7 +420,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
                             : holiday ? "bg-red-50 text-red-500 cursor-not-allowed"
                             : disabled
                               ? "cursor-not-allowed text-[#C9C9C9]"
-                              : "text-black hover:bg-[#F4F5FB]"
+                              : "text-base-black hover:bg-[#F4F5FB]"
                         }`}
                       >
                         {date.getDate()}
@@ -431,11 +431,11 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               </div>
 
               <div className="flex flex-col gap-3">
-                <span className="text-[18px] font-semibold text-black">Horarios disponibles:</span>
+                <span className="text-[18px] font-semibold text-base-black">Horarios disponibles:</span>
                 {selectedDate ? (
                   <>
                     {publicSlotsQuery.isFetching && (
-                      <p className="text-[16px] text-[#8A8A8A]">Cargando horarios...</p>
+                      <p className="text-[16px] text-secondary-text">Cargando horarios...</p>
                     )}
 
                     {publicSlotsQuery.isError && (
@@ -443,7 +443,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
                     )}
 
                     {!publicSlotsQuery.isFetching && !publicSlotsQuery.isError && availableSlots.length === 0 && (
-                      <p className="text-[16px] text-[#8A8A8A]">No hay horarios disponibles para este día.</p>
+                      <p className="text-[16px] text-secondary-text">No hay horarios disponibles para este día.</p>
                     )}
 
                     {!publicSlotsQuery.isFetching && !publicSlotsQuery.isError && availableSlots.map((slot) => {
@@ -471,7 +471,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
                     })}
                   </>
                 ) : (
-                  <p className="text-[16px] text-[#8A8A8A]">
+                  <p className="text-[16px] text-secondary-text">
                     Selecciona una fecha para ver los horarios.
                   </p>
                 )}
@@ -484,9 +484,9 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               </p>
             )}
 
-            <div className="flex flex-col gap-1 text-black">
+            <div className="flex flex-col gap-1 text-base-black">
               <span className="text-[16px] font-semibold">Detalle de tu cita:</span>
-              <span className="text-[16px] text-[#656565]">{meetingDetailLabel}</span>
+              <span className="text-[16px] text-secondary-text">{meetingDetailLabel}</span>
             </div>
           </div>
 
@@ -494,7 +494,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
             type="button"
             onClick={() => selectedTime && setStep("contact")}
             disabled={!selectedTime}
-            className={`flex h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-[18px] transition-colors ${
+            className={`flex h-12 w-full items-center justify-center gap-2 rounded-[14px] px-6 text-[18px] transition-colors ${
               selectedTime
                 ? "bg-navy text-white cursor-pointer hover:bg-[#151c5a]"
                 : "bg-[#ECECEC] text-[#9A9A9A] cursor-not-allowed"
@@ -513,11 +513,11 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               <button
                 type="button"
                 onClick={() => setStep("datetime")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-black transition-colors hover:bg-[#F6F6F6]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-base-black transition-colors hover:bg-[#F6F6F6]"
               >
                 <LuChevronLeft className="h-5 w-5 cursor-pointer" />
               </button>
-              <h3 className="text-[18px] font-bold text-black">Datos de contacto</h3>
+              <h3 className="text-[18px] font-semibold text-base-black">Datos de contacto</h3>
             </div>
 
             <div className="flex flex-col gap-5">
@@ -558,7 +558,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
               />
             </div>
 
-            <div className="flex flex-col gap-1 text-black">
+            <div className="flex flex-col gap-1 text-base-black">
               <span className="text-[16px] font-semibold">Detalle de tu cita:</span>
               <span className="text-[16px] text-[#656565]">{meetingDetailLabel}</span>
             </div>
@@ -589,7 +589,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
           </div>
 
           <div className="flex max-w-95 flex-col gap-4">
-            <h3 className="text-[20px] font-bold text-black">¡Cita agendada con éxito!</h3>
+            <h3 className="text-[20px] font-semibold text-base-black">¡Cita agendada con éxito!</h3>
             <p className="text-[18px] text-[#656565]">
               Gracias por contactarte con nosotros, en los próximos minutos recibirás un correo con la confirmación y detalles de tu reunión.
             </p>
@@ -597,7 +597,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
 
           <div className="flex w-full max-w-95 items-start gap-4 rounded-xl bg-[#F6F6F6] px-5 py-4 text-left">
             <LuCalendarDays className="mt-1 h-6 w-6 text-text-secondary" />
-            <div className="flex flex-col gap-1 text-black">
+            <div className="flex flex-col gap-1 text-base-black">
               <span className="text-base text-[#656565]">Fecha y hora</span>
               <span className="text-base font-semibold">{selectedDateLabel}</span>
               <span className="text-base text-[#3C3C3C]">{meetingTimeRange}</span>

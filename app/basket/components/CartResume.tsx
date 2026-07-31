@@ -106,7 +106,7 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                   />
 
                   <div className="hidden lg:block bg-gray-200 p-5 rounded-[22px]">
-                    <h4 className="font-medium text-lg leading-6.5 text-black">
+                    <h4 className="font-medium text-lg leading-6.5 text-base-black">
                       Próximamente más módulos para sumar a tu Paquete Base
                     </h4>
                     <p className="text-sm leading-5.5 text-primary-text">
