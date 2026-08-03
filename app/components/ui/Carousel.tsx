@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useLayoutEffect, useEffect, useRef, useState } from 'react'
+import React, { CSSProperties, useLayoutEffect, useEffect, useRef, useState } from 'react'
 import { LuChevronLeft, LuChevronRight } from 'react-icons/lu'
 
 type Props = {
@@ -31,6 +31,9 @@ export default function Carousel({
   const timerRef = useRef<number | null>(null)
   const slidesRef = useRef<HTMLDivElement>(null)
   const isScrolling = useRef(false)
+  const progressStyle = {
+    '--hero-slider-progress-duration': `${intervalMs}ms`,
+  } as CSSProperties
 
   const hasClones = loop && slides.length > 1
   const displaySlides = hasClones ? [slides[slides.length - 1], ...slides, slides[0]] : slides
@@ -225,18 +228,32 @@ export default function Carousel({
 
       {indicators && (
         <div className="absolute left-1/2 bottom-0 -translate-x-1/2 flex justify-center gap-3 items-center mt-4 z-20">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              aria-label={`Ir al slide ${i + 1}`}
-              className={`rounded-full transition-colors cursor-pointer ${
-                i === index
-                  ? 'h-2 w-11 bg-secondary'
-                  : 'h-2.5 w-2.5 bg-teal-100 hover:bg-teal-300'
-              }`}
-            />
-          ))}
+          {slides.map((_, i) => {
+            if (i === index) {
+              return (
+                <button
+                  key={i}
+                  onClick={() => goTo(i)}
+                  aria-label={`Ir al slide ${i + 1}`}
+                  className="relative h-2 w-11 rounded-full bg-teal-100 overflow-hidden cursor-pointer"
+                >
+                  <span
+                    key={index}
+                    className="hero-slider-progress absolute left-0 top-0 h-full w-full origin-left rounded-full bg-secondary"
+                    style={progressStyle}
+                  />
+                </button>
+              )
+            }
+            return (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                aria-label={`Ir al slide ${i + 1}`}
+                className="h-2.5 w-2.5 rounded-full bg-teal-100 hover:bg-teal-300 cursor-pointer transition-colors"
+              />
+            )
+          })}
         </div>
       )}
     </div>

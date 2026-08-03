@@ -60,7 +60,7 @@ const Comments = () => {
             <div className="lg:hidden">
               <Carousel
                 slides={slides}
-                intervalMs={7000}
+                intervalMs={7400}
                 indicators={true}
                 autoplay
                 controls={false}
@@ -70,7 +70,7 @@ const Comments = () => {
             <div className="hidden lg:block">
               <Carousel
                 slides={slides}
-                intervalMs={7000}
+                intervalMs={7400}
                 indicators={false}
                 autoplay
                 controls

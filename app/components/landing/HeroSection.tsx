@@ -156,7 +156,7 @@ const HeroSection = () => {
     },
   ];
 
-  return <HeroSlider slides={slides} intervalMs={7000} controls={false} />
+  return <HeroSlider slides={slides} intervalMs={8000} controls={false} />
   
 };
 

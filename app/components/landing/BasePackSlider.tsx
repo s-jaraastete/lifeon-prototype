@@ -75,7 +75,7 @@ const BasePackSlider = ({ cardData }: BasePackSliderProps) => {
               key={index}
               type="button"
               onClick={() => scrollToCard(index)}
-              className={`h-2 rounded-full transition-all ${isActive ? 'w-11 bg-secondary' : 'w-2.5 bg-teal-100'}`}
+              className={`h-2 w-2.5 rounded-full transition-all ${isActive ? 'bg-secondary' : 'bg-teal-100'}`}
             />
           )
         })}
