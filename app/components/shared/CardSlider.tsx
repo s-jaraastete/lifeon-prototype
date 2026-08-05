@@ -40,7 +40,7 @@ function CardSlider<T extends object>({
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex lg:flex-row lg:justify-between lg:items-stretch mt-10 overflow-x-auto snap-x snap-mandatory gap-4 lg:gap-6 px-4 lg:px-0 -mx-4 lg:mx-0 pb-0 hide-scrollbar lg:overflow-visible lg:snap-none"
+        className="flex lg:flex-row lg:justify-between lg:items-stretch mt-10 overflow-x-auto snap-x snap-mandatory gap-4 lg:gap-5.5 px-4 lg:px-0 -mx-4 lg:mx-0 pt-4 pb-4 lg:pt-0 lg:pb-0 hide-scrollbar lg:overflow-visible lg:snap-none"
       >
         {cardData.map((card, index) => (
           <React.Fragment key={index}>
