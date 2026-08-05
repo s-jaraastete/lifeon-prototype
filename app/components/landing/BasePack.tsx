@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import { LuFileSearch2, LuTable } from 'react-icons/lu';
+import CardSlider from '../shared/CardSlider';
+import CardPack from './CardPack';
 import PricePack from './PricePack';
-import BasePackSlider from './BasePackSlider';
 
 export const CardData = [
   {
@@ -64,7 +65,7 @@ const BasePack = () => {
           </p>
         </div>
         
-        <BasePackSlider cardData={CardData} />
+        <CardSlider cardData={CardData} CardComponent={CardPack} showPlusSeparator />
 
         <div className="mt-6">
           <PricePack />

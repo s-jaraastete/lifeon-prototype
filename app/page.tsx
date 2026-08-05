@@ -1,6 +1,6 @@
 import AssociatedCompanies from "./components/landing/AssociatedCompanies";
 import BannerSection from "./components/landing/BannerSection";
-import BasePack from "./components/landing/BasePack";
+import PlansPricing from "./components/shared/PlansPricing";
 import Comments from "./components/landing/Comments";
 import ContactSection from "./components/landing/ContactSection";
 import frequentlyQuestions from "./components/landing/data/frequentlyQuestions";
@@ -29,7 +29,7 @@ const HomePage = () => {
       <HeroSection />
       <AssociatedCompanies />
       <ManagementMap />
-      <BasePack />
+      <PlansPricing />
       <InfoPack />
       <BannerSection />
       <Comments />
