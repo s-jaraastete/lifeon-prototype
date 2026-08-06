@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 
-import ShoppingCart from "../shopping/ShoppingCart";
+// import ShoppingCart from "../shopping/ShoppingCart";
 import ModulesModal from "./ModulesModal";
 import MobileMenu from "./MobileMenu";
 
@@ -28,7 +28,7 @@ const Header = () => {
   const mainLinks: NavLink[] = [
     { name: "Software", href: "/" },
     { name: "Módulos", modal: "modules" },
-    { name: "Recursos", modal: "resources" },
+    { name: "Precios", href: "/precios" },
     { name: "Contacto", href: "/contacto" },
   ];
 
@@ -66,11 +66,11 @@ const Header = () => {
               </p>
             </Link>
           </div>
-          {pathname !== "/basket" && pathname !== "/checkout" && (
+          {/* {pathname !== "/basket" && pathname !== "/checkout" && (
             <div className="">
               <ShoppingCart />
             </div>
-          )}
+          )} */}
         </div>
       </header>
       {/* Desktop header */}
@@ -117,8 +117,8 @@ const Header = () => {
                       ) {
                         isActive = true;
                       } else if (
-                        link.name === "Recursos" &&
-                        (pathname === "/recursos")
+                        link.name === "Precios" &&
+                        pathname === "/precios"
                       ) {
                         isActive = true;
                       } else if (
@@ -160,7 +160,7 @@ const Header = () => {
                 </nav>
 
                 <div className="flex items-center gap-8">
-                  <ShoppingCart />
+                  {/* <ShoppingCart /> */}
 
                   <div className="flex items-center gap-3">
                     {/* <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">

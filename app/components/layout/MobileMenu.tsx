@@ -122,37 +122,16 @@ const MobileMenu = ({ isOpen, onClose }: {
                 )}
               </Disclosure>
 
-              {/* Recursos Accordion */}
-              <Disclosure>
-                {({ open }) => (
-                  <>
-                    <DisclosureButton className="flex justify-between items-center text-primary-text border-b border-gray-300 py-5">
-                      Recursos
-                      <LuChevronDown
-                        className={clsx(
-                          "w-5 h-5 transition-transform",
-                          open && "rotate-180",
-                        )}
-                      />
-                    </DisclosureButton>
-                    <Transition
-                      show={open}
-                      as={Fragment}
-                      enter="ease-out duration-200"
-                      enterFrom="opacity-0 -translate-y-2"
-                      enterTo="opacity-100 translate-y-0"
-                      leave="ease-in duration-150"
-                      leaveFrom="opacity-100 translate-y-0"
-                      leaveTo="opacity-0 -translate-y-2"
-                    >
-                      <DisclosurePanel
-                        static
-                        className="text-base text-primary-text py-5"
-                      />
-                    </Transition>
-                  </>
+              <Link
+                href="/precios"
+                onClick={onClose}
+                className={clsx(
+                  "border-b border-gray-300 py-5",
+                  pathname === "/precios" && "text-primary",
                 )}
-              </Disclosure>
+              >
+                Precios
+              </Link>
 
               <Link
                 href="/contacto"
