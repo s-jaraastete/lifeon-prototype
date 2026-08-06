@@ -1,8 +1,8 @@
 const frequentlyQuestions = [
   {
-    title: "¿Qué es LifeOn?",
+    title: "¿Qué es LifeOn y cómo puede ayudar a mi empresa?",
     content:
-      "LifeOn es una plataforma SaaS diseñada para centralizar la gestión de riesgos, cumplimiento normativo y procesos preventivos en una sola herramienta, facilitando la participación de toda la organización.",
+      "LifeOn es una plataforma modular que permite organizar, digitalizar y administrar la gestión de seguridad de tu empresa. Ayuda a centralizar información, conectar procesos, mejorar la trazabilidad y facilitar el seguimiento de las actividades preventivas.",
   },
   {
     title: "¿Puedo contratar solo un módulo?",

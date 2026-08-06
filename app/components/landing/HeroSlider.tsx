@@ -148,7 +148,7 @@ const HeroSlider = ({ slides, intervalMs = 5000, className, pauseOnHover = true,
     >
       <div
         ref={slidesRef}
-        className="w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar scroll-smooth flex items-center pt-5 lg:pt-0 lg:grid lg:place-items-center lg:overflow-visible lg:snap-none lg:min-h-[calc(100vh-70px)]"
+        className="w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar scroll-smooth flex items-center pt-5 lg:pt-0 lg:grid lg:grid-cols-1 lg:place-items-center lg:overflow-visible lg:snap-none lg:min-h-[calc(100vh-70px)]"
         onScroll={onScroll}
       >
         {displaySlides.map((s, i) => (

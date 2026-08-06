@@ -1,7 +1,7 @@
 import React from 'react'
 
 // Icons
-import { LuAward, LuCircleCheck, LuMonitorSmartphone } from 'react-icons/lu';
+import { LuChartColumn, LuCircleCheck, LuMonitorSmartphone } from 'react-icons/lu';
 
 
 interface InfoCardProps {
@@ -29,19 +29,19 @@ const AssociatedCompanies = () => {
 
   const cardData = [
     {
-      title: "Cumplimiento normativo sin dolores de cabeza",
-      description: "Simplifica el marco legal chileno en una interfaz intuitiva y 100% auditable ante cualquier inspección.",
+      title: "Toda tu gestión en un sólo lugar",
+      description: "Centraliza procesos, documentos, evaluaciones y acciones de seguridad en una plataforma conectada y accesible para todos tus equipos.",
+      icon: <LuMonitorSmartphone className="text-white w-5 h-5" />
+    },
+    {
+      title: "Procesos más ágiles y eficientes",
+      description: "Reduce tareas manuales, evita la duplicidad de información y facilita el seguimiento de las actividades clave de tu operación.",
       icon: <LuCircleCheck className="text-white w-5 h-5" />
     },
     {
-      title: "Excelencia industrial al alcance de tu PYME",
-      description: "Herramientas de control de la gran minería adaptadas para proteger el talento y capital de medianas y pequeñas empresas.",
-      icon: <LuAward className="text-white w-5 h-5" />
-    },
-    {
-      title: "Gestión participativa en tiempo real",
-      description: "Automatiza la prevención activa involucrando a toda la organización desde cualquier dispositivo.",
-      icon: <LuMonitorSmartphone className="text-white w-5 h-5" />
+      title: "Información confiable para decidir",
+      description: "Accede a datos actualizados, trazables y auditables para detectar brechas, demostrar cumplimiento y mejorar continuamente.",
+      icon: <LuChartColumn className="text-white w-5 h-5" />
     },
   ]
   
@@ -74,7 +74,8 @@ const AssociatedCompanies = () => {
       </div>
       <div className="max-w-325 mx-auto pt-8">
         <h2 className="text-[30px] lg:text-5xl font-semibold text-center mb-10 lg:mx-30 text-base-black">
-          Diseñado para <span className="text-secondary">proteger</span> tu capital, tu talento y tu operación
+          <span className="text-secondary">Más control</span>
+          , menos carga y mejores decisiones.
         </h2>
         <div className="flex flex-col lg:flex-row gap-6 justify-center">
           {cardData.map((card, index) => (

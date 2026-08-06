@@ -8,10 +8,10 @@ import { LuCheck } from 'react-icons/lu';
 const InfoPack = () => {
   
   const ListData = [
-    "Comienza con nuestro Paquete Base Esencial",
-    "Suma nuevas herramientas a tu ritmo y sin fricciones.",
-    "Sin contratos de amarre ocultos ni costos sorpresa. Activa, desactiva o cambia tus módulos cuando lo necesites.",
-    "Elige el pago anual para asegurar tarifas preferenciales.",
+    "Comienza con el Paquete Base Esencial.",
+    "Agrega nuevos módulos cuando tu operación lo requiera.",
+    "Evita costos por herramientas o funcionalidades que no utilizas.",
+    "Mantén una inversión flexible y alineada con el crecimiento de tu empresa.",
   ];
   
   return (
@@ -28,16 +28,14 @@ const InfoPack = () => {
         </div>
         <div className="w-full xl:h-144.5">
           <h2 className="text-[30px] lg:text-5xl font-semibold text-base-black leading-tight">
-            Con <span className="text-primary">Life</span>
-            <span className="text-secondary">On</span> no pagarás por
-            herramientas que no usarás
+            En <span className="text-primary">Life</span>
+            <span className="text-secondary">On</span>
+            , paga solo por lo que tu empresa necesita.
           </h2>
           <p className="lg:text-lg text-primary-text mt-2.5">
-            Comienza con los módulos esenciales para tu operación y expande tu
-            plataforma cuando tu organización lo necesite. A medida que nuevos
-            módulos estén disponibles, podrás incorporarlos fácilmente dentro de
-            un único ecosistema integrado, sin costos innecesarios ni procesos
-            complejos de implementación.
+            Elige los módulos que aportan valor a tu operación y evita invertir en
+            herramientas que no utilizarás. Con LifeOn, tu plataforma y tu inversión crecen
+            al ritmo de tus necesidades.
           </p>
           <ul className="mt-8 flex flex-col gap-4">
             {ListData.map((item, index) => (

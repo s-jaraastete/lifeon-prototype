@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 import HeroSlider from './HeroSlider';
 import ModuleCardsRow from './ModuleCardsRow';
-import StartTrialButton from '../shopping/StartTrialButton';
+// import StartTrialButton from '../shopping/StartTrialButton';
 
 
 const HeroSection = () => {
@@ -14,35 +14,37 @@ const HeroSection = () => {
       id: 1,
       content: (
         <div className="flex items-center w-full h-full lg:min-h-[calc(100vh-70px)] overflow-hidden">
-          <div className="relative z-10 lg:grid grid-cols-2 h-full max-w-325 mx-auto items-center pt-4 pb-18 lg:pb-0">
-            <div className="px-4 xl:px-0">
+          <div className="relative z-10 h-full max-w-325 mx-auto flex items-center pt-4 pb-18 lg:pb-0 w-full">
+            <div className="px-4 xl:px-0 lg:w-[50%] xl:w-[65%]">
               <div className="flex flex-col gap-5.5 lg:gap-4">
                 <h1 className="text-[30px] font-semibold leading-tight md:text-5xl lg:text-6xl text-base-black">
-                  Gestión de riesgos inteligente, accesible y 100% auditable.
+                  Toda la gestión de seguridad de tu empresa, en una sola
+                  plataforma.
                 </h1>
                 <p className="text-lg text-primary-text leading-6 md:text-[22px] md:leading-7">
-                  Estandariza la seguridad de tu empresa. Adopta los altos
-                  estándares de la industria en una plataforma intuitiva que
-                  evoluciona con tu negocio, activando soluciones a tu propio
-                  ritmo.
+                  Centraliza tus procesos, conecta a tus equipos y gestiona
+                  información trazable, actualizada y lista para tomar mejores
+                  decisiones.
                 </p>
               </div>
               <div className="flex flex-col gap-2.5 lg:gap-4 mt-10 sm:flex-row">
-                <StartTrialButton
+                {/* <StartTrialButton
                   slug="paquete-base-esencial"
                   className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25"
                   pendingText="Preparando prueba..."
                 >
                   Iniciar prueba gratuita 🚀
-                </StartTrialButton>
+                </StartTrialButton> */}
+                <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
+                  Comienza ahora 🚀
+                </button>
                 <Link href="/modulos">
                   <button className="w-full border border-secondary text-secondary py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer sm:w-59.25">
-                    Conocer módulos
+                    Conoce los módulos
                   </button>
                 </Link>
               </div>
             </div>
-            <div />
           </div>
           <div className="pointer-events-none absolute left-[48%] top-1/2 hidden w-[clamp(54rem,58vw,120rem)] translate-y-[-53%] lg:block lg:left-[50%] xl:left-[58%]">
             <Image
@@ -61,31 +63,32 @@ const HeroSection = () => {
     {
       id: 2,
       content: (isActive: boolean) => (
-        <div className="flex flex-col max-w-325 mx-auto items-center justify-center lg:h-full px-4 xl:px-0 pt-4 pb-18 lg:pb-0">
+        <div className="flex flex-col w-full items-center justify-center lg:h-full px-4 xl:px-0 pt-4 pb-18 lg:pb-0">
           <div className="flex flex-col items-center justify-center gap-7.5 group">
             <ModuleCardsRow isActive={isActive} />
-            <div className="flex flex-col gap-5.5 lg:gap-4 items-center w-full lg:w-260">
-              <h2 className="text-[30px] font-semibold leading-tight lg:text-center md:text-5xl lg:text-6xl lg:w-220 text-base-black">
-                Software modular: Comienza hoy con nuestro{" "}
-                <span className="text-secondary">Paquete Base Esencial</span>
+            <div className="flex flex-col gap-5.5 lg:gap-4 items-center w-full lg:w-240">
+              <h2 className="text-[30px] font-semibold leading-tight lg:text-center md:text-5xl lg:text-6xl text-base-black">
+                Comienza con lo esencial.{" "}
+                <span className="text-secondary">Crece con LifeOn</span>
               </h2>
-               <p className="text-lg text-primary-text leading-6 lg:text-center md:text-[22px] md:leading-7">
-                Digitaliza tu prevención de riesgos con tres herramientas
-                robustas e integradas: MIPER, Control Documental y Asistente
-                Virtual de Prevención. Una solución potente que mantiene la
-                flexibilidad de sumar módulos especializados a medida que tu
-                operación crezca.
+              <p className="text-lg text-primary-text leading-6 lg:text-center md:text-[22px] md:leading-7">
+                Gestiona MIPER, Programa y Documentación Preventiva y un Asesor de
+                Prevención de Riesgos Virtual desde una solución integrada, con la flexibilidad
+                de sumar nuevos módulos cuando los necesites.
               </p>
             </div>
           </div>
           <div className="flex flex-col justify-center gap-2.5 lg:gap-4 mt-10 sm:flex-row w-full">
-            <StartTrialButton
+            {/* <StartTrialButton
               slug="paquete-base-esencial"
               className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25"
               pendingText="Preparando prueba..."
             >
               Iniciar prueba gratuita 🚀
-            </StartTrialButton>
+            </StartTrialButton> */}
+            <button className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25">
+              Comienza ahora 🚀
+            </button>
             <Link href="/modulos">
               <button className="w-full border border-primary text-primary py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer sm:w-59.25">
                 Conocer módulos
@@ -124,28 +127,28 @@ const HeroSection = () => {
             <div className="w-full">
               <div className="flex flex-col gap-5.5 lg:gap-4">
                 <h2 className="text-[30px] font-semibold leading-tight md:text-5xl lg:text-6xl text-base-black">
-                  Excelencia industrial accesible para{" "}
-                  <span className="text-secondary">pequeñas</span> y{" "}
-                  <span className="text-secondary">grandes</span> empresas
+                  <span className="text-secondary">Seguridad de alto nivel </span>{" "}
+                  para empresas de todos los tamaños.
                 </h2>
                 <p className="text-lg text-primary-text leading-6 md:text-[22px] md:leading-7">
-                  Democratizamos la seguridad de alto nivel. Implementa MIPER,
-                  Control Documental y Asistente Virtual de Prevención, y
-                  protege a tus trabajadores sin el presupuesto de una gran
-                  minera.
+                  Desde pequeñas empresas hasta grandes organizaciones, LifeOn se adapta a
+                  tu operación, tus equipos y tus necesidades de crecimiento.
                 </p>
               </div>
               <div className="flex flex-col gap-2.5 lg:gap-4 mt-10 sm:flex-row">
-                <StartTrialButton
+                {/* <StartTrialButton
                   slug="paquete-base-esencial"
                   className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25"
                   pendingText="Preparando prueba..."
                 >
                   Comenzar gratis ahora 🚀
-                </StartTrialButton>
+                </StartTrialButton> */}
+                <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
+                  Comeienza ahora 🚀
+                </button>
                 <Link href="/modulos">
                   <button className="w-full border border-secondary text-secondary py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer sm:w-59.25">
-                    Conocer módulos
+                    Conoce los módulos
                   </button>
                 </Link>
               </div>

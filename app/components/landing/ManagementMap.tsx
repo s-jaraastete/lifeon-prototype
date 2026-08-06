@@ -7,13 +7,13 @@ const ManagementMap = () => {
       <div className="max-w-325 mx-auto bg-gray-200 px-5 py-10 lg:px-10 rounded-3xl flex flex-col gap-15">
         <div>
           <h2 className="text-[30px] lg:text-5xl font-semibold text-center lg:mx-30 leading-tight text-base-black">
-            Centraliza toda tu gestión preventiva en
-            <span className="text-secondary"> una sola plataforma</span>
+            Todos tus procesos de seguridad,
+            <span className="text-secondary"> conectados</span>
           </h2>
           <p className="lg:text-xl text-primary-text text-center mt-2.5 lg:mt-6 lg:mx-20">
-            Olvídate de planillas, correos y documentos dispersos. LifeOn
-            conecta personas, procesos y controles para que toda la gestión de
-            riesgos esté siempre actualizada y disponible en tiempo real.
+            LifeOn integra personas, procesos, documentos y controles para mantener la
+            información actualizada entre módulos y facilitar una gestión más coordinada,
+            trazable y oportuna.
           </p>
         </div>
         <div className="hidden lg:flex justify-center bg-white rounded-3xl">

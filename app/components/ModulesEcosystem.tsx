@@ -15,9 +15,9 @@ export type EcosystemItem = {
 export const ecosystemItems: EcosystemItem[] = [
   {
     icon: (size = 24) => <LuTable size={size} className="text-black" />,
-    title: "MIPER",
+    title: "Matriz IPER",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+      "Identifica, evalúa y controla los riesgos mediante matrices digitales, trazables y alineadas al DS 44.",
     href: "/modulos/",
     bgColor: "bg-purple-300",
     textColor: "text-black",
@@ -27,7 +27,7 @@ export const ecosystemItems: EcosystemItem[] = [
     icon: (size = 24) => <LuFileSearch2 size={size} className="text-black" />,
     title: "Programa y Documentación Preventiva",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+      "Planifica las actividades de seguridad y mantén tu documentación preventiva organizada, vigente y disponible.",
     href: "/modulos/",
     bgColor: "bg-sky-300",
     textColor: "text-black",
@@ -49,7 +49,7 @@ export const ecosystemItems: EcosystemItem[] = [
     ),
     title: "APR Virtual",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+      "Entrega orientación preventiva inmediata mediante un asistente inteligente que agiliza las tareas diarias.",
     href: "/modulos/",
     bgColor: "bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
     textColor: "text-black",

@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import StartTrialButton from '../shopping/StartTrialButton';
+// import StartTrialButton from '../shopping/StartTrialButton';
 
 // Icons
 import { LuChevronRight } from 'react-icons/lu';
@@ -21,14 +21,14 @@ const BannerSection = () => {
           <div className="absolute inset-0 p-5 md:p-8 lg:p-10 flex flex-col justify-between">
             <div className="w-160 flex flex-col gap-2.5">
               <h2 className="text-2xl lg:text-4xl sm:text-4xl md:text-5xl font-semibold text-white leading-tight">
-                Comienza tu mes de <br /> prueba sin costo.
+                Crece junto a tu <br /> organización
               </h2>
               <p className="hidden lg:block lg:text-lg text-white">
-                Prueba LifeOn durante 30 días. Al finalizar el período de prueba, continuarás con la suscripción seleccionada pagando únicamente el valor del paquete contratado.
+                LifeOn evoluciona contigo. Incorpora nuevas herramientas sin cambiar de plataforma ni migrar tu información.
               </p>
             </div>
             <div className="flex">
-              <StartTrialButton
+              {/* <StartTrialButton
                 slug="paquete-base-esencial"
                 className="text-white sm:text-black sm:bg-white sm:px-6 py-3 rounded-xl sm:hover:bg-gray-300 transition cursor-pointer flex items-center w-full"
                 pendingText="Preparando prueba..."
@@ -38,7 +38,14 @@ const BannerSection = () => {
                   size={20}
                   className="inline-block sm:ml-2 sm:text-black"
                 />
-              </StartTrialButton>
+              </StartTrialButton> */}
+              <button className="text-white sm:text-black sm:bg-white sm:px-6 py-3 rounded-xl sm:hover:bg-gray-300 transition cursor-pointer flex items-center">
+                Comienza ahora
+                <LuChevronRight
+                  size={20}
+                  className="inline-block sm:ml-2 sm:text-black"
+                />
+              </button>
             </div>
           </div>
         </div>

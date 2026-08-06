@@ -13,8 +13,9 @@ const FrequentlyQuestions = ({ items }: FrequentlyQuestion) => {
           <h2 className="font-semibold text-[30px] lg:text-5xl leading-tight text-base-black">
             ¿Tienes dudas? <br /> Te ayudamos a resolverlas
           </h2>
-          <p className="lg:text-lg text-center text-primary-text">
-            Encuentra respuestas a las consultas más comunes sobre LifeOn, sus módulos y su implementación.
+          <p className="lg:text-lg text-center text-primary-text max-w-218">
+            Encuentra respuestas sobre LifeOn, su implementación y la forma en que
+            puede adaptarse a las necesidades de tu empresa.
           </p>
         </div>
         <div data-aos="fade-up">
