@@ -168,7 +168,7 @@ const Header = () => {
                     </button> */}
                     <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
                       <LuUserRound className="w-5 h-5 inline-block mr-1" />
-                      Acceder
+                      Iniciar sesión
                     </button>
                   </div>
                 </div>

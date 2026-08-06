@@ -144,7 +144,7 @@ const HeroSection = () => {
                   Comenzar gratis ahora 🚀
                 </StartTrialButton> */}
                 <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
-                  Comeienza ahora 🚀
+                  Comienza ahora 🚀
                 </button>
                 <Link href="/modulos">
                   <button className="w-full border border-secondary text-secondary py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer sm:w-59.25">
