@@ -41,6 +41,7 @@ const CheckFeature = {
   icon: <LuCheck size={18} className="text-secondary font-bold" />,
 };
 
+// TODO: Quitar este comentario cuando todo funcione bien.
 /* export const CardData: PlanPricingCardProps[] = [
   {
     title: "Free",

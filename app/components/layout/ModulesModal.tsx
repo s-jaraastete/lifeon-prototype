@@ -22,7 +22,7 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
         onClose={onClose}
         showCloseButton={false}
         sizeClass="max-w-[1230px]"
-        height={`items-start ${isHome ? "pt-30" : "pt-[90px]"}`}
+        height={`items-start ${isHome ? "pt-24" : "pt-[90px]"}`}
       >
         <div>
           <div className="flex items-center justify-between mb-7.5">

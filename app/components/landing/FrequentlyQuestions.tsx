@@ -34,6 +34,7 @@ const FrequentlyQuestions = ({ items, title, description }: FrequentlyQuestion) 
         </div>
         <div data-aos="fade-up">
           <Accordion
+            defaultOpenIndex={0}
             items={items.map((item) => ({
               ...item,
               content: (

@@ -17,11 +17,17 @@ interface AccordionItem {
 interface AccordionProps {
   items: AccordionItem[];
   className?: string;
+  defaultOpenIndex?: number | null;
   onOpenChange?: (index: number | null) => void;
 }
 
-const Accordion = ({ items, className, onOpenChange }: AccordionProps) => {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+const Accordion = ({
+  items,
+  className,
+  defaultOpenIndex = null,
+  onOpenChange,
+}: AccordionProps) => {
+  const [openIndex, setOpenIndex] = useState<number | null>(defaultOpenIndex);
 
   const toggleAccordion = (index: number) => {
     const newIndex = openIndex === index ? null : index;
@@ -75,7 +81,7 @@ const Accordion = ({ items, className, onOpenChange }: AccordionProps) => {
                 isOpen ? "max-h-[2000px] rounded-3xl" : "max-h-0"
               }`}
             >
-              <div className="border-t border-gray-100 bg-white p-4 text-primary-text text-sm lg:text-base">
+              <div className="border-t border-gray-200 bg-white p-4 text-primary-text text-sm lg:text-base">
                 {item.content}
               </div>
             </div>
