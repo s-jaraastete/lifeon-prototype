@@ -104,21 +104,23 @@ export const CardData: PlanPricingCardProps[] = [
   },
 ];
 
-const PlansPricing = () => {
+const PlansPricing = ({ compact = false }: { compact?: boolean }) => {
   return (
     <section className="w-full py-15 px-4 xl:px-0">
       <div className="max-w-325 mx-auto">
-        <div className="flex flex-col items-center justify-center gap-2.5">
-          <h3 className="lg:text-2xl font-semibold text-secondary">Planes</h3>
-          <h2 className="text-3xl lg:text-5xl font-semibold text-base-black text-center">
-            Un plan para cada etapa de tu organización
-          </h2>
-          <p className="lg:text-lg text-center lg:mx-30">
-            Elige un plan y accede a los módulos esenciales para digitalizar tu
-            gestión preventiva. Tu plataforma estará preparada para incorporar
-            nuevos módulos cuando los necesites.
-          </p>
-        </div>
+        {!compact && (
+          <div className="flex flex-col items-center justify-center gap-2.5">
+            <h3 className="lg:text-2xl font-semibold text-secondary">Planes</h3>
+            <h2 className="text-3xl lg:text-5xl font-semibold text-base-black text-center">
+              Un plan para cada etapa de tu organización
+            </h2>
+            <p className="lg:text-lg text-center lg:mx-30">
+              Elige un plan y accede a los módulos esenciales para digitalizar tu
+              gestión preventiva. Tu plataforma estará preparada para incorporar
+              nuevos módulos cuando los necesites.
+            </p>
+          </div>
+        )}
 
         <div className="flex justify-end text-sm mt-12">
           <p>
