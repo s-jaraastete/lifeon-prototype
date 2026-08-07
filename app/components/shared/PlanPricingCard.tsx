@@ -38,7 +38,7 @@ const PlanPricingCard = ({
 }: PlanPricingCardProps) => {
   return (
     <div
-      className={`relative bg-white rounded-[22px] p-6 lg:p-7.5 flex flex-col justify-between w-full h-full transition-all duration-200 ${
+      className={`relative bg-white rounded-[22px] p-6 lg:p-5 flex flex-col justify-between w-full h-full transition-all duration-200 ${
         isPopular ? 'border-2 border-primary' : 'border border-gray-400'
       }`}
     >
@@ -50,7 +50,7 @@ const PlanPricingCard = ({
       )}
 
       <div>
-        <div className="min-h-32 flex flex-col gap-2 justify-between">
+        <div className="min-h-28 flex flex-col gap-2 justify-between">
           {/* Card Header */}
           <div>
             <h3 className="text-2xl font-semibold text-base-black">{title}</h3>
@@ -73,8 +73,8 @@ const PlanPricingCard = ({
           onClick={onButtonClick}
           className={`w-full py-3 px-4 rounded-[14px] font-medium text-center transition cursor-pointer mt-5.5 text-sm lg:text-base ${
             buttonVariant === 'secondary'
-              ? 'bg-secondary text-white hover:bg-secondary/90'
-              : 'bg-primary text-white hover:bg-primary/90'
+              ? 'bg-secondary text-white hover:bg-teal-600'
+              : 'bg-primary text-white hover:bg-red-600'
           }`}
         >
           {buttonText}

@@ -21,7 +21,7 @@ const Footer = () => {
             <div className="flex flex-col items-center lg:items-start space-y-7 mb-7.5">
               <Link
                 href="/"
-                className="mb-3.5 lg:mb-7.5"
+                className="mb-3.5 lg:mb-7.5 transition-colors duration-200 hover:text-gray-400"
               >
                 <h3 className="text-[40px] font-semibold">
                   Life
@@ -39,6 +39,7 @@ const Footer = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram de LifeOn"
+                  className="transition-colors duration-200 hover:text-gray-400"
                 >
                   <FaInstagram size={22} />
                 </Link>
@@ -47,6 +48,7 @@ const Footer = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="LinkedIn de LifeOn"
+                  className="transition-colors duration-200 hover:text-gray-400"
                 >
                   <FaLinkedin size={22} />
                 </Link>
@@ -55,6 +57,7 @@ const Footer = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="YouTube de LifeOn"
+                  className="transition-colors duration-200 hover:text-gray-400"
                 >
                   <FaYoutube size={28} />
                 </Link>
@@ -67,13 +70,13 @@ const Footer = () => {
                   <h6 className="font-semibold text-[18px] mb-3">Módulos</h6>
                   <ul className="space-y-2.5">
                     <li>
-                      <Link href="/">MIPER</Link>
+                      <Link href="/" className="transition-colors duration-200 hover:text-gray-400">MIPER</Link>
                     </li>
                     <li>
-                      <Link href="/">Programa y Documentación Preventiva</Link>
+                      <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Programa y Documentación Preventiva</Link>
                     </li>
                     <li>
-                      <Link href="/">APR Virtual</Link>
+                      <Link href="/" className="transition-colors duration-200 hover:text-gray-400">APR Virtual</Link>
                     </li>
                   </ul>
                 </div>
@@ -82,10 +85,10 @@ const Footer = () => {
                   <h6 className="font-semibold text-[18px] mb-3">Soporte</h6>
                   <ul className="space-y-2.5">
                     <li>
-                      <Link href="/">Centro de ayuda</Link>
+                      <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Centro de ayuda</Link>
                     </li>
                     <li>
-                      <Link href="/">Contacto</Link>
+                      <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Contacto</Link>
                     </li>
                   </ul>
                 </div>
@@ -100,13 +103,13 @@ const Footer = () => {
             </p>
             <ul className="flex gap-5.5 space-y-2 lg:space-y-0 lg:space-x-5.5 text-[14px] ">
               <li>
-                <Link href="/">Términos de uso</Link>
+                <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Términos de uso</Link>
               </li>
               <li>
-                <Link href="/">Política de Privacidad</Link>
+                <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Política de Privacidad</Link>
               </li>
               <li>
-                <Link href="/">Cookies</Link>
+                <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Cookies</Link>
               </li>
             </ul>
           </div>

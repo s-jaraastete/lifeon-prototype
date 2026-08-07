@@ -5,7 +5,6 @@ import Link from 'next/link';
 
 import HeroSlider from './HeroSlider';
 import ModuleCardsRow from './ModuleCardsRow';
-// import StartTrialButton from '../shopping/StartTrialButton';
 
 
 const HeroSection = () => {
@@ -28,16 +27,11 @@ const HeroSection = () => {
                 </p>
               </div>
               <div className="flex flex-col gap-2.5 lg:gap-4 mt-10 sm:flex-row">
-                {/* <StartTrialButton
-                  slug="paquete-base-esencial"
-                  className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25"
-                  pendingText="Preparando prueba..."
-                >
-                  Iniciar prueba gratuita 🚀
-                </StartTrialButton> */}
-                <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
-                  Comienza ahora 🚀
-                </button>
+                <Link href="/precios">
+                  <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
+                    Comienza ahora 🚀
+                  </button>
+                </Link>
                 <Link href="/modulos">
                   <button className="w-full border border-secondary text-secondary py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer sm:w-59.25">
                     Conoce los módulos
@@ -79,16 +73,11 @@ const HeroSection = () => {
             </div>
           </div>
           <div className="flex flex-col justify-center gap-2.5 lg:gap-4 mt-10 sm:flex-row w-full">
-            {/* <StartTrialButton
-              slug="paquete-base-esencial"
-              className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25"
-              pendingText="Preparando prueba..."
-            >
-              Iniciar prueba gratuita 🚀
-            </StartTrialButton> */}
-            <button className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25">
-              Comienza ahora 🚀
-            </button>
+            <Link href="/precios">
+              <button className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25">
+                Comienza ahora 🚀
+              </button>
+            </Link>
             <Link href="/modulos">
               <button className="w-full border border-primary text-primary py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer sm:w-59.25">
                 Conocer módulos
@@ -136,16 +125,11 @@ const HeroSection = () => {
                 </p>
               </div>
               <div className="flex flex-col gap-2.5 lg:gap-4 mt-10 sm:flex-row">
-                {/* <StartTrialButton
-                  slug="paquete-base-esencial"
-                  className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25"
-                  pendingText="Preparando prueba..."
-                >
-                  Comenzar gratis ahora 🚀
-                </StartTrialButton> */}
-                <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
-                  Comienza ahora 🚀
-                </button>
+                <Link href="/precios">
+                  <button className="w-full bg-secondary text-white py-3 rounded-xl hover:bg-teal-700 transition cursor-pointer sm:w-59.25">
+                    Comienza ahora 🚀
+                  </button>
+                </Link>
                 <Link href="/modulos">
                   <button className="w-full border border-secondary text-secondary py-3 rounded-xl hover:bg-gray-300 transition cursor-pointer sm:w-59.25">
                     Conoce los módulos

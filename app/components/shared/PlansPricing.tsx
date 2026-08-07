@@ -7,6 +7,11 @@ import Switch from '../ui/Switch';
 import CardSlider from './CardSlider';
 import PlanPricingCard, { PlanPricingCardProps } from './PlanPricingCard';
 
+
+interface PlansPricingProps {
+  plans: Pack[];
+}
+
 const IPERModule = {
   icon: <LuTable size={10} className="text-black" />,
   bgIcon: "bg-purple-300",
@@ -36,7 +41,7 @@ const CheckFeature = {
   icon: <LuCheck size={18} className="text-secondary font-bold" />,
 };
 
-export const CardData: PlanPricingCardProps[] = [
+/* export const CardData: PlanPricingCardProps[] = [
   {
     title: "Free",
     subtitle: "Empieza a digitalizarte.",
@@ -102,9 +107,93 @@ export const CardData: PlanPricingCardProps[] = [
       { ...CheckFeature, text: 'Compatible con futuros módulos' },
     ],
   },
-];
+]; */
 
-const PlansPricing = () => {
+
+const buildCardData = (plans: Pack[]): PlanPricingCardProps[] => {
+  return plans.map((plan) => {
+    const monthlyPrice = plan.prices.find(
+      (price) => price.billing_period === 'monthly'
+    );
+
+    const features = plan.entitlements.map((item) => {
+      const baseFeature = {
+        text: item.display_name ?? item.entitlement.name,
+        suffix: item.display_value
+          ? ` (${item.display_value})`
+          : undefined,
+      };
+
+      switch (item.entitlement.key) {
+        case 'miper_matrix_limit':
+          return {
+            ...IPERModule,
+            ...baseFeature,
+          };
+
+        case 'documentation_access_level':
+          return {
+            ...DocumentationModule,
+            ...baseFeature,
+          };
+
+        case 'apr_virtual':
+          return {
+            ...APRVirtualModule,
+            ...baseFeature,
+          };
+
+        case 'apr_virtual_assistant':
+          return {
+            ...APRAssistantModule,
+            ...baseFeature,
+          };
+
+        default:
+          return {
+            ...CheckFeature,
+            ...baseFeature,
+          };
+      }
+    });
+
+    return {
+      title: plan.name,
+      subtitle: plan.short_description ?? '',
+      price:
+        plan.plan_type === 'free'
+          ? '$0'
+          : monthlyPrice
+            ? `${monthlyPrice.amount === "1.0" ? "1" : monthlyPrice.amount} ${monthlyPrice.currency}`
+            : undefined,
+      period:
+        plan.plan_type === 'paid'
+          ? monthlyPrice?.amount === '1.0'
+            ? 'mensual'
+            : 'mensuales'
+          : undefined,
+      buttonText:
+        plan.cta_type === 'contact'
+          ? 'Habla con un asesor'
+          : 'Comienza ahora',
+      buttonVariant:
+        plan.cta_type === 'contact'
+          ? 'secondary'
+          : 'primary',
+      badge: plan.badge ?? undefined,
+      isPopular: plan.is_featured,
+      features,
+      footerText:
+        plan.plan_type === 'paid'
+          ? 'Valores incluyen IVA'
+          : undefined,
+    };
+  });
+};
+
+const PlansPricing = ({ plans }: PlansPricingProps) => {
+  const cardData = buildCardData(plans);
+  
   return (
     <section className="w-full py-15 px-4 xl:px-0">
       <div className="max-w-325 mx-auto">
@@ -133,7 +222,7 @@ const PlansPricing = () => {
           />
         </div>
 
-        <CardSlider cardData={CardData} CardComponent={PlanPricingCard} />
+        <CardSlider cardData={cardData} CardComponent={PlanPricingCard} />
 
         <div className="mt-5.5">
           <p className="text-[10px] lg:text-xs text-secondary-text font-light text-justify">

@@ -1,41 +1,3 @@
-interface ProductModule {
-	id: number;
-	name: string;
-	slug: string;
-	description: string | null;
-	is_active: boolean;
-}
-
-interface PackPrice {
-	id: number;
-	pack: number;
-	amount: string;
-	original_amount: string | null;
-	discount_percentage: string | null;
-	discount_label: string | null;
-	currency: 'UF' | 'CLP' | 'USD';
-	billing_period: 'monthly' | 'yearly';
-	trial_days: number;
-	is_active: boolean;
-}
-
-interface PackModule {
-	id: number;
-	pack: number;
-	is_active: boolean;
-	module: ProductModule;
-}
-
-interface Pack {
-	id: number;
-	name: string;
-	slug: string;
-	description: string | null;
-	is_active: boolean;
-	pack_modules: PackModule[];
-	prices: PackPrice[];
-}
-
 interface Region {
 	id: number;
 	name: string;
@@ -51,6 +13,75 @@ interface Commune {
 	region: number;
 	region_code?: string | null;
 	region_name?: string | null;
+}
+
+interface ProductModule {
+  public_id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  is_active: boolean;
+}
+
+interface PackModulePrice {
+  amount: string;
+  currency: 'UF' | 'CLP' | 'USD';
+  billing_period: 'monthly' | 'yearly';
+  is_active: boolean;
+}
+
+interface PackModule {
+  inclusion_type: 'included' | 'optional';
+  display_order: number;
+  is_active: boolean;
+  module: ProductModule;
+  prices: PackModulePrice[];
+}
+
+interface PackPrice {
+  amount: string;
+  original_amount: string | null;
+  discount_percentage: string | null;
+  discount_label: string | null;
+  currency: 'UF' | 'CLP' | 'USD';
+  billing_period: 'monthly' | 'yearly';
+  trial_days: number;
+  has_trial: boolean;
+  is_active: boolean;
+}
+
+interface Entitlement {
+  key: string;
+  name: string;
+  description: string | null;
+  value_type: 'boolean' | 'integer' | 'decimal' | 'text';
+}
+
+interface PackEntitlement {
+  value: boolean | number | string | null;
+  display_name: string | null;
+  display_value: string | null;
+  display_order: number;
+  is_active: boolean;
+  entitlement: Entitlement;
+}
+
+interface Pack {
+  public_id: string;
+  name: string;
+  slug: string;
+  short_description: string | null;
+  description: string | null;
+  plan_type: 'free' | 'paid' | 'custom';
+  cta_type: 'registration' | 'checkout' | 'contact';
+  subscription_group: string;
+  sort_order: number;
+  is_featured: boolean;
+  badge: string | null;
+  is_active: boolean;
+  pack_modules: PackModule[];
+  prices: PackPrice[];
+  entitlements: PackEntitlement[];
 }
 
 interface CheckoutCompanyPayload {

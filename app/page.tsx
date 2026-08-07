@@ -9,27 +9,38 @@ import HeroSection from "./components/landing/HeroSection";
 import InfoPack from "./components/landing/InfoPack";
 import ManagementMap from "./components/landing/ManagementMap";
 
+import { getServerData } from "@/lib/requests";
 
-const HomePage = () => {
+
+const HomePage = async () => {
   let allSlots: unknown[] = [];
 
+  // Schedule Data
   /* try {
-    const response = await getServerData("/timeslots/", {
+    const scheduleResponse = await getServerData("/timeslots/", {
       useAccessToken: false,
       cache: "no-store"
     });
 
-    allSlots = Array.isArray(response) ? response : [];
+    allSlots = Array.isArray(response) ? scheduleResponse : [];
   } catch {
     allSlots = [];
   } */
-  
+
+  // Plans Data
+  const plansResponse = await getServerData("/packs/all/", {
+      useAccessToken: false,
+      cache: "no-store"
+    });
+
+  const plansData: Pack[] = plansResponse.data.results
+
   return (
     <>
       <HeroSection />
       <AssociatedCompanies />
       <ManagementMap />
-      <PlansPricing />
+      <PlansPricing plans={plansData} />
       <InfoPack />
       <BannerSection />
       <Comments />
