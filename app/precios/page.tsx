@@ -8,13 +8,18 @@ import { getServerData } from "@/lib/requests";
 
 const PreciosPage = async () => {
   const allSlots: unknown[] = [];
+  let plansData: Pack[] = [];
 
-  const plansResponse = await getServerData("/packs/all/", {
-        useAccessToken: false,
-        cache: "no-store"
-      });
-  
-  const plansData: Pack[] = plansResponse.data.results
+  try {
+    const plansResponse = await getServerData("/packs/all/", {
+      useAccessToken: false,
+      cache: "no-store",
+    });
+
+    plansData = plansResponse?.data?.results ?? [];
+  } catch {
+    plansData = [];
+  }
 
   return (
     <div className="w-full">

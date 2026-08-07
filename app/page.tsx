@@ -14,6 +14,7 @@ import { getServerData } from "@/lib/requests";
 
 const HomePage = async () => {
   let allSlots: unknown[] = [];
+  let plansData: Pack[] = [];
 
   // Schedule Data
   /* try {
@@ -22,18 +23,22 @@ const HomePage = async () => {
       cache: "no-store"
     });
 
-    allSlots = Array.isArray(response) ? scheduleResponse : [];
+    allSlots = Array.isArray(scheduleResponse) ? scheduleResponse : [];
   } catch {
     allSlots = [];
   } */
 
   // Plans Data
-  const plansResponse = await getServerData("/packs/all/", {
+  try {
+    const plansResponse = await getServerData("/packs/all/", {
       useAccessToken: false,
-      cache: "no-store"
+      cache: "no-store",
     });
 
-  const plansData: Pack[] = plansResponse.data.results
+    plansData = plansResponse?.data?.results ?? [];
+  } catch {
+    plansData = [];
+  }
 
   return (
     <>

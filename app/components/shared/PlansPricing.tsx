@@ -194,6 +194,14 @@ const buildCardData = (plans: Pack[]): PlanPricingCardProps[] => {
 
 const PlansPricing = ({ plans, compact = false }: PlansPricingProps & { compact?: boolean }) => {
   const cardData = buildCardData(plans);
+
+  if (!plans.length) {
+    return (
+      <section className='text-center'>
+        <p className='py-10'>Los planes de suscripción no están disponibles por el momento.</p>
+      </section>
+    );
+  }
   
   return (
     <section className="w-full py-15 px-4 xl:px-0">
