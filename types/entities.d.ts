@@ -104,7 +104,7 @@ interface CheckoutContactPayload {
 interface CheckoutOrderPayload {
 	company: CheckoutCompanyPayload;
 	contact: CheckoutContactPayload;
-	pack_id: number;
+	pack_public_id: string;
 	billing_period: 'monthly' | 'yearly';
 	coupon_code?: string | null;
 	payment_method: 'webpay';

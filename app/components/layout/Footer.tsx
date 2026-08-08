@@ -67,7 +67,9 @@ const Footer = () => {
             {!compact && (
               <div className="flex flex-col lg:flex-row gap-6 lg:gap-25">
                 <div className="mb-0 text-center lg:text-left">
-                  <h6 className="font-semibold text-[18px] mb-3">Módulos</h6>
+                  <h6 className="font-semibold text-[18px] mb-3">
+                    <Link href="/modulos" className="transition-colors duration-200 hover:text-gray-400">Módulos</Link>
+                  </h6>
                   <ul className="space-y-2.5">
                     <li>
                       <Link href="/" className="transition-colors duration-200 hover:text-gray-400">MIPER</Link>
@@ -88,7 +90,7 @@ const Footer = () => {
                       <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Centro de ayuda</Link>
                     </li>
                     <li>
-                      <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Contacto</Link>
+                      <Link href="/contacto" className="transition-colors duration-200 hover:text-gray-400">Contacto</Link>
                     </li>
                   </ul>
                 </div>
@@ -103,13 +105,13 @@ const Footer = () => {
             </p>
             <ul className="flex gap-5.5 space-y-2 lg:space-y-0 lg:space-x-5.5 text-[14px] ">
               <li>
-                <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Términos de uso</Link>
+                <Link href="/terminos-de-uso" className="transition-colors duration-200 hover:text-gray-400">Términos de uso</Link>
               </li>
               <li>
-                <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Política de Privacidad</Link>
+                <Link href="/politica-de-privacidad" className="transition-colors duration-200 hover:text-gray-400">Política de Privacidad</Link>
               </li>
               <li>
-                <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Cookies</Link>
+                <Link href="/cookies" className="transition-colors duration-200 hover:text-gray-400">Cookies</Link>
               </li>
             </ul>
           </div>

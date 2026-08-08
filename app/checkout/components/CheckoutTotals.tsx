@@ -1,3 +1,6 @@
+import Image from 'next/image';
+import type { ReactNode } from 'react';
+
 import type { CartCouponPreview, CartItem } from '@/providers/CartProvider';
 import {
   REFERENCE_CURRENCY,
@@ -9,8 +12,18 @@ import {
   getReferencePrice,
   getTotalDueToday,
 } from '@/utils/pricingHelpers';
-import { getDateAfterDays } from '@/utils/currentDate';
 import { PAYMENT_METHODS } from './form/PaymentMethod';
+
+// Icons
+import { LuFileSearch2, LuTable } from 'react-icons/lu';
+
+
+type CheckoutModule = {
+  icon: ReactNode;
+  bgIcon: string;
+  text: string;
+  hasAiBadge?: boolean;
+};
 
 type CheckoutTotalsProps = {
   plan: CartItem | null;
@@ -19,21 +32,40 @@ type CheckoutTotalsProps = {
   ufValue: number;
 };
 
+const IPERModule = {
+  icon: <LuTable size={10} className="text-black" />,
+  bgIcon: "bg-purple-300",
+  text: 'Matriz IPER ',
+};
+
+const DocumentationModule = {
+  icon: <LuFileSearch2 size={10} className="text-black" />,
+  bgIcon: "bg-sky-300",
+  text: 'Programa y Documentación preventiva ',
+};
+
+const APRVirtualModule = {
+  icon: <Image src="/svg/apr-icon.svg" width={10} height={10} alt="APR" />,
+  bgIcon: "bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
+  text: 'APR Virtual',
+};
+
+const modulesByName: Record<string, CheckoutModule> = {
+  MIPER: IPERModule,
+  "Programa y Documentación Preventiva": DocumentationModule,
+  "APR Virtual": APRVirtualModule,
+};
+
 const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: CheckoutTotalsProps) => {
   const selectedPriceOption = getActivePriceOption(plan, plan?.selectedBillingPeriod ?? 'monthly');
-  const trialDays = selectedPriceOption?.trial_days ?? 30;
 
   const discountAmount = getDiscountAmount(selectedPriceOption);
   const discountLabel = getDiscountLabel(selectedPriceOption);
   const billingPeriod = plan?.selectedBillingPeriod ?? 'monthly';
-  const referencePrice = getReferencePrice(billingPeriod, ufValue);
+  const referencePrice = getReferencePrice(selectedPriceOption, ufValue);
   const baseTotalDueToday = getTotalDueToday(selectedPriceOption)
-  const totalDueToday = selectedPriceOption?.trial_days
-    ? baseTotalDueToday
-    : couponPreview?.total ?? baseTotalDueToday
-  const referenceFinalPrice = selectedPriceOption?.trial_days
-    ? '0'
-    : getReferenceFinalPrice(billingPeriod, ufValue);
+  const totalDueToday = couponPreview?.total ?? baseTotalDueToday
+  const referenceFinalPrice = getReferenceFinalPrice(selectedPriceOption, ufValue);
   const hasYearlyDiscount = billingPeriod === 'yearly'
     && Boolean(selectedPriceOption?.discount_percentage)
     && selectedPriceOption?.original_amount !== null
@@ -43,19 +75,24 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
     (m) => m.id === paymentMethodId,
   )?.icon;
 
-
+//TODO: LIMPIAR COMENTARIOS
   return (
     <>
-      <h2 className="text-2xl font-semibold">Orden total</h2>
+      <h2 className="text-xl font-semibold">Resumen de tu plataforma</h2>
+        <hr className="border-stroke my-5.5" />
         <div className="flex justify-between mt-5.5 gap-8">
           <div>
             <p className="font-medium">
-              Suscripción
+              Plan seleccionado
+              {/* Suscripción
               {" "}
-              {plan?.selectedBillingPeriod === 'monthly' ? 'mensual' : 'anual'}
+              {plan?.selectedBillingPeriod === 'monthly' ? 'mensual' : 'anual'} */}
             </p>
-            <p className="font-medium">{plan?.name}</p>
-            <p className="text-sm">({plan?.description})</p>
+            {/* <p className="font-medium">{plan?.name}</p>
+            <p className="text-sm">({plan?.description})</p> */}
+            <p className='text-xs text-primary-text'>
+              {plan?.selectedBillingPeriod === 'monthly' ? 'Suscripción mensual' : 'Suscripción anual'}
+            </p>
           </div>
           <div className="flex flex-col items-end text-nowrap text-sm">
             {hasYearlyDiscount && (
@@ -71,36 +108,75 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
               </div>
             )}
             <div>
-              {formatApiAmount(selectedPriceOption?.amount)}
+              {/* {formatApiAmount(selectedPriceOption?.amount)}
               {" "}
               {plan?.currency}
               {" "}
-              por {plan?.selectedBillingPeriod === 'monthly' ? 'mes' : 'el año'}
+              por {plan?.selectedBillingPeriod === 'monthly' ? 'mes' : 'el año'} */}
+              <p className='font-medium text-secondary'>
+                {plan?.name}
+              </p>
             </div>
-            <div className="text-primary-text">
+            {/* <div className="text-primary-text">
               (Ref: ${referencePrice}
               {" "}
               {REFERENCE_CURRENCY})
+            </div> */}
+          </div>
+        </div>
+        <div>
+          <div className="font-medium pt-5.5">
+            Plataforma base
+            <div className='pt-2 flex flex-col gap-2'>
+              {plan?.packModules.map((module) => {
+                const moduleInfo = modulesByName[module.name];
+
+                return (
+                <div key={module.name} className='flex items-center gap-2'>
+                  {moduleInfo && (
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${moduleInfo.bgIcon}`}>
+                      {moduleInfo.icon}
+                    </span>
+                  )}
+                  <p className='text-sm text-primary-text font-normal'>
+                    {moduleInfo?.text ?? module.name}
+                  </p>
+                </div>
+                );
+              })}
             </div>
+            {/* Suscripción
+            {" "}
+            {plan?.selectedBillingPeriod === 'monthly' ? 'mensual' : 'anual'} */}
           </div>
         </div>
 
       <hr className="border-stroke my-5.5" />
       <div className="flex flex-col gap-3 text-base">
         <div className="flex justify-between gap-8 text-black">
-          <span>Subtotal</span>
+          <p className='font-medium'>Suscripción base</p>
           <div className="text-right">
             <span>
               {formatApiAmount(selectedPriceOption?.amount)}
               {" "}
               {plan?.currency}
+              {" "}
+              {plan?.selectedBillingPeriod === 'monthly' ? 'mes' : 'año'}
             </span>
-            <span className="text-secondary-text ml-1.5">
+            {/* <span className="text-secondary-text ml-1.5">
               (Ref: ${referencePrice}
               {" "}
               {REFERENCE_CURRENCY})
-            </span>
+            </span> */}
           </div>
+        </div>
+        <div className='pt-4 flex items-center gap-2'>
+          <p className='font-medium'>¿Tienes un cupón?</p>
+          <button 
+            className='font-medium text-primary underline cursor-pointer transition duration-200 hover:text-red-600'
+          >
+            Agregar
+          </button>
         </div>
         {discountAmount !== undefined && (
           <div className="flex justify-between gap-8 text-black">
@@ -164,39 +240,6 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
             <span className="text-black">Método de pago</span>
             {paymentMethodId && paymentMethodIcon}
           </div>
-          {trialDays > 0 && (
-            <>
-              <hr className="border-stroke my-10.5" />
-              <p className="bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
-              {hasYearlyDiscount ? (
-                <>
-                  Para activar tus {trialDays} días de acceso gratuito es
-                  necesario configurar tu método de pago. Hoy se realizará una
-                  validación por $0 {REFERENCE_CURRENCY} en tu cuenta para
-                  verificar la tarjeta. El cobro diferido de{" "}
-                  {formatApiAmount(selectedPriceOption?.amount)} {plan?.currency}{" "}
-                  por el año completo se ejecutará de forma automática el{" "}
-                  {getDateAfterDays(trialDays)} solo si decides continuar con
-                  el servicio y no cancelas previamente desde tu panel de
-                  configuración.
-                </>
-              ) : (
-                <>
-                  Para activar tus {trialDays} días de acceso gratuito es
-                  necesario configurar tu método de pago. Hoy se realizará una
-                  validación por $0 {REFERENCE_CURRENCY} en tu cuenta para
-                  verificar la tarjeta. Los cobros recurrentes de{" "}
-                  {formatApiAmount(selectedPriceOption?.amount)} {plan?.currency}{" "}
-                  {plan?.selectedBillingPeriod === 'monthly' ? 'mensuales' : 'anuales'}{" "}
-                  se ejecutarán de forma automática a partir del{" "}
-                  {getDateAfterDays(trialDays)}. Recuerda que no tienes contratos de amarre
-                  y puedes cancelar cuando quieras desde tu panel para evitar
-                  futuros cargos.
-                </>
-              )}
-              </p>
-            </>
-          )}
         </div>
       </div>
     </>

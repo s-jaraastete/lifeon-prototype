@@ -11,7 +11,7 @@ const ClearCartOnSuccess = ({ status }: ClearCartOnSuccessProps) => {
   const { clearCart } = useCart();
 
   useEffect(() => {
-    if (status === 'trialing' || status === 'active') {
+    if (status === 'active') {
       clearCart();
     }
   }, [status, clearCart]);

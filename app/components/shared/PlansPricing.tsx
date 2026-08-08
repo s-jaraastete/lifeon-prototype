@@ -1,11 +1,17 @@
 'use client'
 
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { LuCheck, LuFileSearch2, LuTable } from 'react-icons/lu';
+
+import { useCart } from '@/providers/CartProvider';
+import type {CartBillingPeriod, CartItem} from '@/providers/CartProvider';
 
 import Switch from '../ui/Switch';
 import CardSlider from './CardSlider';
 import PlanPricingCard, { PlanPricingCardProps } from './PlanPricingCard';
+
+// Icons
+import { LuCheck, LuFileSearch2, LuTable } from 'react-icons/lu';
 
 
 interface PlansPricingProps {
@@ -111,7 +117,7 @@ const CheckFeature = {
 ]; */
 
 
-const buildCardData = (plans: Pack[]): PlanPricingCardProps[] => {
+const buildCardData = (plans: Pack[], onPlanClick: (plan: Pack) => void): PlanPricingCardProps[] => {
   return plans.map((plan) => {
     const monthlyPrice = plan.prices.find(
       (price) => price.billing_period === 'monthly'
@@ -188,12 +194,72 @@ const buildCardData = (plans: Pack[]): PlanPricingCardProps[] => {
         plan.plan_type === 'paid'
           ? 'Valores incluyen IVA'
           : undefined,
+
+      onButtonClick: () => onPlanClick(plan),
     };
   });
 };
 
+const packToCartItem = (pack: Pack, billingPeriod: CartBillingPeriod): CartItem => {
+  return {
+    public_id: pack.public_id,
+    slug: pack.slug,
+    name: pack.name,
+    description: pack.description,
+    selectedBillingPeriod: billingPeriod,
+
+    priceOptions: pack.prices.map((price) => ({
+      amount: Number(price.amount),
+      original_amount: price.original_amount
+        ? Number(price.original_amount)
+        : null,
+      discount_percentage: price.discount_percentage
+        ? Number(price.discount_percentage)
+        : null,
+      discount_label: price.discount_label,
+      currency: price.currency,
+      billing_period: price.billing_period,
+      trial_days: price.trial_days,
+      has_trial: price.has_trial,
+      is_active: price.is_active,
+    })),
+
+    packModules: pack.pack_modules.map((packModule) => ({
+      public_id: packModule.module.public_id,
+      name: packModule.module.name,
+      slug: packModule.module.slug,
+      description: packModule.module.description,
+    })),
+  };
+};
+
 const PlansPricing = ({ plans, compact = false }: PlansPricingProps & { compact?: boolean }) => {
-  const cardData = buildCardData(plans);
+  const router = useRouter();
+  const { addItem } = useCart();
+
+  const handlePlanClick = (plan: Pack) => {
+    if (plan.cta_type === 'contact') {
+      router.push('/contacto');
+      return;
+    }
+
+    if (plan.cta_type !== 'checkout') {
+      return;
+    }
+
+    const cartItem = packToCartItem(
+      plan,
+      'monthly',
+    );
+
+    addItem(cartItem);
+    router.push('/checkout');
+  };
+
+  const cardData = buildCardData(
+    plans,
+    handlePlanClick,
+  );
 
   if (!plans.length) {
     return (

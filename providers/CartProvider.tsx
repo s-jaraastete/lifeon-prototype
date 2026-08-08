@@ -6,8 +6,6 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useState 
 export type CartBillingPeriod = 'monthly' | 'yearly'
 
 export type CartPriceOption = {
-  id: number
-  pack: number
   amount: number
   original_amount?: number | null
   discount_percentage?: number | null
@@ -15,21 +13,22 @@ export type CartPriceOption = {
   currency: 'UF' | 'CLP' | 'USD'
   billing_period: CartBillingPeriod
   trial_days: number
+  has_trial: boolean
   is_active: boolean
 }
 
 export type CartModule = {
-  id: number
+  public_id: string
   name: string
   slug: string
-  description?: string
+  description?: string | null
 }
 
 export type CartItem = {
-  id: string
+  public_id: string
   slug: string
   name: string
-  description?: string
+  description?: string | null
   priceOptions: CartPriceOption[]
   selectedBillingPeriod: CartBillingPeriod
   price?: number
@@ -54,15 +53,15 @@ type CartContextValue = {
   couponPreview: CartCouponPreview | null
   isHydrated: boolean
   addItem: (item: CartItem) => void
-  updateItemBillingPeriod: (id: string, billingPeriod: CartBillingPeriod) => void
-  removeItem: (id: string) => void
+  updateItemBillingPeriod: (publicId: string, billingPeriod: CartBillingPeriod) => void
+  removeItem: (publicId: string) => void
+  hasItem: (publicId: string) => boolean
   clearCart: () => void
-  hasItem: (id: string) => boolean
   applyCouponPreview: (preview: CartCouponPreview) => void
   clearCouponPreview: () => void
 }
 
-const CART_STORAGE_KEY = 'lifeon-cart-items'
+const CART_STORAGE_KEY = 'lifeon-cart-items-v2'
 const CART_COUPON_STORAGE_KEY = 'lifeon-cart-coupon'
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
@@ -87,12 +86,18 @@ const getSelectedPriceOption = (
 
 const normalizeCartItem = (item: CartItem): CartItem => {
   const priceOptions = item.priceOptions ?? []
-  const selectedBillingPeriod = item.selectedBillingPeriod ?? getDefaultBillingPeriod(priceOptions)
-  const selectedPriceOption = getSelectedPriceOption(priceOptions, selectedBillingPeriod)
+
+  const selectedBillingPeriod =
+    item.selectedBillingPeriod
+    ?? getDefaultBillingPeriod(priceOptions)
+
+  const selectedPriceOption = getSelectedPriceOption(
+    priceOptions,
+    selectedBillingPeriod,
+  )
 
   return {
     ...item,
-    slug: item.slug ?? item.id,
     packModules: item.packModules ?? [],
     priceOptions,
     selectedBillingPeriod,
@@ -145,18 +150,17 @@ const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [couponPreview, isHydrated])
 
   const addItem = (item: CartItem) => {
-    setItems((currentItems) => {
-      if (currentItems.some((currentItem) => currentItem.id === item.id)) {
-        return currentItems
-      }
-      return [...currentItems, normalizeCartItem(item)]
-    })
+    setCouponPreview(null)
+
+    setItems([
+      normalizeCartItem(item),
+    ])
   }
 
-  const updateItemBillingPeriod = (id: string, billingPeriod: CartBillingPeriod) => {
+  const updateItemBillingPeriod = (publicId: string, billingPeriod: CartBillingPeriod) => {
     setCouponPreview(null)
     setItems((currentItems) => currentItems.map((item) => {
-      if (item.id !== id) {
+      if (item.public_id !== publicId) {
         return item
       }
 
@@ -171,9 +175,14 @@ const CartProvider = ({ children }: { children: ReactNode }) => {
     }))
   }
 
-  const removeItem = (id: string) => {
+  const removeItem = (publicId: string) => {
     setCouponPreview(null)
-    setItems((currentItems) => currentItems.filter((item) => item.id !== id))
+
+    setItems((currentItems) =>
+      currentItems.filter(
+        (item) => item.public_id !== publicId
+      )
+    )
   }
 
   const clearCart = useCallback(() => {
@@ -181,7 +190,7 @@ const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems([])
   }, [])
 
-  const hasItem = (id: string) => items.some((item) => item.id === id)
+  const hasItem = (publicId: string) => items.some((item) => item.public_id === publicId)
   const couponCode = couponPreview?.coupon_code ?? null
   const applyCouponPreview = useCallback((preview: CartCouponPreview) => {
     setCouponPreview(preview)

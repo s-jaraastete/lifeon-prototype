@@ -27,7 +27,7 @@ export const PAYMENT_METHODS: PaymentMethodData[] = [
       />
     ),
   },
-  {
+  /* {
     id: "transfer",
     title: "Transferencia bancaria",
     description:
@@ -42,7 +42,7 @@ export const PAYMENT_METHODS: PaymentMethodData[] = [
         height={27}
       />
     ),
-  },
+  }, */
 ];
 
 type PaymentMethodProps = {

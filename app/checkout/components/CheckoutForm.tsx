@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { FormFields } from "@/hooks/useFormValidation";
 import useFormValidation from "@/hooks/useFormValidation";
 import { useCart } from "@/providers/CartProvider";
@@ -40,8 +44,17 @@ type CheckoutFormProps = {
 }
 
 export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
+  const router = useRouter();
   const { items, isHydrated, couponCode, couponPreview } = useCart();
   const plan = items[0] ?? null;
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (!plan) {
+      router.replace("/");
+    }
+  }, [isHydrated, plan, router]);
 
   const [activeSection, setActiveSection] = useState<SectionId | null>("personal");
   const [form, setForm] = useState<FormFields>({
@@ -106,6 +119,13 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (!plan) {
+      setMessage(
+        'No hay un plan seleccionado para realizar la compra.'
+      );
+      return;
+    }
+
     if (isButtonDisabled || isPending) return;
 
     setIsPending(true);
@@ -129,7 +149,7 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
           email: form.email ?? '',
           phone: form.phone,
         },
-        pack_id: Number(plan?.id),
+        pack_public_id: plan?.public_id ?? '',
         billing_period:
           plan?.selectedBillingPeriod ?? 'monthly',
         coupon_code: couponCode,
@@ -174,7 +194,7 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
 
   const isButtonDisabled = !(isPersonalCompleted && isBillingCompleted && isPaymentCompleted);
 
-  if (!isHydrated) return null;
+  if (!isHydrated || !plan) return null;
 
   return (
     <form 
@@ -250,6 +270,20 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
             {isPending ? 'Redirigiendo a Transbank...' : 'Finalizar y pagar'}
           </button>
           {message && <p className="text-sm mt-2 text-red-500">{message}</p>}
+
+          <p className="text-xs text-secondary-text text-center pt-3">
+            Al hacer clic en Finalizar, aceptas los 
+            <Link className="underline pl-1 transition hover:text-gray-600" href={"/"}>Términos de servicio</Link> y 
+            <Link className="underline pl-1 transition hover:text-gray-600" href={"/"}>Política de privacidad</Link> de LifeOn.
+          </p>
+          <div className="flex justify-end pt-5.5">
+            <Image 
+              src={"/images/pay_methods.png"}
+              alt="Métodos de pago"
+              width={134}
+              height={50}
+            />
+          </div>
         </div>
       </div>
     </form>

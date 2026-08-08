@@ -13,27 +13,22 @@ interface CheckoutResultProps {
 }
 
 const CheckoutResult = ({ result }: CheckoutResultProps) => {
-  const isTrialing = result.status === 'trialing';
   const isActive = result.status === 'active';
   const inscriptionFailed = result.inscription_status === 'failed';
   const initialPaymentFailed = result.initial_payment_status === 'failed';
-  const showSuccessDetails = isTrialing || isActive;
+  const showSuccessDetails = isActive;
 
-  const title = isTrialing
-    ? '¡Tu período de prueba comenzó!'
-    : isActive
-      ? '¡Pago exitoso!'
-      : initialPaymentFailed
-        ? 'No pudimos procesar tu pago inicial'
-        : inscriptionFailed
-          ? 'No pudimos procesar tu suscripción'
-          : 'No se pudo procesar la órden'
+  const title = isActive
+    ? '¡Pago exitoso!'
+    : initialPaymentFailed
+      ? 'No pudimos procesar tu pago inicial'
+      : inscriptionFailed
+        ? 'No pudimos procesar tu suscripción'
+        : 'No se pudo procesar la orden';
 
-  const description = isTrialing
-    ? `Disfruta ${result.trial_days} días gratis antes de tu primer cobro. Hemos enviado un comprobante a tu correo electrónico y un enlace para el acceso a tu plataforma. `
-    : isActive
-      ? 'Tu suscripción ya está activa. Hemos enviado un comprobante a tu correo electrónico y un enlace para el acceso a tu plataforma.'
-      : 'Hubo un problema al validar tu método de pago. No te preocupes, no se realizó ningún cargo.'
+  const description = isActive
+    ? 'Tu suscripción ya está activa. Hemos enviado un comprobante a tu correo electrónico y un enlace para el acceso a tu plataforma.'
+    : 'Hubo un problema al validar tu método de pago. No se realizó ningún cargo.';
 
   return (
     <>
@@ -77,12 +72,12 @@ const CheckoutResult = ({ result }: CheckoutResultProps) => {
                 </div>
                 <div>
                   <p className="text-secondary-text text-sm">
-                    ({result.pack_description})
+                    {result.pack_description}
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-col items-start mt-4 md:items-center md:mt-0">
+              <div className="flex flex-col items-start mt-4 md:items-end md:mt-0 w-50">
                 <div className="flex items-center gap-1">
                   <p className="font-medium">
                     {result.amount_uf} UF
@@ -112,12 +107,12 @@ const CheckoutResult = ({ result }: CheckoutResultProps) => {
                 <div>
                   <div className="flex items-center justify-end gap-1">
                     <p className="font-semibold">
-                      {result.status === 'trialing' ? '0 UF' : `${result.amount_uf} UF`}
+                      {result.amount_uf} UF
                     </p>
                   </div>
                   <div>
                     <p className="text-secondary-text text-sm">
-                      (Ref: ${result.status === 'trialing' ? '0' : `$${result.amount_clp.toLocaleString('es-CL')}`} CLP)
+                      (Ref: ${result.amount_clp.toLocaleString('es-CL')} CLP)
                     </p>
                   </div>
                 </div>
@@ -180,10 +175,10 @@ const CheckoutResult = ({ result }: CheckoutResultProps) => {
               />
             }
             <Link
-              href={`${showSuccessDetails ? "/" : "/basket"}`}
+              href={`${showSuccessDetails ? "/" : "/"}`}
               className={`${showSuccessDetails ? "mt-4" : "mt-0"} inline-flex min-h-11 items-center justify-center w-full  rounded-xl bg-white px-6 font-medium text-primary border-primary border transition duration-200 hover:bg-gray-200 md:w-auto md:mt-8`}
             >
-              {showSuccessDetails ? "Volver a Inicio" : "Volver al carrito"} 
+              {showSuccessDetails ? "Volver a Inicio" : "Volver a Inicio"} 
             </Link>
           </div>
 

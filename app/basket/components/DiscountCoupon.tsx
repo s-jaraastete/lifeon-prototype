@@ -1,13 +1,23 @@
 'use client'
 
 import TextInput from '@/app/components/ui/TextInput';
-import { getActivePriceOption } from '@/utils/pricingHelpers';
 import axiosManager from '@/lib/axios_manager';
 import { useCart, type CartCouponPreview } from '@/providers/CartProvider';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 import React, { type FormEvent, useState } from 'react'
 
+
+type CouponPreviewPayload = {
+  pack_public_id: string
+  billing_period: 'monthly' | 'yearly'
+  coupon_code: string
+}
+
+type CouponInputState = {
+  billingKey: string
+  value: string
+}
 
 const getCouponErrorMessage = (error: unknown) => {
   if (!axios.isAxiosError(error)) {
@@ -28,17 +38,6 @@ const getCouponErrorMessage = (error: unknown) => {
   return 'No fue posible aplicar el cupón.'
 }
 
-type CouponPreviewPayload = {
-  pack_id: number
-  billing_period: string
-  coupon_code: string
-}
-
-type CouponInputState = {
-  billingKey: string
-  value: string
-}
-
 const previewCoupon = (payload: CouponPreviewPayload) => {
   return axiosManager('/checkout/coupon/preview/', payload, {
     method: 'post',
@@ -55,19 +54,19 @@ const DiscountCoupon = () => {
   } = useCart()
 
   const initialPlan = items[0] ?? null
-  const selectedPriceOption = getActivePriceOption(initialPlan, initialPlan?.selectedBillingPeriod ?? 'monthly')
-  const isCouponDisabled = (selectedPriceOption?.trial_days ?? 0) > 0
   const billingKey = initialPlan
-    ? `${initialPlan.id}:${initialPlan.selectedBillingPeriod}`
+    ? `${initialPlan.public_id}:${initialPlan.selectedBillingPeriod}`
     : ''
   const [couponInput, setCouponInput] = useState<CouponInputState>({
     billingKey,
     value: couponCode ?? '',
   })
-  const couponInputValue = !isCouponDisabled && couponInput.billingKey === billingKey
-    ? couponInput.value
-    : ''
+  const couponInputValue =
+    couponInput.billingKey === billingKey
+      ? couponInput.value
+      : ''
   const [error, setError] = useState<string | null>(null)
+
   const couponPreviewMutation = useMutation({
     mutationFn: previewCoupon,
     onSuccess: (preview) => {
@@ -85,10 +84,6 @@ const DiscountCoupon = () => {
   const handleApplyCoupon = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (isCouponDisabled) {
-      return
-    }
-
     const normalizedCouponCode = couponInputValue.trim()
 
     if (!initialPlan) {
@@ -102,7 +97,7 @@ const DiscountCoupon = () => {
     }
 
     couponPreviewMutation.mutate({
-      pack_id: Number(initialPlan.id),
+      pack_public_id: initialPlan.public_id,
       billing_period: initialPlan.selectedBillingPeriod,
       coupon_code: normalizedCouponCode,
     })
@@ -127,8 +122,8 @@ const DiscountCoupon = () => {
             placeholder="Ingresa el código"
             className="w-full"
             value={couponInputValue}
-            disabled={isApplying || isCouponDisabled}
-            error={!isCouponDisabled ? error ?? undefined : undefined}
+            disabled={isApplying}
+            error={error ?? undefined}
             onChange={(event) => setCouponInput({
               billingKey,
               value: event.target.value,
@@ -137,18 +132,12 @@ const DiscountCoupon = () => {
         </div>
         <button
           type="submit"
-          disabled={isApplying || isCouponDisabled}
+          disabled={isApplying}
           className="h-12 bg-red-500 text-white px-6 rounded-[14px] cursor-pointer transition hover:bg-red-600 duration-200 disabled:cursor-not-allowed disabled:bg-gray-500"
         >
           {isApplying ? 'Aplicando' : 'Aplicar'}
         </button>
       </form>
-
-      {isCouponDisabled && (
-        <p className="mt-3 text-sm text-primary-text">
-          Los cupones estarán disponibles para planes sin periodo gratuito.
-        </p>
-      )}
 
       {couponPreview && (
         <div className="mt-6 flex items-center justify-between gap-4 text-sm">

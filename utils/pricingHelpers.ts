@@ -2,10 +2,6 @@ import { CartBillingPeriod, CartItem, CartPriceOption } from '@/providers/CartPr
 
 export const REFERENCE_CURRENCY = 'CLP' as const
 
-const REFERENCE_MULTIPLIERS: Record<CartBillingPeriod, number> = {
-  monthly: 2.5,
-  yearly: 25.5,
-}
 
 const formatReferenceAmount = (value: number) => {
   return new Intl.NumberFormat('es-CL', {
@@ -25,23 +21,28 @@ export const getActivePriceOption = (
     ?? item.priceOptions.find((priceOption) => priceOption.is_active)
 }
 
-export const getReferencePrice = (billingPeriod: CartBillingPeriod, ufValue: number) => {
-  return formatReferenceAmount(REFERENCE_MULTIPLIERS[billingPeriod] * ufValue)
-}
-
-export const getReferenceFinalPrice = (billingPeriod: CartBillingPeriod, ufValue: number) => {
-  if (billingPeriod !== 'yearly') {
+export const getReferencePrice = (priceOption: CartPriceOption | undefined, ufValue: number) => {
+  if (!priceOption) {
     return undefined
   }
 
-  return getReferencePrice(billingPeriod, ufValue)
+  return formatReferenceAmount(
+    priceOption.amount * ufValue
+  )
+}
+
+export const getReferenceFinalPrice = (priceOption: CartPriceOption | undefined, ufValue: number) => {
+  if (!priceOption) {
+    return undefined
+  }
+
+  return getReferencePrice(
+    priceOption,
+    ufValue
+  )
 }
 
 export const getDiscountAmount = (priceOption: CartPriceOption | undefined) => {
-  if (priceOption?.trial_days) {
-    return priceOption.amount
-  }
-
   if (!priceOption?.original_amount) {
     return undefined
   }
@@ -54,18 +55,12 @@ export const getTotalDueToday = (priceOption: CartPriceOption | undefined) => {
     return undefined
   }
 
-  return priceOption.trial_days > 0 ? 0 : priceOption.amount
+  return priceOption.amount
 }
 
 export const getDiscountLabel = (priceOption: CartPriceOption | undefined) => {
   if (!priceOption) {
     return undefined
-  }
-
-  if (priceOption.trial_days > 0) {
-    return priceOption.billing_period === 'yearly'
-      ? 'Mes de prueba + Contrato diferido'
-      : 'Mes gratis'
   }
 
   return priceOption.discount_label ?? undefined

@@ -1,6 +1,38 @@
 'use server';
 
 import axiosServerManager from '@/lib/axios_server_manager';
+import axios from 'axios';
+
+
+const getCheckoutBackendErrorMessage = (error: unknown) => {
+  if (!axios.isAxiosError(error)) {
+    return 'No fue posible crear la orden.';
+  }
+
+  const data = error.response?.data;
+
+  if (!data || typeof data !== 'object') {
+    return 'No fue posible crear la orden.';
+  }
+
+  const firstMessage = Object.values(data).find((value) => {
+    return typeof value === 'string'
+      || Array.isArray(value);
+  });
+
+  if (typeof firstMessage === 'string') {
+    return firstMessage;
+  }
+
+  if (
+    Array.isArray(firstMessage)
+    && typeof firstMessage[0] === 'string'
+  ) {
+    return firstMessage[0];
+  }
+
+  return 'No fue posible crear la orden. Revisa los datos ingresados.';
+};
 
 const createCheckoutAndStartOneclick = async (
   checkoutPayload: CheckoutOrderPayload
@@ -23,20 +55,28 @@ const createCheckoutAndStartOneclick = async (
       email: checkoutPayload.contact.email,
       phone: checkoutPayload.contact.phone ?? null,
     },
-    pack_id: checkoutPayload.pack_id,
+    pack_public_id: checkoutPayload.pack_public_id,
     billing_period: checkoutPayload.billing_period,
     coupon_code: checkoutPayload.coupon_code ?? null,
     payment_method: checkoutPayload.payment_method,
   };
 
-  const order = await axiosServerManager(
-    '/checkout/order/',
-    payload,
-    {
-      useAccessToken: false,
-      method: 'post',
-    }
-  ) as CheckoutOrderResponse;
+  let order: CheckoutOrderResponse;
+
+  try {
+    order = await axiosServerManager(
+      '/checkout/order/',
+      payload,
+      {
+        useAccessToken: false,
+        method: 'post',
+      }
+    ) as CheckoutOrderResponse;
+  } catch (error) {
+    throw new Error(
+      getCheckoutBackendErrorMessage(error)
+    );
+  }
 
   if (!order.subscription_public_id) {
     throw new Error(
