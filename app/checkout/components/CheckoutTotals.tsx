@@ -62,6 +62,10 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
   const discountAmount = getDiscountAmount(selectedPriceOption);
   const discountLabel = getDiscountLabel(selectedPriceOption);
   const billingPeriod = plan?.selectedBillingPeriod ?? 'monthly';
+  const monthlyEquivalent =
+    billingPeriod === 'yearly' && selectedPriceOption
+      ? Number(selectedPriceOption.amount) / 12
+      : Number(selectedPriceOption?.amount ?? 0);
   const referencePrice = getReferencePrice(selectedPriceOption, ufValue);
   const baseTotalDueToday = getTotalDueToday(selectedPriceOption)
   const totalDueToday = couponPreview?.total ?? baseTotalDueToday
@@ -95,7 +99,7 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
             </p>
           </div>
           <div className="flex flex-col items-end text-nowrap text-sm">
-            {hasYearlyDiscount && (
+            {/* {hasYearlyDiscount && (
               <div className="text-sm">
                 <span className="line-through font-light text-secondary-text pe-2">
                   {formatApiAmount(selectedPriceOption?.original_amount)}
@@ -106,14 +110,14 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
                   -{selectedPriceOption?.discount_percentage}%
                 </span>
               </div>
-            )}
+            )} */}
             <div>
               {/* {formatApiAmount(selectedPriceOption?.amount)}
               {" "}
               {plan?.currency}
               {" "}
               por {plan?.selectedBillingPeriod === 'monthly' ? 'mes' : 'el año'} */}
-              <p className='font-medium text-secondary'>
+              <p className='font-medium text-secondary text-base'>
                 {plan?.name}
               </p>
             </div>
@@ -155,19 +159,19 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
       <div className="flex flex-col gap-3 text-base">
         <div className="flex justify-between gap-8 text-black">
           <p className='font-medium'>Suscripción base</p>
-          <div className="text-right">
-            <span>
-              {formatApiAmount(selectedPriceOption?.amount)}
+          <div className="flex flex-col text-right">
+            <span className='text-primary-text'>
+              {formatApiAmount(monthlyEquivalent)}
               {" "}
               {plan?.currency}
               {" "}
-              {plan?.selectedBillingPeriod === 'monthly' ? 'mes' : 'año'}
+              {plan?.selectedBillingPeriod === 'monthly' ? 'mes' : 'por mes'}
             </span>
-            {/* <span className="text-secondary-text ml-1.5">
-              (Ref: ${referencePrice}
-              {" "}
-              {REFERENCE_CURRENCY})
-            </span> */}
+            {plan?.selectedBillingPeriod === 'yearly' && (
+              <span className="text-primary-text ml-1.5">
+                (Total año: {formatApiAmount(selectedPriceOption?.amount)} UF)
+              </span>
+            )}
           </div>
         </div>
         <div className='pt-4 flex items-center gap-2'>
@@ -178,7 +182,7 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
             Agregar
           </button>
         </div>
-        {discountAmount !== undefined && (
+        {/* {discountAmount !== undefined && (
           <div className="flex justify-between gap-8 text-black">
             <span>Descuento</span>
             <div className="text-right">
@@ -194,7 +198,7 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
               )}
             </div>
           </div>
-        )}
+        )} */}
         {couponPreview && (
           <div className="flex justify-between gap-8 text-black">
             <span>Cupón</span>
@@ -214,7 +218,7 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
         <div className="flex justify-between">
           <span className="text-black">Total a pagar</span>
           <div className="flex flex-col items-end">
-            <span className="text-black">
+            <span className="text-black font-medium">
               {formatApiAmount(totalDueToday)}
               {" "}
               {plan?.currency}

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -117,11 +118,24 @@ const CheckFeature = {
 ]; */
 
 
-const buildCardData = (plans: Pack[], onPlanClick: (plan: Pack) => void): PlanPricingCardProps[] => {
+const buildCardData = (plans: Pack[], billingPeriod: CartBillingPeriod, onPlanClick: (plan: Pack) => void): PlanPricingCardProps[] => {
   return plans.map((plan) => {
-    const monthlyPrice = plan.prices.find(
-      (price) => price.billing_period === 'monthly'
+    const selectedPrice = plan.prices.find(
+      (price) =>
+        price.is_active &&
+        price.billing_period === billingPeriod
     );
+
+    const displayAmount =
+      billingPeriod === 'yearly' && selectedPrice
+        ? Number(selectedPrice.amount) / 12
+        : Number(selectedPrice?.amount ?? 0);
+
+    const formattedDisplayAmount =
+      displayAmount.toLocaleString('es-CL', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
 
     const features = plan.entitlements.map((item) => {
       const baseFeature = {
@@ -170,14 +184,16 @@ const buildCardData = (plans: Pack[], onPlanClick: (plan: Pack) => void): PlanPr
       price:
         plan.plan_type === 'free'
           ? '$0'
-          : monthlyPrice
-            ? `${monthlyPrice.amount === "1.0" ? "1" : monthlyPrice.amount} ${monthlyPrice.currency}`
+          : selectedPrice
+            ? `${formattedDisplayAmount} ${selectedPrice.currency}`
             : undefined,
       period:
         plan.plan_type === 'paid'
-          ? monthlyPrice?.amount === '1.0'
-            ? 'mensual'
-            : 'mensuales'
+          ? billingPeriod === 'yearly'
+            ? 'por mes'
+            : Number(selectedPrice?.amount ?? 0) === 1
+              ? 'mensual'
+              : 'mensuales'
           : undefined,
       buttonText:
         plan.cta_type === 'contact'
@@ -236,6 +252,7 @@ const packToCartItem = (pack: Pack, billingPeriod: CartBillingPeriod): CartItem 
 const PlansPricing = ({ plans, compact = false }: PlansPricingProps & { compact?: boolean }) => {
   const router = useRouter();
   const { addItem } = useCart();
+  const [billingPeriod, setBillingPeriod] = useState<CartBillingPeriod>('monthly')
 
   const handlePlanClick = (plan: Pack) => {
     if (plan.cta_type === 'contact') {
@@ -249,7 +266,7 @@ const PlansPricing = ({ plans, compact = false }: PlansPricingProps & { compact?
 
     const cartItem = packToCartItem(
       plan,
-      'monthly',
+      billingPeriod,
     );
 
     addItem(cartItem);
@@ -258,6 +275,7 @@ const PlansPricing = ({ plans, compact = false }: PlansPricingProps & { compact?
 
   const cardData = buildCardData(
     plans,
+    billingPeriod,
     handlePlanClick,
   );
 
@@ -292,10 +310,14 @@ const PlansPricing = ({ plans, compact = false }: PlansPricingProps & { compact?
             <span className="text-secondary px-1">15%</span>
             con un compromiso de un año)
           </p>
-          <Switch 
-            className="ml-2.5"
-            size="sm"
-            bgColor="bg-teal-500"
+          <Switch
+            checked={billingPeriod === 'yearly'}
+            onChange={(checked) => {
+              setBillingPeriod(
+                checked ? 'yearly' : 'monthly'
+              )
+            }}
+            ariaLabel="Cambiar entre plan mensual y anual"
           />
         </div>
 

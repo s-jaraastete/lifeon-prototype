@@ -273,8 +273,8 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
 
           <p className="text-xs text-secondary-text text-center pt-3">
             Al hacer clic en Finalizar, aceptas los 
-            <Link className="underline pl-1 transition hover:text-gray-600" href={"/"}>Términos de servicio</Link> y 
-            <Link className="underline pl-1 transition hover:text-gray-600" href={"/"}>Política de privacidad</Link> de LifeOn.
+            <Link className="underline pl-1 transition hover:text-gray-600" href={"/terminos-de-uso"}>Términos de servicio</Link> y 
+            <Link className="underline pl-1 transition hover:text-gray-600" href={"/politica-de-privacidad"}>Política de privacidad</Link> de LifeOn.
           </p>
           <div className="flex justify-end pt-5.5">
             <Image 
