@@ -1,13 +1,16 @@
-import AssociatedCompanies from "./components/landing/AssociatedCompanies";
-import BannerSection from "./components/landing/BannerSection";
-import PlansPricing from "./components/shared/PlansPricing";
-import Comments from "./components/landing/Comments";
-import ContactSection from "./components/landing/ContactSection";
-import frequentlyQuestions from "./components/landing/data/frequentlyQuestions";
-import FrequentlyQuestions from "./components/landing/FrequentlyQuestions";
 import HeroSection from "./components/landing/HeroSection";
-import InfoPack from "./components/landing/InfoPack";
+import AssociatedCompanies from "./components/landing/AssociatedCompanies";
 import ManagementMap from "./components/landing/ManagementMap";
+import InfoPack from "./components/landing/InfoPack";
+import Comments from "./components/landing/Comments";
+import InfoCardsSection from "./components/shared/InfoCardsSection";
+import PlansPricing from "./components/shared/PlansPricing";
+import BannerSection from "./components/shared/BannerSection";
+import ContactSection from "./components/shared/ContactSection";
+import FrequentlyQuestions from "./components/shared/FrequentlyQuestions";
+
+import frequentlyQuestions from "./components/landing/data/frequentlyQuestions";
+import infoCardsData from "./components/landing/data/infoCardsData";
 
 import { getServerData } from "@/lib/requests";
 
@@ -44,10 +47,18 @@ const HomePage = async () => {
     <>
       <HeroSection />
       <AssociatedCompanies />
+      <InfoCardsSection
+        title={<><span className="text-secondary">Más control</span>, menos carga y mejores decisiones.</>}
+        cardsData={infoCardsData}
+      />
       <ManagementMap />
       <PlansPricing plans={plansData} />
       <InfoPack />
-      <BannerSection />
+      <BannerSection
+        title="Crece junto a tu organización"
+        description="LifeOn evoluciona contigo. Incorpora nuevas herramientas sin cambiar de plataforma ni migrar tu información."
+        buttonUrl="/precios"
+      />
       <Comments />
       <FrequentlyQuestions items={frequentlyQuestions} />
       <ContactSection 
