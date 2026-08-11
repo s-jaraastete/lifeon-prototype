@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import TextInput from "@/app/components/ui/TextInput";
 import Listbox from "@/app/components/ui/Listbox";
 import Autocomplete from "@/app/components/ui/Autocomplete";
@@ -14,6 +13,8 @@ type BillingDataProps = {
   onFieldChange: (field: keyof FormFields, value: string) => void;
   onFieldBlur: (field: keyof FormFields) => void;
   onFieldReset: (field: keyof FormFields) => void;
+  selectedCommune: Commune | null;
+  onSelectedCommuneChange: (value: Commune | null) => void;
 };
 
 export default function BillingData({
@@ -24,9 +25,9 @@ export default function BillingData({
   onFieldChange,
   onFieldBlur,
   onFieldReset,
+  selectedCommune,
+  onSelectedCommuneChange,
 }: BillingDataProps) {
-  const [selectedCommune, setSelectedCommune] = useState<Commune | null>(null);
-
   const regionOptions = regions.map((r) => ({
     value: String(r.id),
     label: r.name,
@@ -107,7 +108,7 @@ export default function BillingData({
         value={values.region ?? ""}
         onValueChange={(v) => {
           onFieldChange("region", v);
-          setSelectedCommune(null);
+          onSelectedCommuneChange(null);
           onFieldReset("comuna");
         }}
         onFocus={() => onFieldBlur("region")}
@@ -123,7 +124,7 @@ export default function BillingData({
             placeholder="Selecciona una comuna o ciudad"
             selected={selectedCommune}
             setSelected={(commune) => {
-              setSelectedCommune(commune);
+              onSelectedCommuneChange(commune);
               onFieldChange("comuna", commune ? String(commune.id) : "");
             }}
             item={(commune) => <span>{commune.name}</span>}

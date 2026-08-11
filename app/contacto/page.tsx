@@ -1,4 +1,4 @@
-import ContactSection from "../components/landing/ContactSection";
+import ContactSection from "../components/shared/ContactSection";
 import ContactCards from "./components/ContactCards";
 
 

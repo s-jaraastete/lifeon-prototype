@@ -26,15 +26,24 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
       >
         <div>
           <div className="flex items-center justify-between mb-7.5">
-            <h6 className="text-2xl text-base-black font-medium">
-              Módulos LifeOn
-            </h6>
-            <Link href="/modulos/" onClick={onClose} className="text-lg text-secondary transition hover:text-teal-700">
+            <Link
+              href="/modulos/"
+              onClick={onClose}
+            >
+              <h6 className="text-2xl text-base-black font-medium">
+                Módulos LifeOn
+              </h6>
+            </Link>
+            <Link
+              href="/modulos/"
+              onClick={onClose}
+              className="text-lg text-secondary transition hover:text-teal-700"
+            >
               Ver todo
               <LuChevronRight size={20} className="inline-block ml-1 mb-0.5" />
             </Link>
           </div>
-          
+
           <div className="grid grid-cols-3 gap-5.5">
             {ecosystemItems.map((item, index) => (
               <Link
@@ -45,13 +54,20 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
                   ${item.available ? "hover:bg-gray-200 cursor-pointer" : "cursor-not-allowed"}`}
               >
                 <div className="flex items-start justify-center gap-4">
-                  <div className={`flex items-center gap-2.5 p-4 mt-1 rounded-2xl justify-center ${item.bgColor}`}>
+                  <div
+                    className={`flex items-center gap-2.5 p-4 mt-1 rounded-2xl justify-center ${item.bgColor}`}
+                  >
                     {item.available ? (
                       item.icon()
                     ) : (
                       <>
-                        <span className="block group-hover:hidden">{item.icon()}</span>
-                        <LuLock size={24} className="hidden group-hover:block text-gray-700" />
+                        <span className="block group-hover:hidden">
+                          {item.icon()}
+                        </span>
+                        <LuLock
+                          size={24}
+                          className="hidden group-hover:block text-gray-700"
+                        />
                       </>
                     )}
                   </div>
@@ -71,7 +87,9 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
                         </span>
                       )}
                     </div>
-                    <p className={`text-sm leading-relaxed ${!item.available ? "text-secondary-text" : "text-primary-text"}`}>
+                    <p
+                      className={`text-sm leading-relaxed ${!item.available ? "text-secondary-text" : "text-primary-text"}`}
+                    >
                       {item.description}
                     </p>
                   </div>

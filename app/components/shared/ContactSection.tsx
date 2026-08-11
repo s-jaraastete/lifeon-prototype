@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import ContactForm from "./contact/ContactForm";
-import ScheduleForm from "./contact/ScheduleForm";
 import Link from "next/link";
 import Image from "next/image";
+import ContactForm from "./contact/ContactForm";
+import ScheduleForm from "./contact/ScheduleForm";
 
 // Icons
 import Instagram from "@/public/svg/Instagram";

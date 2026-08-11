@@ -1,52 +1,8 @@
-import React from 'react'
-
-// Icons
-import { LuChartColumn, LuCircleCheck, LuMonitorSmartphone } from 'react-icons/lu';
-
-
-interface InfoCardProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-};
-
-const InfoCard = ({ title, description, icon }: InfoCardProps) => {
-  return (
-    <div className='border border-gray-300 p-6 flex flex-col gap-5 rounded-3xl w-full'>
-      <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-xl'>
-        {icon}
-      </div>
-      <div className='flex flex-col gap-2'>
-        <h3 className='text-lg font-semibold text-base-black'>{title}</h3>
-        <p className='text-primary-text'>{description}</p>
-      </div>
-    </div>
-  )
-};
-
 const AssociatedCompanies = () => {
-  const companyNames = ["ESCONDIDA | BHP", "SPENCE | BHP", "CERRO COLORADO | BHP"]
-
-  const cardData = [
-    {
-      title: "Toda tu gestión en un sólo lugar",
-      description: "Centraliza procesos, documentos, evaluaciones y acciones de seguridad en una plataforma conectada y accesible para todos tus equipos.",
-      icon: <LuMonitorSmartphone className="text-white w-5 h-5" />
-    },
-    {
-      title: "Procesos más ágiles y eficientes",
-      description: "Reduce tareas manuales, evita la duplicidad de información y facilita el seguimiento de las actividades clave de tu operación.",
-      icon: <LuCircleCheck className="text-white w-5 h-5" />
-    },
-    {
-      title: "Información confiable para decidir",
-      description: "Accede a datos actualizados, trazables y auditables para detectar brechas, demostrar cumplimiento y mejorar continuamente.",
-      icon: <LuChartColumn className="text-white w-5 h-5" />
-    },
-  ]
+  const companyNames = ["ESCONDIDA | BHP", "SPENCE | BHP", "CERRO COLORADO | BHP"];
   
   return (
-    <section className="w-full pb-15 px-4 xl:px-0">
+    <section className="w-full pb-3 px-4 xl:px-0">
       <div className="max-w-325 mx-auto lg:h-[50vh] my-15 lg:my-0 flex flex-col justify-center items-center gap-8">
         <h2 className="text-[24px] lg:text-3xl font-semibold text-center mb-8 lg:mx-30 text-base-black">
           +1.700 empresas usan LifeOn para simplificar el cumplimiento normativo y la gestión de riesgos.
@@ -71,22 +27,6 @@ const AssociatedCompanies = () => {
               ))}
             </div>
           </div>
-      </div>
-      <div className="max-w-325 mx-auto pt-8">
-        <h2 className="text-[30px] lg:text-5xl font-semibold text-center mb-10 lg:mx-30 text-base-black">
-          <span className="text-secondary">Más control</span>
-          , menos carga y mejores decisiones.
-        </h2>
-        <div className="flex flex-col lg:flex-row gap-6 justify-center">
-          {cardData.map((card, index) => (
-            <InfoCard
-              key={index}
-              title={card.title}
-              description={card.description}
-              icon={card.icon}
-            />
-          ))}
-        </div>
       </div>
     </section>
   )

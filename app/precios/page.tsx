@@ -1,8 +1,8 @@
-import ContactSection from "../components/landing/ContactSection";
-import frequentlyQuestions from "../components/landing/data/frequentlyQuestions";
-import FrequentlyQuestions from "../components/landing/FrequentlyQuestions";
 import PlansPricing from "../components/shared/PlansPricing";
-import PlanComparisonTable from "../components/shared/PlanComparisonTable";
+import ContactSection from "../components/shared/ContactSection";
+import FrequentlyQuestions from "../components/shared/FrequentlyQuestions";
+import frequentlyQuestions from "../components/landing/data/frequentlyQuestions";
+import PlanComparisonTable from "./components/PlanComparisonTable";
 import { getServerData } from "@/lib/requests";
 
 

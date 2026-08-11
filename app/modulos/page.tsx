@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import BannerSection from '../components/landing/BannerSection';
 import BaseModules from './components/BaseModules';
 import SpecializedModules from './components/SpecializedModules';
+import BannerSection from '../components/shared/BannerSection';
 
 const ModulosPage = () => {
   return (
@@ -32,7 +32,12 @@ const ModulosPage = () => {
       </section>
       <BaseModules />
       <SpecializedModules />
-      <BannerSection />
+      <BannerSection
+        title={<>Empieza con la Plataforma Base. <br /> Crece a tu ritmo.</>}
+        description="Todos los planes incluyen los módulos esenciales de LifeOn. A medida que tu organización evolucione, podrás activar nuevos módulos especializados sin cambiar de plataforma."
+        buttonLabel="Ver planes"
+        buttonUrl="/precios"
+      />
     </div>
   );
 };
