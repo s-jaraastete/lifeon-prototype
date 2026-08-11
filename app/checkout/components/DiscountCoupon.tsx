@@ -5,7 +5,7 @@ import axiosManager from '@/lib/axios_manager';
 import { useCart, type CartCouponPreview } from '@/providers/CartProvider';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
-import React, { type FormEvent, useState } from 'react'
+import { useState } from 'react'
 
 
 type CouponPreviewPayload = {
@@ -81,9 +81,7 @@ const DiscountCoupon = () => {
 
   const isApplying = couponPreviewMutation.isPending
 
-  const handleApplyCoupon = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
+  const handleApplyCoupon = () => {
     const normalizedCouponCode = couponInputValue.trim()
 
     if (!initialPlan) {
@@ -113,10 +111,10 @@ const DiscountCoupon = () => {
   }
 
   return (
-    <div className="border border-gray-500 rounded-[22px] bg-white p-6">
+    <div className="border border-gray-300 rounded-[22px] bg-white p-6">
       <h4 className="font-medium text-lg leading-6.5">Aplicar cupón</h4>
       <p className="text-base text-primary-text mb-2.5">¿Tienes un cupón de descuento?</p>
-      <form className="flex gap-2.5" onSubmit={handleApplyCoupon}>
+      <div className="flex gap-2.5">
         <div className="grow">
           <TextInput
             placeholder="Ingresa el código"
@@ -131,13 +129,14 @@ const DiscountCoupon = () => {
           />
         </div>
         <button
-          type="submit"
+          type="button"
           disabled={isApplying}
+          onClick={handleApplyCoupon}
           className="h-12 bg-red-500 text-white px-6 rounded-[14px] cursor-pointer transition hover:bg-red-600 duration-200 disabled:cursor-not-allowed disabled:bg-gray-500"
         >
           {isApplying ? 'Aplicando' : 'Aplicar'}
         </button>
-      </form>
+      </div>
 
       {couponPreview && (
         <div className="mt-6 flex items-center justify-between gap-4 text-sm">

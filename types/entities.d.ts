@@ -132,8 +132,11 @@ interface CheckoutResultData {
   billing_period: 'monthly' | 'yearly';
   pack_name: string;
 	pack_description: string;
+  contracted_amount_clp: number;
+  contracted_amount_uf: number;
   amount_uf: number;
   amount_clp: number;
+  amount_uf_snapshot: number;
   trial_days: number;
   trial_ends_at: string | null;
   next_billing_at: string | null;

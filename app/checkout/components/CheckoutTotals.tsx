@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import type { CartCouponPreview, CartItem } from '@/providers/CartProvider';
 import {
@@ -13,6 +13,7 @@ import {
   getTotalDueToday,
 } from '@/utils/pricingHelpers';
 import { PAYMENT_METHODS } from './form/PaymentMethod';
+import DiscountCoupon from './DiscountCoupon';
 
 // Icons
 import { LuFileSearch2, LuTable } from 'react-icons/lu';
@@ -57,8 +58,9 @@ const modulesByName: Record<string, CheckoutModule> = {
 };
 
 const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: CheckoutTotalsProps) => {
-  const selectedPriceOption = getActivePriceOption(plan, plan?.selectedBillingPeriod ?? 'monthly');
+  const [showCoupon, setShowCoupon] = useState(false);
 
+  const selectedPriceOption = getActivePriceOption(plan, plan?.selectedBillingPeriod ?? 'monthly');
   const discountAmount = getDiscountAmount(selectedPriceOption);
   const discountLabel = getDiscountLabel(selectedPriceOption);
   const billingPeriod = plan?.selectedBillingPeriod ?? 'monthly';
@@ -174,13 +176,20 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
             )}
           </div>
         </div>
-        <div className='pt-4 flex items-center gap-2'>
-          <p className='font-medium'>¿Tienes un cupón?</p>
-          <button 
-            className='font-medium text-primary underline cursor-pointer transition duration-200 hover:text-red-600'
-          >
-            Agregar
-          </button>
+        <div className='pt-4 flex flex-col gap-4'>
+          <div className='flex items-center gap-2'>
+            <p className='font-medium'>¿Tienes un cupón?</p>
+            <button 
+              className='font-medium text-primary underline cursor-pointer transition duration-200 hover:text-red-600'
+              onClick={() => setShowCoupon((prev) => !prev)}
+              type='button'
+            >
+              {showCoupon === false ? 'Agregar' : 'Ocultar'}
+            </button>
+          </div>
+          {showCoupon && (
+            <DiscountCoupon />
+          )}
         </div>
         {/* {discountAmount !== undefined && (
           <div className="flex justify-between gap-8 text-black">

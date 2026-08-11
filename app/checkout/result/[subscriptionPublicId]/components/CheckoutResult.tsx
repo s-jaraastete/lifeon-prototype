@@ -88,7 +88,7 @@ const CheckoutResult = ({ result }: CheckoutResultProps) => {
                 </div>
                 <div>
                   <p className="text-secondary-text text-sm">
-                    (Ref: ${result.amount_clp.toLocaleString('es-CL')} CLP)
+                    (Ref: ${result.contracted_amount_clp.toLocaleString('es-CL')} CLP)
                   </p>
                 </div>
               </div>
@@ -107,7 +107,7 @@ const CheckoutResult = ({ result }: CheckoutResultProps) => {
                 <div>
                   <div className="flex items-center justify-end gap-1">
                     <p className="font-semibold">
-                      {result.amount_uf} UF
+                      {result.amount_uf_snapshot} UF
                     </p>
                   </div>
                   <div>
