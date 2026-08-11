@@ -304,7 +304,7 @@ const PlansPricing = ({ plans, compact = false }: PlansPricingProps & { compact?
           </div>
         )}
 
-        <div className="flex justify-end text-sm mt-12">
+        <div className="flex items-center justify-end gap-2 text-sm mt-12">
           <p>
             Anual (Ahorra un
             <span className="text-secondary px-1">15%</span>
