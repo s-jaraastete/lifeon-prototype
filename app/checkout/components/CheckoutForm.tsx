@@ -71,6 +71,7 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
     comuna: "",
     payment_method: "",
   });
+  const [selectedCommune, setSelectedCommune] = useState<Commune | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const { errors } = useFormValidation(form);
 
@@ -231,6 +232,8 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
             onFieldChange={handleFieldChange}
             onFieldBlur={handleFieldBlur}
             onFieldReset={handleFieldReset}
+            selectedCommune={selectedCommune}
+            onSelectedCommuneChange={setSelectedCommune}
           />
         </CheckoutCollapse>
 
