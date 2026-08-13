@@ -1,9 +1,17 @@
-import React from 'react'
+import DashboardHero from "./components/DashboardHero";
 
-const AdminPage = () => {
+export default function AdminPage() {
   return (
-    <div>AdminPage</div>
-  )
-};
+    <>
+      <DashboardHero />
 
-export default AdminPage;
+      {/* <section className="grid gap-4 xl:grid-cols-[1.45fr_1fr]">
+        <section className="rounded-[28px] border border-white/80 bg-white p-5 min-h-105">
+        </section>
+
+        <section className="rounded-[28px] border border-white/80 bg-white p-5 min-h-105">
+        </section>
+      </section> */}
+    </>
+  );
+}

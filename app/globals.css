@@ -256,6 +256,10 @@ body {
   --color-azure-950: #00131F;
 }
 
+@utility shadow-soft {
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.02);
+}
+
 @keyframes hero-slider-progress {
   from {
     transform: scaleX(0);

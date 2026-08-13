@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
 
-import Footer from "./components/layout/Footer";
-import Header from "./components/layout/Header";
+import SiteLayout from "./components/layout/SiteLayout";
 
 import NextAuthSessionProvider from "@/providers/NextAuthSessionProvider";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
@@ -31,11 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <NextAuthSessionProvider>
           <ReactQueryProvider>
             <CartProvider>
-              <Header />
-              <main className="pt-16 lg:pt-0">
-                {children}
-              </main>
-              <Footer />
+              <SiteLayout>{children}</SiteLayout>
             </CartProvider>
           </ReactQueryProvider>
         </NextAuthSessionProvider>
