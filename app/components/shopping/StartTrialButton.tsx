@@ -47,7 +47,7 @@ const StartTrialButton = ({
         {isAddingBasePack ? pendingText : children}
       </button>
       {error && (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-red-500">
           {error.message}
         </p>
       )}

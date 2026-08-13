@@ -72,7 +72,7 @@ const CartDrawer = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
         {mockItems.length > 0 && (
           <div className="p-5">
             <Link href="/basket">
-              <button className="w-full bg-red-500 text-white py-3 rounded-xl font-medium cursor-pointer transition duration-200 hover:bg-red-600">
+              <button className="w-full bg-red-500 text-white py-3 rounded-xl font-medium cursor-pointer transition duration-200 hover:bg-primary-hover">
                   Configura tu paquete
                   <LuChevronRight className="w-4 h-4 inline-block ml-2" />
               </button>

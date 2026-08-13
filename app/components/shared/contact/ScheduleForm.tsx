@@ -345,7 +345,7 @@ const ScheduleForm = ({ allSlots: _allSlots = [] }: ScheduleFormProps) => {
             <button
               type="button"
               onClick={() => setStep("datetime")}
-              className="flex h-12.5 w-full items-center justify-center gap-2 rounded-[14px] bg-primary px-6 text-[18px] text-white transition-colors cursor-pointer hover:bg-red-700"
+              className="flex h-12.5 w-full items-center justify-center gap-2 rounded-[14px] bg-primary px-6 text-[18px] text-white transition-colors cursor-pointer hover:bg-primary-hover"
             >
               <span>Seleccionar fecha</span>
               <LuChevronRight className="h-5 w-5" />

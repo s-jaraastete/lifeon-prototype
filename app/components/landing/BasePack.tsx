@@ -19,13 +19,13 @@ export const CardData = [
   {
     chip: "Incluído en Paquete Base Esencial",
     icon: <LuFileSearch2 size={24} className="text-black" />,
-    bgIcon: "bg-sky-300",
+    bgIcon: "bg-[#7dd3fc]",
     title: "Programa y Documentación Preventiva",
-    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+    description: "Planifica las actividades de seguridad y mantén tu documentación preventiva organizada, vigente y disponible.",
     details: ["Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet"],
-    borderButtonColor: "border-sky-300",
-    hoverButton: "hover:bg-sky-300",
-    hoverBorderCard: "hover:border-sky-300",
+    borderButtonColor: "border-[#7dd3fc]",
+    hoverButton: "hover:bg-[#7dd3fc]",
+    hoverBorderCard: "hover:border-[#7dd3fc]",
     titleStart: true
   },
   {

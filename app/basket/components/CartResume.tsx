@@ -10,7 +10,7 @@ import { formatApiAmount } from '@/utils/pricingHelpers';
 
 import CartProductPlan from './CartProductPlan'
 import CartPricingBlock from './CartPricingBlock'
-import DiscountCoupon from './DiscountCoupon'
+import DiscountCoupon from '../../checkout/components/DiscountCoupon';
 import Listbox from '@/app/components/ui/Listbox'
 
 
@@ -88,7 +88,7 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                 >
                   <button
                     type="button"
-                    className="mt-6 w-full py-3 px-6 rounded-[14px] text-white bg-primary hover:bg-red-600 cursor-pointer transition-colors duration-150 flex items-center justify-center gap-1.5"
+                    className="mt-6 w-full py-3 px-6 rounded-[14px] text-white bg-primary hover:bg-primary-hover cursor-pointer transition-colors duration-150 flex items-center justify-center gap-1.5"
                   >
                     Volver al inicio
                   </button>
@@ -176,7 +176,7 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                     >
                       <button
                         type="button"
-                        className="mt-6 w-full py-3 rounded-[14px] text-white bg-primary hover:bg-red-600 cursor-pointer transition-colors duration-150 flex items-center justify-center gap-1.5"
+                        className="mt-6 w-full py-3 rounded-[14px] text-white bg-primary hover:bg-primary-hover cursor-pointer transition-colors duration-150 flex items-center justify-center gap-1.5"
                       >
                         Ir a pagar
                         <LuChevronRight size={20} />

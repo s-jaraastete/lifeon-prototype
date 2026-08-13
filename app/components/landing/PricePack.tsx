@@ -22,11 +22,11 @@ const PricePack = () => {
               <LuTable className="text-xs lg:text-xl text-black" />
             </div>
             <div className="hidden md:group-hover:flex items-center text-lg text-black">+</div>
-            <div className="rounded-xl p-3 border-2 border-white bg-sky-300 transform -translate-x-1/2 group-hover:translate-x-0 transition-transform duration-300">
+              <div className="rounded-xl p-3 border-2 border-white bg-[#7dd3fc] transform -translate-x-1/2 group-hover:translate-x-0 transition-transform duration-300">
               <LuFileSearch2 className="text-xs lg:text-xl text-black" />
             </div>
             <div className="hidden md:group-hover:flex items-center text-lg text-black">+</div>
-            <div className="rounded-xl p-3 border-2 border-white bg-linear-to-b from-[#BDE7FF] to-[#ADF2D3] transform -translate-x-1/1 group-hover:translate-x-0 transition-transform duration-300">
+            <div className="rounded-xl p-3 border-2 border-white bg-linear-to-b from-azure-100 to-emerald-200 transform -translate-x-1/1 group-hover:translate-x-0 transition-transform duration-300">
               <Image 
                 src="/svg/apr-icon.svg"
                 className="h-3 w-3 lg:h-5 lg:w-5"

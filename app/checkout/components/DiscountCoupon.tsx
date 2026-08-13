@@ -132,7 +132,7 @@ const DiscountCoupon = () => {
           type="button"
           disabled={isApplying}
           onClick={handleApplyCoupon}
-          className="h-12 bg-red-500 text-white px-6 rounded-[14px] cursor-pointer transition hover:bg-red-600 duration-200 disabled:cursor-not-allowed disabled:bg-gray-500"
+          className="h-12 bg-red-500 text-white px-6 rounded-[14px] cursor-pointer transition hover:bg-primary-hover duration-200 disabled:cursor-not-allowed disabled:bg-gray-500"
         >
           {isApplying ? 'Aplicando' : 'Aplicar'}
         </button>

@@ -29,7 +29,7 @@ export const ecosystemItems: EcosystemItem[] = [
     description:
       "Planifica las actividades de seguridad y mantén tu documentación preventiva organizada, vigente y disponible.",
     href: "/modulos/",
-    bgColor: "bg-sky-300",
+    bgColor: "bg-[#7dd3fc]",
     textColor: "text-black",
     available: true,
   },

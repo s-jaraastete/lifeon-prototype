@@ -266,7 +266,7 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
               ${
                 isButtonDisabled || isPending
                   ? "text-secondary-text bg-gray-300"
-                  : "text-white bg-primary hover:bg-red-600 cursor-pointer"
+                  : "text-white bg-primary hover:bg-primary-hover cursor-pointer"
               }
             `}
           >

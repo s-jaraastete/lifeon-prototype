@@ -1,5 +1,6 @@
 import api from '@/lib/axios';
 import { useMutation } from '@tanstack/react-query';
+import Link from 'next/link';
 import React, { useState } from 'react'
 
 
@@ -70,17 +71,17 @@ const ContactForm = () => {
     return (
       <div 
         className="flex flex-col items-center justify-center w-full h-142.5 bg-white p-8 rounded-2xl border border-gray-200 text-center">
-        <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-6">
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#dcfce7] mb-6">
           <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" fill="#d1fae5"/><path d="M8 12l2.5 2.5L16 9"/></svg>
         </div>
         <h2 className="text-lg font-bold mb-2">¡Mensaje enviado con éxito!</h2>
         <p className="text-gray-600 text-sm mb-8">
           Gracias por contactarte con nosotros, nuestro equipo se <br/> contactará contigo dentro de 24 horas en horario hábil.
         </p>
-        <a href="/" className="inline-flex items-center gap-2 px-8 py-3 border-2 border-[#9900FF] text-[#9900FF] rounded-full font-medium hover:bg-[#9900FF]/5 transition-colors">
+        <Link href="/" className="inline-flex items-center gap-2 px-8 py-3 border-2 border-[#9900FF] text-[#9900FF] rounded-full font-medium hover:bg-[#9900FF]/5 transition-colors">
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
           Volver al inicio
-        </a>
+        </Link>
       </div>
     )
   };
@@ -142,7 +143,7 @@ const ContactForm = () => {
             disabled={!isFormValid}
             className={`w-full rounded-[14px] py-3 text-lg font-medium mt-2 transition-colors duration-200 cursor-pointer ${
               isFormValid
-                ? 'bg-primary text-white hover:bg-red-700'
+                ? 'bg-primary text-white hover:bg-primary-pressed'
                 : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
           >

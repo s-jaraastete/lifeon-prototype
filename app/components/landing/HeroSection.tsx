@@ -74,7 +74,7 @@ const HeroSection = () => {
           </div>
           <div className="flex flex-col justify-center gap-2.5 lg:gap-4 mt-10 sm:flex-row w-full">
             <Link href="/precios">
-              <button className="w-full bg-primary text-white py-3 rounded-xl hover:bg-red-700 transition cursor-pointer sm:w-59.25">
+              <button className="w-full bg-primary text-white py-3 rounded-xl hover:bg-primary-hover transition cursor-pointer sm:w-59.25">
                 Comienza ahora 🚀
               </button>
             </Link>

@@ -16,7 +16,7 @@ const cards = [
   },
   {
     icon: <LuFileSearch2 size={24} className="text-black" />,
-    bgIcon: "bg-sky-300",
+    bgIcon: "bg-[#7dd3fc]",
     border: "border-2",
     borderColor: "border-gray-200",
   },
@@ -24,7 +24,7 @@ const cards = [
     icon: (
       <Image src="/svg/apr-icon.svg" width={22} height={22} alt="APR Virtual" />
     ),
-    bgIcon: "bg-linear-to-b from-[#BDE7FF] to-[#ADF2D3]",
+    bgIcon: "bg-linear-to-b from-azure-100 to-emerald-200",
     border: "border-2",
     borderColor: "border-gray-200",
   },

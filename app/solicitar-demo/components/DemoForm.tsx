@@ -87,7 +87,7 @@ const DemoForm = () => {
           w-full font-medium px-6 py-3 rounded-[14px] transition duration-200
           ${isDisabled
             ? "text-secondary-text bg-gray-300"
-            : "text-white bg-primary hover:bg-red-600 cursor-pointer"
+            : "text-white bg-primary hover:bg-primary-hover cursor-pointer"
           }
         `}
       >

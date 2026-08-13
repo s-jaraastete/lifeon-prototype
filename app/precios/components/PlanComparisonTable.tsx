@@ -83,7 +83,7 @@ const comparisonData: ComparisonRow[] = [
 
 const renderCell = (val: string | boolean) => {
   if (val === true) {
-    return <LuCheck className="w-5 h-5 text-emerald-500 mx-auto" />;
+    return <LuCheck className="w-5 h-5 text-[#10b981] mx-auto" />;
   }
   if (val === false) {
     return <LuX className="w-5 h-5 text-red-500 mx-auto" />;

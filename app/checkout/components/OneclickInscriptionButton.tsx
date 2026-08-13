@@ -97,7 +97,7 @@ const OneclickInscriptionButton = ({
         type="button"
         onClick={handleInscription}
         disabled={isLoading}
-        className="cursor-pointer rounded bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600 disabled:opacity-50"
+        className="cursor-pointer rounded bg-[#3b82f6] px-4 py-2 text-white transition hover:bg-[#2563eb] disabled:opacity-50"
       >
         {isLoading
           ? 'Redirigiendo a Transbank...'

@@ -74,7 +74,7 @@ const PlanPricingCard = ({
           className={`w-full py-3 px-4 rounded-[14px] font-medium text-center transition cursor-pointer mt-5.5 text-sm lg:text-base ${
             buttonVariant === 'secondary'
               ? 'bg-secondary text-white hover:bg-teal-600'
-              : 'bg-primary text-white hover:bg-red-600'
+              : 'bg-primary text-white hover:bg-primary-hover'
           }`}
         >
           {buttonText}
@@ -106,7 +106,7 @@ const PlanPricingCard = ({
                 )}
                 {feature.suffix && <span>{feature.suffix}</span>}
                 {feature.hasAiBadge && (
-                  <span className="ml-1.5 inline-flex items-center text-[8px] font-medium bg-blue-100 text-blue-600 px-1 py-0.5 rounded-md align-middle">
+                  <span className="ml-1.5 inline-flex items-center text-[8px] font-medium bg-[#dbeafe] text-[#2563eb] px-1 py-0.5 rounded-md align-middle">
                     IA
                   </span>
                 )}

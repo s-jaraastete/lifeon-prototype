@@ -73,7 +73,7 @@ const RetryOneclickInscriptionButton = ({ subscriptionPublicId }: RetryOneclickI
           ${
             isPending
               ? 'cursor-not-allowed bg-gray-300 text-gray-500'
-              : 'bg-primary text-white hover:bg-red-600 cursor-pointer'
+              : 'bg-primary text-white hover:bg-primary-hover cursor-pointer'
           }
         `}
       >

@@ -41,7 +41,7 @@ const IPERModule = {
 
 const DocumentationModule = {
   icon: <LuFileSearch2 size={10} className="text-black" />,
-  bgIcon: "bg-sky-300",
+  bgIcon: "bg-[#7dd3fc]",
   text: 'Programa y Documentación preventiva ',
 };
 
@@ -180,7 +180,7 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
           <div className='flex items-center gap-2'>
             <p className='font-medium'>¿Tienes un cupón?</p>
             <button 
-              className='font-medium text-primary underline cursor-pointer transition duration-200 hover:text-red-600'
+              className='font-medium text-primary underline cursor-pointer transition duration-200 hover:text-primary-pressed'
               onClick={() => setShowCoupon((prev) => !prev)}
               type='button'
             >

@@ -28,7 +28,7 @@ const CartProductPlan = ({ items, onRemove, ufValue }: CartProductPlanProps) => 
         </div>
       </div>
       <div className="w-8 h-8 rounded-[10px] border-2 border-white bg-white overflow-hidden relative z-30 -ml-4">
-        <div className="w-full h-full bg-linear-to-b from-[#BDE7FF] to-[#ADF2D3] flex items-center justify-center">
+        <div className="w-full h-full bg-linear-to-b from-azure-100 to-emerald-200 flex items-center justify-center">
           <Image 
             src="/svg/apr-icon.svg" 
             width={16}
@@ -110,7 +110,7 @@ const CartProductPlan = ({ items, onRemove, ufValue }: CartProductPlanProps) => 
                 </div>
               </div>
               <button
-                className="text-red-500 cursor-pointer m-1 lg:pb-3 transition duration-200 hover:text-red-700"
+                className="text-red-500 cursor-pointer m-1 lg:pb-3 transition duration-200 hover:text-primary-pressed"
                 onClick={() => onRemove(item.id)}
               >
                 <LuTrash2 size={24} />

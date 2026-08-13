@@ -27,7 +27,7 @@ const IPERModule = {
 
 const DocumentationModule = {
   icon: <LuFileSearch2 size={10} className="text-black" />,
-  bgIcon: "bg-sky-300",
+  bgIcon: "bg-[#7dd3fc]",
   text: 'Programa y Documentación preventiva ',
 };
 
