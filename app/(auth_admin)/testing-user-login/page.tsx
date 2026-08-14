@@ -2,9 +2,9 @@ import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 
 import nextAuthOptions from '@/lib/nextAuth/nextAuthOptions';
-import DashboardHero from "./components/DashboardHero";
 
-const AdminPage = async () => {
+// TODO: Destino temporal para usuarios que no son staff
+const TestingUserLogin = async () => {
   const session = await getServerSession(nextAuthOptions);
 
   if (!session) {
@@ -17,24 +17,22 @@ const AdminPage = async () => {
       'http://localhost:3000';
 
     const callbackUrl = encodeURIComponent(
-      `${purchaseFrontendUrl}/admin`
+      `${purchaseFrontendUrl}/post-login`
     );
 
     redirect(
-      `${authFrontendUrl}/login?view=password&callbackUrl=${callbackUrl}`
+      `${authFrontendUrl}/login?callbackUrl=${callbackUrl}`
     );
   }
 
-  if (!session.user?.is_staff) {
-    redirect('/');
+  if (session.user?.is_staff) {
+    redirect('/admin');
   }
 
   return (
     <div className="max-w-5xl mx-auto py-10 px-4">
-      <DashboardHero />
-
       <h1 className="text-3xl font-semibold">
-        Administración LifeOn
+        Prueba de acceso de usuario
       </h1>
 
       <div className="mt-6">
@@ -47,4 +45,4 @@ const AdminPage = async () => {
   );
 };
 
-export default AdminPage;
+export default TestingUserLogin;

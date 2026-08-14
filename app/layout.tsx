@@ -1,11 +1,13 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
+import { getServerSession } from "next-auth";
 
 import SiteLayout from "./components/layout/SiteLayout";
 
 import NextAuthSessionProvider from "@/providers/NextAuthSessionProvider";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import CartProvider from "@/providers/CartProvider";
+import nextAuthOptions from "@/lib/nextAuth/nextAuthOptions";
 
 import { Poppins } from "next/font/google";
 import "./globals.css";
@@ -23,11 +25,13 @@ export const metadata: Metadata = {
   description: "Conoce nuestros módulos disponibles",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const session = await getServerSession(nextAuthOptions);
+
   return (
     <html lang="en">
       <body className={`${geistPoppins.variable}  antialiased`}>
-        <NextAuthSessionProvider>
+        <NextAuthSessionProvider session={session}>
           <ReactQueryProvider>
             <CartProvider>
               <SiteLayout>{children}</SiteLayout>

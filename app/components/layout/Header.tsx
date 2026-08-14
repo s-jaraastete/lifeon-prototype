@@ -1,21 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 
 // import ShoppingCart from "../shopping/ShoppingCart";
 import ModulesModal from "./ModulesModal";
 import MobileMenu from "./MobileMenu";
 
 // Icons
-import { LuChevronDown, LuMenu, LuUserRound, LuX } from "react-icons/lu";
+import {
+  LuChevronDown,
+  LuLogOut,
+  LuMenu,
+  LuUserRound,
+  LuX,
+} from "react-icons/lu";
 
 
 const Header = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
   const pathname = usePathname();
   const isHome = pathname === "/";
 
@@ -36,6 +43,87 @@ const Header = () => {
     setActiveModal(activeModal === type ? null : type);
   };
 
+  const handleLogin = () => {
+    const authFrontendUrl =
+      process.env.NEXT_PUBLIC_AUTH_FRONTEND_URL ??
+      "http://localhost:3002";
+
+    const loginUrl = new URL("/login", authFrontendUrl);
+
+    loginUrl.searchParams.set(
+      "callbackUrl",
+      `${window.location.origin}/post-login`
+    );
+
+    window.location.assign(loginUrl.toString());
+  };
+
+  const handleAccountAccess = () => {
+    window.location.assign("/post-login");
+  };
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    window.location.assign("/");
+  };
+
+  const userDisplayName =
+    session?.user?.name ||
+    session?.user?.username ||
+    session?.user?.email ||
+    "Mi cuenta";
+
+  const renderAuthControls = (compact = false) => {
+    if (status === "authenticated") {
+      return (
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={handleAccountAccess}
+            title={userDisplayName}
+            className={`
+              flex items-center gap-2 font-medium py-1 text-sm
+              text-black hover:text-primary-text transition duration-200 cursor-pointer
+              ${compact ? "px-3" : "px-4"}
+            `}
+          >
+            <span className={compact ? "max-w-30 truncate" : "max-w-50 truncate"}>
+              {userDisplayName}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+            className="rounded-xl text-primary hover:bg-gray-100 transition duration-200 cursor-pointer hover:text-red-600"
+          >
+            <LuLogOut className="w-4 h-4" />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={handleLogin}
+        disabled={status === "loading"}
+        className="
+          font-medium bg-primary px-4 py-1 rounded-xl text-white
+          enabled:hover:bg-red-600 enabled:cursor-pointer
+          disabled:opacity-60 disabled:cursor-wait
+          transition duration-200
+        "
+      >
+        <LuUserRound className="w-5 h-5 inline-block mr-1 mb-1" />
+        {status === "loading" ? "Cargando..." : "Iniciar sesión"}
+      </button>
+    );
+  };
+
+  // TODO: Borrar comentarios
   return (
     <>
       {/* Mobile header */}
@@ -45,26 +133,30 @@ const Header = () => {
             flex justify-between items-center px-4 py-2.5 h-16
             ${!isMenuOpen ? "border-b border-gray-400" : ""}
           `}>
-          <div className="flex items-center gap-2.5">
-            {pathname !== "/basket" && pathname !== "/checkout" && (
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
-                className="cursor-pointer"
-              >
-                {isMenuOpen ? (
-                  <LuX className="w-7 h-7 text-secondary" />
-                ) : (
-                  <LuMenu className="w-7 h-7 text-secondary" />
-                )}
-              </button>
-            )}
-            <Link href="/">
-              <p className="text-3xl font-semibold text-primary">
-                Life
-                <span className="text-secondary font-extrabold">On</span>
-              </p>
-            </Link>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2.5">
+              {pathname !== "/basket" && pathname !== "/checkout" && (
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                  className="cursor-pointer"
+                >
+                  {isMenuOpen ? (
+                    <LuX className="w-7 h-7 text-secondary" />
+                  ) : (
+                    <LuMenu className="w-7 h-7 text-secondary" />
+                  )}
+                </button>
+              )}
+              <Link href="/">
+                <p className="text-3xl font-semibold text-primary">
+                  Life
+                  <span className="text-secondary font-extrabold">On</span>
+                </p>
+              </Link>
+            </div>
+
+            <div>{renderAuthControls(true)}</div>
           </div>
           {/* {pathname !== "/basket" && pathname !== "/checkout" && (
             <div className="">
@@ -163,13 +255,7 @@ const Header = () => {
                   {/* <ShoppingCart /> */}
 
                   <div className="flex items-center gap-3">
-                    {/* <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-red-600 transition duration-200 cursor-pointer">
-                      Pruébalo gratis
-                    </button> */}
-                    <button className="font-medium bg-primary px-4 py-1 rounded-xl text-white hover:bg-primary-hover transition duration-200 cursor-pointer">
-                      <LuUserRound className="w-5 h-5 inline-block mr-1 mb-1" />
-                      Iniciar sesión
-                    </button>
+                    {renderAuthControls()}
                   </div>
                 </div>
               </>
