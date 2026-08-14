@@ -15,7 +15,7 @@ const toneClasses: Record<StatTone, string> = {
 
 export default function StatCard({ label, value, note, tone = "default" }: StatCardProps) {
   return (
-    <article className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_12px_30px_rgba(17,17,17,0.03)]">
+    <article className="rounded-2xl border border-gray-200 bg-white p-5">
       <p className="text-sm font-medium text-neutral-secondary">{label}</p>
       <p className="mt-3 text-[clamp(1.6rem,3vw,2.25rem)] font-semibold tracking-tight text-neutral-primary">
         {value}
