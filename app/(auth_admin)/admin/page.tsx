@@ -30,10 +30,9 @@ const AdminPage = async () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-10 px-4">
-      <DashboardHero />
-
-      <h1 className="text-3xl font-semibold">
+    <div className="w-full mx-auto">
+      <DashboardHero userName={session.user.name} />
+      {/* <h1 className="text-3xl font-semibold">
         Administración LifeOn
       </h1>
 
@@ -42,7 +41,7 @@ const AdminPage = async () => {
         <p>Usuario: {session.user.username}</p>
         <p>Nombre: {session.user.name}</p>
         <p>Correo: {session.user.email}</p>
-      </div>
+      </div> */}
     </div>
   );
 };

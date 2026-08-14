@@ -26,14 +26,14 @@ const stats = [
   },
 ];
 
-export default function DashboardHero() {
+export default function DashboardHero({userName}: {userName?: string}) {
   return (
     <section className="rounded-2xl bg-surface-primary p-6 shadow-soft lg:p-7">
       <div className="flex items-start gap-4">
         <div className="text-5xl leading-none">👋</div>
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-neutral-primary lg:text-4xl">
-            Hola de nuevo, Gonzalo
+            Hola de nuevo, {userName}
           </h1>
           <p className="mt-1 text-base text-neutral-secondary lg:text-lg">
             Aquí tienes el resumen general y estado de la plataforma LifeOn
