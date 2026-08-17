@@ -18,7 +18,7 @@ export const ecosystemItems: EcosystemItem[] = [
     title: "Matriz IPER",
     description:
       "Identifica, evalúa y controla los riesgos mediante matrices digitales, trazables y alineadas al DS 44.",
-    href: "/modulos/",
+    href: "/modulos/miper",
     bgColor: "bg-purple-300",
     textColor: "text-black",
     available: true,

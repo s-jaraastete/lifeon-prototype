@@ -18,7 +18,7 @@ export const CardData = [
       "Facilita los procesos de revisión y aprobación.",
       "Conserva un historial completo de cada cambio.",
     ],
-    buttonLink: "/contacto",
+    buttonLink: "/modulos/miper",
   },
   {
     icon: <LuFileSearch2 size={24} className="text-black" />,
