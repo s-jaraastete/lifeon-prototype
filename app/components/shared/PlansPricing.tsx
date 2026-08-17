@@ -260,6 +260,11 @@ const PlansPricing = ({ plans, compact = false }: PlansPricingProps & { compact?
       return;
     }
 
+    if (plan.cta_type === 'registration') {
+      window.location.assign("/post-login");
+      return;
+    }
+
     if (plan.cta_type !== 'checkout') {
       return;
     }
