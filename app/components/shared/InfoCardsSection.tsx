@@ -1,9 +1,10 @@
-import { type ReactNode } from 'react'
+import { type ReactNode } from 'react';
+import { type IconType } from 'react-icons';
 
-interface CardData {
+export interface CardData {
   title: string;
   description: string;
-  icon: ReactNode;
+  icon: IconType;
 }
 
 interface InfoCardsSectionProps {
@@ -13,13 +14,15 @@ interface InfoCardsSectionProps {
 }
 
 const InfoCard = ({ title, description, icon }: CardData) => {
+  const Icon = icon;
+
   return (
-    <div className='border border-gray-300 p-6 flex flex-col gap-5 rounded-3xl w-full'>
+    <div className='border border-gray-300 p-6 flex flex-col gap-5 rounded-3xl w-full h-full min-h-58'>
       <div className='bg-primary w-9 h-9 flex items-center justify-center rounded-xl'>
-        {icon}
+        <Icon className="text-white w-5 h-5" />
       </div>
       <div className='flex flex-col gap-2'>
-        <h3 className='text-lg font-semibold text-base-black'>{title}</h3>
+        <h3 className='text-lg font-semibold text-base-black w-[90%]'>{title}</h3>
         <p className='text-primary-text'>{description}</p>
       </div>
     </div>
@@ -38,7 +41,7 @@ const InfoCardsSection = ({ title, description, cardsData }: InfoCardsSectionPro
             {description}
           </p>
         )}
-        <div className="flex flex-col lg:flex-row gap-6 justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cardsData.map((card, index) => (
             <InfoCard
               key={index}
