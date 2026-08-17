@@ -274,6 +274,20 @@ body {
   animation: hero-slider-progress var(--hero-slider-progress-duration) linear forwards;
 }
 
+@keyframes miper-tools-progress {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.miper-tools-progress {
+  animation: miper-tools-progress var(--miper-tools-progress-duration) linear forwards;
+}
+
 :focus-visible {
   outline-color: var(--color-secondary);
 }

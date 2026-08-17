@@ -1,7 +1,9 @@
-import ModuleHero from "./components/ModuleHero";
 import InfoCardsSection from "@/app/components/shared/InfoCardsSection";
-import BannerSection from "@/app/components/shared/BannerSection";
 import FrequentlyQuestions from "@/app/components/shared/FrequentlyQuestions";
+import BannerSection from "@/app/components/shared/BannerSection";
+import ModuleHero from "./components/ModuleHero";
+import MiperInfo from "./components/MiperInfo";
+import MiperToolsSection from "./components/MiperToolsSection";
 
 import infoCardsData from "./data/infoCardsData";
 import frequentlyQuestions from "@/app/components/landing/data/frequentlyQuestions";
@@ -15,6 +17,8 @@ const MiperPage = () => {
         description="Centraliza la identificación de peligros, la evaluación de riesgos y el seguimiento de las medidas de control en una plataforma diseñada para mantener la información organizada, actualizada y disponible para toda la organización."
         cardsData={infoCardsData}
       />
+      <MiperInfo />
+      <MiperToolsSection />
       {/* TODO: Componentes restantes */}
       <FrequentlyQuestions
         title="Preguntas frecuentes"
