@@ -46,7 +46,6 @@ const tools: ToolStep[] = [
 const MiperToolsSection = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [progress, setProgress] = useState(0);
-  const activeTool = tools[activeIndex];
   const intervalMs = 8000;
 
   useEffect(() => {
