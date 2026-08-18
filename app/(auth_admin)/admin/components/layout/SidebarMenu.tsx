@@ -15,24 +15,24 @@ type NavItem = {
   label: string;
   href: string;
   icon: IconType;
-  active?: boolean;
 };
 
 type SidebarProps = {
   collapsed: boolean;
+  pathname: string;
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: LuHouse, active: true },
-  { label: "Usuarios", href: "/admin", icon: LuUsers },
-  { label: "Suscripciones", href: "/admin", icon: LuBadgeCheck },
-  { label: "Pagos", href: "/admin", icon: LuCreditCard },
-  { label: "Módulos", href: "/admin", icon: LuLayoutGrid },
-  { label: "Estado plataforma", href: "/admin", icon: LuBatteryFull },
-  { label: "Configuración", href: "/admin", icon: LuSettings },
+  { label: "Dashboard", href: "/admin", icon: LuHouse },
+  { label: "Usuarios", href: "/admin/usuarios", icon: LuUsers },
+  { label: "Suscripciones", href: "/admin/suscripciones", icon: LuBadgeCheck },
+  { label: "Pagos", href: "/admin/pagos", icon: LuCreditCard },
+  { label: "Módulos", href: "/admin/modulos", icon: LuLayoutGrid },
+  { label: "Estado plataforma", href: "/admin/estado-plataforma", icon: LuBatteryFull },
+  { label: "Configuración", href: "/admin/configuracion", icon: LuSettings },
 ];
 
-export default function SidebarMenu({ collapsed }: SidebarProps) {
+export default function SidebarMenu({ collapsed, pathname }: SidebarProps) {
   return (
     <aside
       className="flex h-full min-h-[calc(100vh-2rem)] flex-col p-3 rounded-2xl bg-surface-primary transition-all duration-300"
@@ -67,6 +67,7 @@ export default function SidebarMenu({ collapsed }: SidebarProps) {
       <nav className="mt-10 flex flex-1 flex-col gap-2.5">
         {navItems.map((item) => {
           const Icon = item.icon;
+          const isActive = item.href === pathname;
 
           return (
             <Link
@@ -76,15 +77,15 @@ export default function SidebarMenu({ collapsed }: SidebarProps) {
                 "flex items-center gap-2 rounded-lg px-3 py-2.5 w-full text-base transition-colors",
                 {
                   "lg:p-3": collapsed,
-                  "font-medium text-primary": item.active,
-                  "text-neutral-primary hover:font-medium hover:bg-surface-tertiary": !item.active,
+                  "font-medium text-primary": isActive,
+                  "text-neutral-primary hover:font-medium hover:bg-surface-tertiary": !isActive,
                 },
               )}
             >
               <Icon
                 className={clsx("h-5 w-5", {
-                  "text-primary": item.active,
-                  "text-neutral-primary": !item.active,
+                  "text-primary": isActive,
+                  "text-neutral-primary": !isActive,
                 })}
               />
               <span
