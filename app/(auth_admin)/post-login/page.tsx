@@ -28,8 +28,8 @@ const PostLoginPage = async () => {
     redirect("/admin");
   }
 
-  // TODO: Destino temporal para usuarios que no son staff
-  redirect("/testing-user-login");
+  // Redirigir al dashboard de LifeOn
+  redirect("/dashboard");
 };
 
 export default PostLoginPage;
