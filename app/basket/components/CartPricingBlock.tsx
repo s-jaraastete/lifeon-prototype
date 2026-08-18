@@ -18,14 +18,14 @@ const CartPricingBlock = ({ plan, ufValue }: { plan: CartItem; ufValue: number }
   const selectedPriceOption = getActivePriceOption(plan, plan.selectedBillingPeriod)
   const discountAmount = getDiscountAmount(selectedPriceOption)
   const discountLabel = getDiscountLabel(selectedPriceOption)
-  const referencePrice = getReferencePrice(plan.selectedBillingPeriod, ufValue)
+  const referencePrice = getReferencePrice(selectedPriceOption, ufValue)
   const baseTotalDueToday = getTotalDueToday(selectedPriceOption)
   const totalDueToday = selectedPriceOption?.trial_days
     ? baseTotalDueToday
     : couponPreview?.total ?? baseTotalDueToday
   const referenceFinalPrice = selectedPriceOption?.trial_days
     ? '0'
-    : getReferenceFinalPrice(plan.selectedBillingPeriod, ufValue)
+    : getReferenceFinalPrice(selectedPriceOption, ufValue)
 
   return (
     <>

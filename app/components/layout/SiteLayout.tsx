@@ -9,15 +9,18 @@ import Footer from './Footer';
 
 export default function SiteLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith('/admin') ?? false;
+  const hideHeaderFooter =
+    pathname === '/login' ||
+    pathname?.startsWith('/dashboard') ||
+    (pathname?.startsWith('/admin') ?? false);
 
   return (
     <>
-      {!isAdmin && <Header />}
-      <main className={clsx(!isAdmin && 'pt-16 lg:pt-0')}>
+      {!hideHeaderFooter && <Header />}
+      <main className={clsx(!hideHeaderFooter && 'pt-16 lg:pt-0')}>
         {children}
       </main>
-      {!isAdmin && <Footer />}
+      {!hideHeaderFooter && <Footer />}
     </>
   );
 }

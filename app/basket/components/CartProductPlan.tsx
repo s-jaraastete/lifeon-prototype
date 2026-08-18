@@ -49,10 +49,10 @@ const CartProductPlan = ({ items, onRemove, ufValue }: CartProductPlanProps) => 
           && selectedPriceOption?.original_amount !== null
           && selectedPriceOption?.original_amount !== undefined
 
-        const referencePrice = getReferencePrice(item.selectedBillingPeriod, ufValue)
+        const referencePrice = getReferencePrice(selectedPriceOption, ufValue)
 
         return (
-          <div key={item.id} className="border border-gray-500 rounded-[22px] bg-white p-7.5">
+          <div key={item.public_id} className="border border-gray-500 rounded-[22px] bg-white p-7.5">
             <div className="flex justify-between items-baseline lg:items-end">
               <div className="flex flex-col lg:flex-row gap-2 lg:gap-7.5">
                 <div className="flex flex-col gap-7">
@@ -111,7 +111,7 @@ const CartProductPlan = ({ items, onRemove, ufValue }: CartProductPlanProps) => 
               </div>
               <button
                 className="text-red-500 cursor-pointer m-1 lg:pb-3 transition duration-200 hover:text-primary-pressed"
-                onClick={() => onRemove(item.id)}
+                onClick={() => onRemove(item.public_id)}
               >
                 <LuTrash2 size={24} />
               </button>

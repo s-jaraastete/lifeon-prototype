@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 
 // import ShoppingCart from "../shopping/ShoppingCart";
@@ -24,6 +24,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const isHome = pathname === "/";
 
   type NavLink = {
@@ -44,18 +45,7 @@ const Header = () => {
   };
 
   const handleLogin = () => {
-    const authFrontendUrl =
-      process.env.NEXT_PUBLIC_AUTH_FRONTEND_URL ??
-      "http://localhost:3002";
-
-    const loginUrl = new URL("/login", authFrontendUrl);
-
-    loginUrl.searchParams.set(
-      "callbackUrl",
-      `${window.location.origin}/post-login`
-    );
-
-    window.location.assign(loginUrl.toString());
+    router.push("/login");
   };
 
   const handleAccountAccess = () => {

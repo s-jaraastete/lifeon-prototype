@@ -33,7 +33,7 @@ const mapPackModules = (packModules: PackModule[]): CartModule[] => {
   return packModules
     .filter((packModule) => packModule.is_active)
     .map((packModule) => ({
-      id: packModule.module.id,
+      public_id: packModule.module.public_id,
       name: packModule.module.name,
       slug: packModule.module.slug,
       description: packModule.module.description ?? undefined,
@@ -42,8 +42,6 @@ const mapPackModules = (packModules: PackModule[]): CartModule[] => {
 
 const mapPackPrices = (prices: PackPrice[]): CartPriceOption[] => {
   return prices.map((price) => ({
-    id: price.id,
-    pack: price.pack,
     amount: Number(price.amount),
     original_amount: price.original_amount !== null ? Number(price.original_amount) : null,
     discount_percentage: price.discount_percentage !== null ? Number(price.discount_percentage) : null,
@@ -51,6 +49,7 @@ const mapPackPrices = (prices: PackPrice[]): CartPriceOption[] => {
     currency: price.currency,
     billing_period: price.billing_period,
     trial_days: price.trial_days,
+    has_trial: price.has_trial,
     is_active: price.is_active,
   }))
 }
@@ -61,7 +60,7 @@ const mapPackToCartItem = (pack: Pack): CartItem => {
   const selectedPriceOption = getSelectedPriceOption(priceOptions, selectedBillingPeriod)
 
   return {
-    id: String(pack.id),
+    public_id: pack.public_id,
     slug: pack.slug,
     name: pack.name,
     description: pack.description ?? undefined,

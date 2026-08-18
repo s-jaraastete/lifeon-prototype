@@ -56,7 +56,7 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
       return
     }
 
-    updateItemBillingPeriod(initialPlan.id, value as CartBillingPeriod)
+    updateItemBillingPeriod(initialPlan.public_id, value as CartBillingPeriod)
   }
 
   return (
