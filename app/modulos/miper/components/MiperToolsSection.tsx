@@ -96,16 +96,23 @@ const MiperToolsSection = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-[5fr_4fr] gap-10 lg:gap-22.5 items-center">
           <div className="relative w-full h-80 lg:h-130 rounded-3xl bg-white overflow-hidden">
-            <div className="relative w-full h-full p-4">
-              <Image
-                key={activeTool.image}
-                src={activeTool.image}
-                alt={activeTool.title}
-                fill
-                className="object-contain"
-                sizes="(min-width: 1024px) 55vw, 100vw"
-              />
-            </div>
+            {tools.map((tool, index) => (
+              <div
+                key={index}
+                className={clsx(
+                  "absolute inset-0 p-4 transition-opacity duration-500 ease-in-out",
+                  index === activeIndex ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <Image
+                  src={tool.image}
+                  alt={tool.title}
+                  fill
+                  className="object-contain"
+                  sizes="(min-width: 1024px) 55vw, 100vw"
+                />
+              </div>
+            ))}
           </div>
 
           <div className="flex flex-col gap-4 lg:gap-5">
@@ -119,7 +126,7 @@ const MiperToolsSection = () => {
                   onClick={() => setActiveIndex(index)}
                   aria-pressed={active}
                   className={clsx(
-                    "flex items-stretch gap-7.5 text-base- text-left transition duration-200",
+                    "flex items-stretch gap-7.5 text-base- text-left transition duration-400",
                     !active && "cursor-pointer",
                   )}
                 >
@@ -141,11 +148,16 @@ const MiperToolsSection = () => {
                     >
                       {tool.title}
                     </h3>
-                    {active && (
-                      <p className="mt-2.5 text-sm lg:text-lg text-primary-text">
-                        {tool.description}
-                      </p>
-                    )}
+                    <div
+                      className="grid transition-[grid-template-rows] duration-500 ease-in-out"
+                      style={{ gridTemplateRows: active ? "1fr" : "0fr" }}
+                    >
+                      <div className="overflow-hidden">
+                        <p className="mt-2.5 text-sm lg:text-lg text-primary-text">
+                          {tool.description}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </button>
               );
