@@ -2,10 +2,11 @@ import ModuleHero from "./components/ModuleHero";
 import InfoCardsSection from "@/app/components/shared/InfoCardsSection";
 import BannerSection from "@/app/components/shared/BannerSection";
 import FrequentlyQuestions from "@/app/components/shared/FrequentlyQuestions";
+import EcoSystemSection from "../components/EcoSystemSection";
+import WorkFlowMiperSection from "./components/WorkFlowMiperSection";
 
 import infoCardsData from "./data/infoCardsData";
 import frequentlyQuestionsMiper from "./data/frequentlyQuestionsMiper";
-import EcoSystemSection from "../components/EcoSystemSection";
 
 const MiperPage = () => {
   return (
@@ -17,6 +18,7 @@ const MiperPage = () => {
         cardsData={infoCardsData}
       />
       {/* TODO: Componentes restantes */}
+      <WorkFlowMiperSection />
       <EcoSystemSection
         title={<>Matriz IPER es parte de un <span className="text-secondary">ecosistema</span> conectado</>}
         description="Aunque el módulo MIPER puede utilizarse de forma independiente, alcanza su máximo potencial cuando se integra con otros módulos de LifeOn. La información fluye entre procesos, evitando duplicidad de registros y facilitando una gestión preventiva más completa."
