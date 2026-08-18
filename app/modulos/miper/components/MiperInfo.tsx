@@ -10,7 +10,7 @@ const MiperInfo = () => {
   ];
 
   return (
-    <section className="w-full py-15 px-4 xl:px-0">
+    <section className="w-full py-18 px-4 xl:px-0">
       <div className="max-w-325 mx-auto flex flex-col lg:flex-row items-center gap-10">
         <div className="flex flex-col items-center lg:items-start justify-center gap-5.5 text-center lg:text-left w-full lg:w-1/2">
           <h2 className="text-[30px] lg:text-5xl font-semibold text-base-black leading-tight">

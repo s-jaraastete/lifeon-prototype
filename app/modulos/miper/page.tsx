@@ -12,7 +12,7 @@ import frequentlyQuestionsMiper from "./data/frequentlyQuestionsMiper";
 
 const MiperPage = () => {
   return (
-    <>
+    <div className="mb-20">
       <ModuleHero />
       <InfoCardsSection
         title={<>Una forma <span className="text-secondary">más eficiente</span> de gestionar tu Matriz IPER</>}
@@ -21,7 +21,6 @@ const MiperPage = () => {
       />
       <MiperInfo />
       <MiperToolsSection />
-      {/* TODO: Componentes restantes */}
       <WorkFlowMiperSection />
       <EcoSystemSection
         title={<>Matriz IPER es parte de un <span className="text-secondary">ecosistema</span> conectado</>}
@@ -40,7 +39,7 @@ const MiperPage = () => {
         textColor="dark"
         buttonUrl="/precios"
       />
-    </>
+    </div>
   );
 };
 

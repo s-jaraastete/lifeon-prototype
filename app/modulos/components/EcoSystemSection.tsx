@@ -11,7 +11,7 @@ type EcoSystemProps = {
 
 const EcoSystemSection = ({title, description, image}: EcoSystemProps) => {
   return (
-    <section className="w-full mt-25 mb-25 px-4 lg:mb-10 xl:px-0">
+    <section className="w-full py-18 px-4 xl:px-0">
       <div className="max-w-325 mx-auto flex flex-col lg:flex-row">
         <div className='w-full flex justify-center mt-10 mr-10'>
           <Image className='object-cover w-112.5 border' src={image} alt='img-module' width={1000}  height={1000} />
