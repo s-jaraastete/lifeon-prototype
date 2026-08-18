@@ -1,9 +1,12 @@
 import React from 'react'
+import Cookies from './components/Cookies';
 
 const CookiesPage = () => {
   return (
-    <div>CookiesPage</div>
+    <>
+      <Cookies />
+    </>
   )
-}
+};
 
 export default CookiesPage;
