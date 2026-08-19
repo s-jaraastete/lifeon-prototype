@@ -5,11 +5,11 @@ import CredentialsProvider from "next-auth/providers/credentials";
 const cookieNamePrefix = process.env.COOKIES_NAME_PREFIX ?? 'localhost_frontend'
 
 const refreshAccessToken = async (refreshToken: string) => {
-  const host = process.env.backendHost;
+  const host = process.env.NEXT_PUBLIC_ADMIN_MODULE_API;
   const payload = {
     refresh: refreshToken
   }
-  const res = await fetch(`${host}/token/refresh/`, {
+  const res = await fetch(`${host}/auth/token/refresh/`, {
     method: 'POST',
     body: JSON.stringify(payload),
     headers: { "Content-Type": "application/json" }
