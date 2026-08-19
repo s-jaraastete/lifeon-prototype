@@ -63,19 +63,17 @@ const Listbox = ({
               id={id}
               onFocus={onFocus}
               className={clsx(
-                "appearance-none w-full py-3 px-5 leading-normal cursor-pointer",
-                "transition duration-200 focus:ring-1 focus:outline-none",
-                "rounded-xl ring-1 flex items-center justify-between gap-2",
-                error
-                  ? "ring-primary focus:ring-primary"
-                  : "ring-gray-400 focus:ring-gray-600"
+                "input-base input-ring input-focus",
+                "cursor-pointer flex items-center justify-between gap-2 leading-normal",
+                open && "ring-2 ring-secondary",
+                error && "input-error",
               )}
             >
               <span className={clsx("text-left truncate min-w-0", selected ? "" : "text-gray-700")}>
                 {selected ? selected.label : (placeholder ?? "Seleccione")}
               </span>
               <LuChevronDown className="w-5 h-5 text-gray-700 shrink-0" />
-            </ListboxButton>
+              </ListboxButton>
             <Transition
               show={open}
               enter="transition duration-200 ease-out"
@@ -88,9 +86,9 @@ const Listbox = ({
               <ListboxOptions
                 anchor="bottom"
                 className={clsx(
-                  "mt-1 rounded-xl bg-white outline-0 ring-1 ring-gray-400",
-                  "focus-visible:ring-gray-600 w-(--button-width) max-h-60!",
-                  "overflow-y-auto",
+                  "input-ring mt-1 rounded-xl bg-white outline-0",
+                  "w-(--button-width) max-h-60! overflow-y-auto",
+                  "focus-visible:ring-gray-600",
                   "[&::-webkit-scrollbar]:w-3",
                   "[&::-webkit-scrollbar-track]:my-1.5",
                   "[&::-webkit-scrollbar-thumb]:rounded-full",

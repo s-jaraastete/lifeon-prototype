@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { ReactNode } from 'react'
+import { ReactNode } from 'react'
 
 
 type EcoSystemProps = {
@@ -11,14 +11,14 @@ type EcoSystemProps = {
 
 const EcoSystemSection = ({title, description, image}: EcoSystemProps) => {
   return (
-    <section className="w-full mb-10 mt-25 px-4 xl:px-0">
-      <div className="max-w-325 mx-auto flex">
+    <section className="w-full py-18 px-4 xl:px-0">
+      <div className="max-w-325 mx-auto flex flex-col lg:flex-row">
         <div className='w-full flex justify-center mt-10 mr-10'>
           <Image className='object-cover w-112.5 border' src={image} alt='img-module' width={1000}  height={1000} />
         </div>
 
         <div className='flex flex-col justify-center'>
-          <h2 className="text-[30px] leading-14 font-semibold mb-4 text-base-black lg:w-165.75 lg:text-5xl">
+          <h2 className="text-[30px] font-semibold mb-4 text-base-black lg:leading-14 lg:w-165.75 lg:text-5xl">
             {title}
           </h2>
           <p className="text-lg text-primary-text lg:w-185">

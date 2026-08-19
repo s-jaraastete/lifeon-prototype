@@ -1,9 +1,10 @@
-import React from 'react'
+import TerminosUso from './components/TerminosUso';
+
 
 const TerminosDeUsoPage = () => {
   return (
-    <div>Términos De Uso Page</div>
+    <TerminosUso />
   )
-}
+};
 
 export default TerminosDeUsoPage;

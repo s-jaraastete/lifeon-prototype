@@ -1,8 +1,11 @@
-import React from 'react'
+import PoliticasPrivacidad from './components/PoliticasPrivacidad';
+
 
 const PoliticaDePrivacidadPage = () => {
   return (
-    <div>Política De Privacidad Page</div>
+    <>
+      <PoliticasPrivacidad />
+    </>
   )
 }
 

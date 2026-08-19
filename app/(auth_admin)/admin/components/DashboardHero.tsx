@@ -1,3 +1,4 @@
+import Image from "next/image";
 import StatCard from "./StatCard";
 
 const stats = [
@@ -30,7 +31,12 @@ export default function DashboardHero({userName}: {userName?: string}) {
   return (
     <section className="rounded-2xl bg-surface-primary p-6 shadow-soft lg:p-7">
       <div className="flex items-start gap-4">
-        <div className="text-5xl leading-none">👋</div>
+        <Image
+          src="/images/waving-hand.png"
+          height={62}
+          width={62}
+          alt="Mano saludando"
+        />
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-neutral-primary lg:text-4xl">
             Hola de nuevo, {userName}

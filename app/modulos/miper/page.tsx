@@ -1,22 +1,27 @@
-import ModuleHero from "./components/ModuleHero";
 import InfoCardsSection from "@/app/components/shared/InfoCardsSection";
-import BannerSection from "@/app/components/shared/BannerSection";
 import FrequentlyQuestions from "@/app/components/shared/FrequentlyQuestions";
+import BannerSection from "@/app/components/shared/BannerSection";
+import ModuleHero from "./components/ModuleHero";
+import MiperInfo from "./components/MiperInfo";
+import MiperToolsSection from "./components/MiperToolsSection";
+import EcoSystemSection from "../components/EcoSystemSection";
+import WorkFlowMiperSection from "./components/WorkFlowMiperSection";
 
 import infoCardsData from "./data/infoCardsData";
 import frequentlyQuestionsMiper from "./data/frequentlyQuestionsMiper";
-import EcoSystemSection from "../components/EcoSystemSection";
 
 const MiperPage = () => {
   return (
-    <>
+    <div className="mb-20">
       <ModuleHero />
       <InfoCardsSection
         title={<>Una forma <span className="text-secondary">más eficiente</span> de gestionar tu Matriz IPER</>}
         description="Centraliza la identificación de peligros, la evaluación de riesgos y el seguimiento de las medidas de control en una plataforma diseñada para mantener la información organizada, actualizada y disponible para toda la organización."
         cardsData={infoCardsData}
       />
-      {/* TODO: Componentes restantes */}
+      <MiperInfo />
+      <MiperToolsSection />
+      <WorkFlowMiperSection />
       <EcoSystemSection
         title={<>Matriz IPER es parte de un <span className="text-secondary">ecosistema</span> conectado</>}
         description="Aunque el módulo MIPER puede utilizarse de forma independiente, alcanza su máximo potencial cuando se integra con otros módulos de LifeOn. La información fluye entre procesos, evitando duplicidad de registros y facilitando una gestión preventiva más completa."
@@ -34,7 +39,7 @@ const MiperPage = () => {
         textColor="dark"
         buttonUrl="/precios"
       />
-    </>
+    </div>
   );
 };
 

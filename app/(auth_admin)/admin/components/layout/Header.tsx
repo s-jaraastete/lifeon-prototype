@@ -5,6 +5,7 @@ import {
   LuPanelRightClose,
   LuSearch,
 } from "react-icons/lu";
+import TextInput from "@/app/components/ui/TextInput";
 
 type HeaderProps = {
   collapsed: boolean;
@@ -41,19 +42,19 @@ export default function Header({ collapsed, onToggle }: HeaderProps) {
         </div>
 
         <div className="flex flex-1 items-center gap-3 xl:max-w-2xl xl:justify-end">
-          <label className="relative flex-1 xl:max-w-md">
-            <LuSearch className="pointer-events-none absolute left-4 top-1/2 h-6 w-6 -translate-y-1/2 text-gray-500" />
-            <input
+          <div className="relative flex-1 xl:max-w-md">
+            <LuSearch className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-tertiary z-10" />
+            <TextInput
               type="search"
               placeholder="¿Qué quieres buscar hoy?..."
-              className="h-12 w-full rounded-2xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-neutral-primary outline-none transition placeholder:text-gray-500 focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
+              className="h-10 rounded-lg bg-white ring-stroke-primary pl-11 pr-3 text-neutral-primary placeholder:text-neutral-tertiary"
             />
-          </label>
+          </div>
 
           <button
             type="button"
             aria-label="Notificaciones"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg cursor-pointer border border-stroke-primary bg-white text-neutral-secondary transition hover:bg-surface-tertiary hover:text-secondary"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg cursor-pointer ring-1 ring-stroke-primary bg-white text-neutral-secondary transition hover:bg-surface-tertiary hover:text-secondary"
           >
             <LuBell className="h-6 w-6" />
             {/* <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500" /> */}

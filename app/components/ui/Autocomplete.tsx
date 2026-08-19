@@ -208,11 +208,11 @@ const Autocomplete = <T extends InterfaceWithId, >(props: AutocompleteProps<T>) 
 
   return (
     <div className="w-full">
-    <Combobox 
-      immediate 
-      multiple={props.multiple} 
-      value={props.selected as typeof props.multiple extends true ? T[] : (T | null)} 
-      onChange={value => handleChange(value as typeof props.multiple extends true ? T[] : (T | null))} 
+    <Combobox
+      immediate
+      multiple={props.multiple}
+      value={props.selected as typeof props.multiple extends true ? T[] : (T | null)}
+      onChange={value => handleChange(value as typeof props.multiple extends true ? T[] : (T | null))}
       onClose={handleClose}
     >
       {({ open }) => (
@@ -222,8 +222,8 @@ const Autocomplete = <T extends InterfaceWithId, >(props: AutocompleteProps<T>) 
         as="div"
         ref={(node) => { controlRef.current = node }}
         className={clsx(
-          'w-full cursor-text transition duration-200 ring-1 rounded-xl bg-white',
-          'ring-gray-400 focus-within:ring-1 focus-within:ring-gray-600 focus:outline-none',
+          'input-ring w-full cursor-text transition duration-200 rounded-xl bg-white',
+          'focus-within:ring-2 focus-within:ring-secondary focus:outline-none',
           'flex items-center justify-between gap-2',
           props.multiple ? 'flex-wrap min-h-10 gap-1 px-2 py-1 pr-10' : 'py-3 px-5'
         )}
@@ -243,8 +243,7 @@ const Autocomplete = <T extends InterfaceWithId, >(props: AutocompleteProps<T>) 
         <ComboboxInput
           placeholder={getPlaceholder()}
           className={clsx(
-            'appearance-none leading-normal placeholder-gray-700',
-            'focus:outline-hidden bg-transparent',
+            'appearance-none focus:outline-hidden leading-normal placeholder-gray-700 bg-transparent',
             props.multiple ? 'min-w-40 flex-1 py-1 pr-7' : 'flex-1 py-0'
           )}
           displayValue={(item: typeof props.multiple extends true ? T[] : (T | null)) => {
@@ -261,7 +260,7 @@ const Autocomplete = <T extends InterfaceWithId, >(props: AutocompleteProps<T>) 
           onFocus={syncOptionsLayout}
           autoComplete={props.enableAutocomplete ? 'on' : 'off'}
         />
-        {rData.isFetching ? 
+        {rData.isFetching ?
           <span className="pointer-events-none flex items-center justify-center shrink-0">
             <Spinner/>
           </span>
@@ -297,7 +296,7 @@ const Autocomplete = <T extends InterfaceWithId, >(props: AutocompleteProps<T>) 
               : { bottom: optionsLayout.bottom }),
           } : undefined}
           className={clsx(
-            'overflow-y-auto rounded-xl bg-white py-2 ring-1 ring-gray-400',
+            'input-ring overflow-y-auto rounded-xl bg-white py-2',
             'focus:outline-hidden z-50',
             '[&::-webkit-scrollbar]:w-3',
             '[&::-webkit-scrollbar-track]:my-1.5',

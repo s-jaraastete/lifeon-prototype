@@ -2,6 +2,7 @@
 
 import { LuChevronDown } from "react-icons/lu";
 import { SelectHTMLAttributes } from "react";
+import clsx from "clsx";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
@@ -38,14 +39,13 @@ const Select = ({
       )}
       <div className="relative">
         <select
-          className={`
-            appearance-none w-full py-3 px-5 leading-normal
-            transition duration-200 focus:ring-1 focus:outline-none
-            rounded-xl ring-1
-            ${error ? "ring-primary focus:ring-primary" : "ring-gray-400 focus:ring-gray-600"}
-            ${selectProps.value ? "" : "text-gray-700"}
-            ${className ?? ""}
-          `}
+          className={clsx(
+            "input-base input-ring input-focus input-disabled leading-normal",
+            error && "input-error",
+            !selectProps.value && "text-gray-700",
+            className,
+          )}
+          aria-invalid={!!error || undefined}
           onChange={handleChange}
           {...selectProps}
         >

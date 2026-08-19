@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useState } from "react";
+import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
 import Header from "./Header";
@@ -12,6 +13,7 @@ type AdminShellProps = {
 
 export default function AdminShell({ children }: AdminShellProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
 
   return (
     <div className="min-h-screen bg-teal-50 p-3 text-neutral-primary">
@@ -23,7 +25,7 @@ export default function AdminShell({ children }: AdminShellProps) {
             : "lg:grid-cols-[270px_minmax(0,1fr)]",
         )}
       >
-        <SidebarMenu collapsed={collapsed} />
+        <SidebarMenu collapsed={collapsed} pathname={pathname} />
 
         <div className="flex min-w-0 flex-col gap-4">
           <Header

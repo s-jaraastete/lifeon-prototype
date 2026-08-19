@@ -1,4 +1,5 @@
 import { DetailedHTMLProps, TextareaHTMLAttributes } from "react";
+import clsx from "clsx";
 
 export interface TextAreaProps extends DetailedHTMLProps<
   TextareaHTMLAttributes<HTMLTextAreaElement>,
@@ -23,16 +24,13 @@ const TextArea = (props: TextAreaProps) => {
       )}
 
       <textarea
-        className={`
-          appearance-none w-full py-3 px-5
-          transition duration-200 focus:ring-1 focus:ring-primary focus:outline-none
-          rounded-xl ring-1 ring-gray-400 placeholder-gray-700
-          min-h-21 resize-none overflow-y-auto
-          [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:my-1
-          [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-gray-500
-          ${props.disabled ? "cursor-not-allowed" : ""}
-          ${className ?? ""}
-        `}
+        className={clsx(
+          "input-base input-ring input-focus input-disabled",
+          "min-h-21 resize-none overflow-y-auto",
+          "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:my-1",
+          "[&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-gray-500",
+          className,
+        )}
         {...textareaProps}
       />
     </div>
