@@ -1,4 +1,3 @@
-import Image from "next/image";
 import {
   LuBell,
   LuPanelLeftClose,
@@ -6,6 +5,7 @@ import {
   LuSearch,
 } from "react-icons/lu";
 import TextInput from "@/app/components/ui/TextInput";
+import UserMenu from "./UserMenu";
 
 type HeaderProps = {
   collapsed: boolean;
@@ -15,7 +15,7 @@ type HeaderProps = {
 export default function Header({ collapsed, onToggle }: HeaderProps) {
   return (
     <header className="rounded-2xl bg-surface-primary px-5 py-2.5 shadow-soft backdrop-blur">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -41,8 +41,8 @@ export default function Header({ collapsed, onToggle }: HeaderProps) {
           </span>
         </div>
 
-        <div className="flex flex-1 items-center gap-3 xl:max-w-2xl xl:justify-end">
-          <div className="relative flex-1 xl:max-w-md">
+        <div className="flex flex-1 items-center gap-3 md:max-w-2xl md:justify-end">
+          <div className="relative flex-1 md:max-w-sm">
             <LuSearch className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-tertiary z-10" />
             <TextInput
               type="search"
@@ -60,17 +60,7 @@ export default function Header({ collapsed, onToggle }: HeaderProps) {
             {/* <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500" /> */}
           </button>
 
-          <button
-            type="button"
-            aria-label="Perfil"
-            className="relative cursor-pointer inline-flex h-8 w-8 items-center justify-center"
-          >
-            <Image
-              src="/svg/avatar.svg"
-              alt="Avatar"
-              fill
-            />
-          </button>
+          <UserMenu />
         </div>
       </div>
     </header>
