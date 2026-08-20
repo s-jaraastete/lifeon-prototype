@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 // import ShoppingCart from "../shopping/ShoppingCart";
 import ModulesModal from "./ModulesModal";
 import MobileMenu from "./MobileMenu";
+import UserMenu from "@/app/components/ui/UserMenu";
 
 // Icons
 import {
   LuChevronDown,
-  LuLogOut,
   LuMenu,
   LuUserRound,
   LuX,
@@ -22,7 +22,7 @@ import {
 const Header = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const pathname = usePathname();
   const isHome = pathname === "/";
 
@@ -58,51 +58,9 @@ const Header = () => {
     window.location.assign(loginUrl.toString());
   };
 
-  const handleAccountAccess = () => {
-    window.location.assign("/post-login");
-  };
-
-  const handleLogout = async () => {
-    await signOut({ redirect: false });
-    window.location.assign("/");
-  };
-
-  const userDisplayName =
-    session?.user?.name ||
-    session?.user?.username ||
-    session?.user?.email ||
-    "Mi cuenta";
-
-  const renderAuthControls = (compact = false) => {
+  const renderAuthControls = () => {
     if (status === "authenticated") {
-      return (
-        <div className="flex items-center">
-          <button
-            type="button"
-            onClick={handleAccountAccess}
-            title={userDisplayName}
-            className={`
-              flex items-center gap-2 font-medium py-1 text-sm
-              text-black hover:text-primary-text transition duration-200 cursor-pointer
-              ${compact ? "px-3" : "px-4"}
-            `}
-          >
-            <span className={compact ? "max-w-30 truncate" : "max-w-50 truncate"}>
-              {userDisplayName}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            aria-label="Cerrar sesión"
-            title="Cerrar sesión"
-            className="rounded-xl text-primary hover:bg-gray-100 transition duration-200 cursor-pointer hover:text-red-600"
-          >
-            <LuLogOut className="w-4 h-4" />
-          </button>
-        </div>
-      );
+      return <UserMenu />;
     }
 
     return (
@@ -156,7 +114,7 @@ const Header = () => {
               </Link>
             </div>
 
-            <div>{renderAuthControls(true)}</div>
+            <div>{renderAuthControls()}</div>
           </div>
           {/* {pathname !== "/basket" && pathname !== "/checkout" && (
             <div className="">

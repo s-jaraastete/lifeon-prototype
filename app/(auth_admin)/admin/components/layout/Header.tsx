@@ -5,7 +5,7 @@ import {
   LuSearch,
 } from "react-icons/lu";
 import TextInput from "@/app/components/ui/TextInput";
-import UserMenu from "./UserMenu";
+import UserMenu from "@/app/components/ui/UserMenu";
 
 type HeaderProps = {
   collapsed: boolean;
