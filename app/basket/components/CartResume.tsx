@@ -21,7 +21,7 @@ import { LuChevronLeft, LuChevronRight, LuShoppingCart } from 'react-icons/lu'
 type CartResumeProps = {
   ufValue: number
 }
-
+// TODO: REMOVER TODO
 const CartResume = ({ ufValue }: CartResumeProps) => {
   const [isCouponOpen, setIsCouponOpen] = useState(false)
   const { items, couponPreview, isHydrated, removeItem, updateItemBillingPeriod } = useCart()
@@ -51,13 +51,13 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
     },
   ]
 
-  const handleBillingPeriodChange = (value: string) => {
+/*   const handleBillingPeriodChange = (value: string) => {
     if (!initialPlan) {
       return
     }
 
     updateItemBillingPeriod(initialPlan.id, value as CartBillingPeriod)
-  }
+  } */
 
   return (
     <div className="w-full bg-white px-4 xl:px-0">
@@ -123,7 +123,7 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                   <div className="border border-gray-500 rounded-[22px] bg-white p-6">
                     <Listbox
                       value={selectedBillingPeriod}
-                      onValueChange={handleBillingPeriodChange}
+                      /* onValueChange={handleBillingPeriodChange} */
                       options={suscriptionOptions}
                       label="Suscripción"
                     />
