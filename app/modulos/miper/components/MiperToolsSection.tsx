@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 
@@ -48,33 +48,39 @@ const MiperToolsSection = () => {
   const [progress, setProgress] = useState(0);
   const intervalMs = 8000;
 
-  useEffect(() => {
-    const resetTimer = window.setTimeout(() => {
-      setProgress(0);
-    }, 0);
+  const elapsedRef = useRef(0);
+  const lastFrameRef = useRef(0);
+  const speedRef = useRef(1);
+  const targetSpeedRef = useRef(1);
 
-    const start = window.performance.now();
+  useEffect(() => {
+    elapsedRef.current = 0;
+    lastFrameRef.current = 0;
+    speedRef.current = 1;
+    targetSpeedRef.current = 1;
     let rafId = 0;
 
     const animate = (now: number) => {
-      const elapsed = now - start;
-      const nextProgress = Math.min(elapsed / intervalMs, 1);
-      setProgress(nextProgress);
+      speedRef.current += (targetSpeedRef.current - speedRef.current) * 0.06;
 
-      if (nextProgress < 1) {
-        rafId = window.requestAnimationFrame(animate);
+      if (lastFrameRef.current) {
+        const delta = now - lastFrameRef.current;
+        elapsedRef.current += delta * speedRef.current;
+        const nextProgress = Math.min(elapsedRef.current / intervalMs, 1);
+        setProgress(nextProgress);
+
+        if (nextProgress >= 1) {
+          setActiveIndex((prev) => (prev + 1) % tools.length);
+          return;
+        }
       }
+      lastFrameRef.current = now;
+      rafId = window.requestAnimationFrame(animate);
     };
 
     rafId = window.requestAnimationFrame(animate);
 
-    const timer = window.setTimeout(() => {
-      setActiveIndex((prev) => (prev + 1) % tools.length);
-    }, intervalMs);
-
     return () => {
-      window.clearTimeout(resetTimer);
-      window.clearTimeout(timer);
       window.cancelAnimationFrame(rafId);
     };
   }, [activeIndex, intervalMs]);
@@ -123,6 +129,8 @@ const MiperToolsSection = () => {
                   key={tool.title}
                   type="button"
                   onClick={() => setActiveIndex(index)}
+                  onMouseEnter={() => { if (!active) targetSpeedRef.current = 0; }}
+                  onMouseLeave={() => { if (!active) targetSpeedRef.current = 1; }}
                   aria-pressed={active}
                   className={clsx(
                     "flex items-stretch gap-7.5 text-base- text-left transition duration-400",
