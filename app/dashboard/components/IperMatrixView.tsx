@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import clsx from "clsx";
 import {
   LuLayoutGrid,
@@ -25,6 +25,20 @@ import {
   LuCopy,
   LuSquarePen,
   LuSparkles,
+  LuArrowRight,
+  LuRotateCw,
+  LuCircleCheck,
+  LuCircleAlert,
+  LuCircleX,
+  LuPencil,
+  LuSend,
+  LuMessageSquare,
+  LuHistory,
+  LuLink,
+  LuClock,
+  LuFileText,
+  LuCalendar,
+  LuShieldAlert,
 } from "react-icons/lu";
 import IperMatrixDetailView from "./IperMatrixDetailView";
 
@@ -32,11 +46,15 @@ export type MatrixStatus =
   | "Vigente"
   | "En revisión"
   | "Borrador"
-  | "Observado"
+  | "Observada"
+  | "En actualización"
   | "En aprobación"
+  | "Vencida"
+  | "Rechazada"
+  | "Observado"
   | "En modificación"
-  | "No iniciado"
-  | "Vencido";
+  | "Vencido"
+  | "No iniciado";
 
 export interface IperMatrixItem {
   id: string;
@@ -63,11 +81,39 @@ export interface SignificanceImpactItem {
   impact: number;
 }
 
+export const getStatusBadgeStyle = (status: MatrixStatus) => {
+  switch (status) {
+    case "Vigente":
+      return "bg-[#ECFDF5] text-[#10B981] border-[#A7F3D0]";
+    case "En revisión":
+      return "bg-[#EFF6FF] text-[#3B82F6] border-[#BFDBFE]";
+    case "Borrador":
+      return "bg-[#F3F4F6] text-[#374151] border-[#E5E7EB]";
+    case "Observada":
+    case "Observado":
+      return "bg-[#FEF9C3] text-[#CA8A04] border-[#FDE047]";
+    case "En actualización":
+    case "En modificación":
+      return "bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]";
+    case "En aprobación":
+      return "bg-[#FAF5FF] text-[#9333EA] border-[#E9D5FF]";
+    case "Vencida":
+    case "Vencido":
+      return "bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]";
+    case "Rechazada":
+      return "bg-[#FFF1F2] text-[#E11D48] border-[#FECDD3]";
+    case "No iniciado":
+      return "bg-[#F3F4F6] text-[#6B7280] border-gray-200";
+    default:
+      return "bg-gray-100 text-gray-700 border-gray-200";
+  }
+};
+
 const INITIAL_MATRICES: IperMatrixItem[] = [
   {
     id: "1",
     code: "MA-001",
-    name: "Operación de equipos pesados",
+    name: "Operación de equipos pesados y movimiento de tierras",
     workCenter: "Planta Quilicura",
     responsible: "Ana Silva Catrileo",
     totalRecords: 85,
@@ -78,80 +124,81 @@ const INITIAL_MATRICES: IperMatrixItem[] = [
   {
     id: "2",
     code: "MA-002",
-    name: "Mina Roja - Sector Norte",
+    name: "Mina Roja - Sector Norte y Perforaciones",
     workCenter: "Mina Roja",
     responsible: "Carlos Mora Rocha",
     totalRecords: 142,
     intolerableRisks: 19,
-    expiryText: "Vencimiento: -",
+    expiryText: "En evaluación",
     status: "En revisión",
   },
   {
     id: "3",
     code: "MA-003",
-    name: "Mantenimiento e instalaciones eléctricas",
+    name: "Mantenimiento e instalaciones eléctricas BT/MT",
     workCenter: "Taller central",
     responsible: "Ramiro Fuentes Rojas",
-    totalRecords: 0,
+    totalRecords: 12,
     intolerableRisks: 0,
-    expiryText: "Vencimiento: -",
+    expiryText: "Borrador preliminar",
     status: "Borrador",
   },
   {
     id: "4",
     code: "MA-004",
-    name: "Bodega y manejo de sustancias",
+    name: "Bodega y manejo de sustancias químicas",
     workCenter: "Planta Quilicura",
     responsible: "Ramiro Fuentes Rojas",
     totalRecords: 28,
     intolerableRisks: 2,
-    expiryText: "Vencimiento: -",
-    status: "Observado",
+    expiryText: "2 observaciones",
+    status: "Observada",
   },
   {
     id: "5",
     code: "MA-005",
-    name: "Bodega y manejo de sustancias",
-    workCenter: "Centro de distribución Lo Espejo",
-    responsible: "Ramiro Fuentes Rojas",
-    totalRecords: 28,
-    intolerableRisks: 2,
-    expiryText: "Vencimiento: -",
-    status: "En aprobación",
+    name: "Trabajos en caliente, corte y soldadura estructural",
+    workCenter: "Centro Lo Espejo",
+    responsible: "Diego Morales Vera",
+    totalRecords: 34,
+    intolerableRisks: 3,
+    expiryText: "Solicitud en curso",
+    status: "En actualización",
   },
   {
     id: "6",
     code: "MA-006",
-    name: "Bodega y manejo de sustancias",
-    workCenter: "Centro de distribución Lo Espejo",
-    responsible: "Ramiro Fuentes Rojas",
-    totalRecords: 28,
-    intolerableRisks: 2,
-    expiryText: "Vencimiento: -",
-    status: "En modificación",
+    name: "Excavaciones profundas, zanjas y entibaciones",
+    workCenter: "Centro Lo Espejo",
+    responsible: "Patricia Valenzuela",
+    totalRecords: 45,
+    intolerableRisks: 5,
+    expiryText: "Pendiente de firma",
+    status: "En aprobación",
   },
   {
     id: "7",
     code: "MA-007",
-    name: "Bodega y manejo de sustancias",
-    workCenter: "Centro de distribución Lo Espejo",
-    responsible: "Ramiro Fuentes Rojas",
-    totalRecords: "-",
-    intolerableRisks: "-",
-    expiryText: "Vencimiento: -",
-    status: "No iniciado",
+    name: "Operación de calderas y generación de vapor",
+    workCenter: "Planta Renca",
+    responsible: "Héctor Espinoza Soto",
+    totalRecords: 22,
+    intolerableRisks: 1,
+    expiryText: "Vencida hace 5 días",
+    isExpired: true,
+    status: "Vencida",
   },
   {
     id: "8",
     code: "MA-008",
-    name: "Bodega y manejo de sustancias",
-    workCenter: "Centro de distribución Lo Espejo",
-    responsible: "Ramiro Fuentes Rojas",
-    totalRecords: 28,
-    intolerableRisks: 2,
-    expiryText: "Vencido hace 5 días",
+    name: "Transporte de personal y faenas nocturnas",
+    workCenter: "Ruta Minera Central",
+    responsible: "Camila Oyarzún",
+    totalRecords: 18,
+    intolerableRisks: 0,
+    expiryText: "Rechazada por comité",
     isExpired: true,
-    status: "Vencido",
+    status: "Rechazada",
   },
 ];
 
@@ -225,7 +272,6 @@ const INITIAL_IMPACTS: SignificanceImpactItem[] = [
 ];
 
 // Matrix Heatmap Definition (5 Rows x 5 Cols)
-// Row 5 (Top, Impact 5) -> Row 1 (Bottom, Impact 1)
 const SIGNIFICANCE_GRID = [
   // Impact 5 (Row index 0)
   [
@@ -269,6 +315,13 @@ const SIGNIFICANCE_GRID = [
   ],
 ];
 
+interface MatrixActionItem {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  action: () => void;
+  isDanger?: boolean;
+}
+
 export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?: () => void }) {
   const [viewMode, setViewMode] = useState<"grid" | "list" | "significance">("grid");
   const [matrices, setMatrices] = useState<IperMatrixItem[]>(INITIAL_MATRICES);
@@ -279,10 +332,40 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [selectedCell, setSelectedCell] = useState<{ prob: number; impact: number; val: number } | null>(null);
 
-  // Modals
+  // Modals and Active Dropdown State
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
   const [isNewMatrixOpen, setIsNewMatrixOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Edit Data Modal State
+  const [isEditDataOpen, setIsEditDataOpen] = useState(false);
+  const [editingMatrix, setEditingMatrix] = useState<IperMatrixItem | null>(null);
+  const [editFormName, setEditFormName] = useState("");
+  const [editFormWorkCenter, setEditFormWorkCenter] = useState("");
+  const [editFormResponsible, setEditFormResponsible] = useState("");
+  const [editFormCode, setEditFormCode] = useState("");
+
+  // Version History Modal State
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [selectedHistoryMatrix, setSelectedHistoryMatrix] = useState<IperMatrixItem | null>(null);
+
+  // Observations Modal State
+  const [isObservationsOpen, setIsObservationsOpen] = useState(false);
+  const [isAddObservationOpen, setIsAddObservationOpen] = useState(false);
+  const [selectedObservationMatrix, setSelectedObservationMatrix] = useState<IperMatrixItem | null>(null);
+  const [newObservationText, setNewObservationText] = useState("");
+
+  // Modification Request Modal State
+  const [isModRequestOpen, setIsModRequestOpen] = useState(false);
+  const [isCreateModRequestOpen, setIsCreateModRequestOpen] = useState(false);
+  const [selectedModificationMatrix, setSelectedModificationMatrix] = useState<IperMatrixItem | null>(null);
+  const [newModReason, setNewModReason] = useState("");
+
+  // Delete Confirmation Modal State
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [matrixToDelete, setMatrixToDelete] = useState<IperMatrixItem | null>(null);
 
   // New Matrix Form State
   const [newCode, setNewCode] = useState(`MA-00${matrices.length + 1}`);
@@ -290,26 +373,319 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
   const [newWorkCenter, setNewWorkCenter] = useState("Planta Quilicura");
   const [newResponsible, setNewResponsible] = useState("Sergio A. Jara Astete");
 
-  const getStatusBadgeStyle = (status: MatrixStatus) => {
+  // Close floating menu on scroll or resize
+  useEffect(() => {
+    const handleScrollOrResize = () => {
+      if (activeMenuId) {
+        setActiveMenuId(null);
+        setMenuPosition(null);
+      }
+    };
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [activeMenuId]);
+
+  // Show Toast Notification
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3200);
+  };
+
+  // Status Updater with Notification
+  const updateMatrixStatus = (id: string, newStatus: MatrixStatus, feedbackMsg: string) => {
+    setMatrices((prev) =>
+      prev.map((m) => {
+        if (m.id === id) {
+          return {
+            ...m,
+            status: newStatus,
+            isExpired: newStatus === "Vencida" || newStatus === "Rechazada",
+          };
+        }
+        return m;
+      })
+    );
+    showToast(feedbackMsg);
+  };
+
+  // Copy Link Handler
+  const handleCopyLink = (mat: IperMatrixItem) => {
+    const url =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/dashboard?matrix=${mat.code}`
+        : `https://lifeon.cl/matrices/${mat.code}`;
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        showToast(`Enlace de ${mat.code} copiado al portapapeles`);
+      })
+      .catch(() => {
+        showToast(`Enlace de ${mat.code} copiado con éxito`);
+      });
+  };
+
+  // Export PDF/XLSX Handler
+  const handleExport = (mat: IperMatrixItem, isDraft: boolean) => {
+    showToast(
+      isDraft
+        ? `Generando borrador descargable de ${mat.code} en XLSX/PDF...`
+        : `Exportando matriz ${mat.code} en XLSX/PDF...`
+    );
+  };
+
+  // Open Edit Metadata Modal
+  const handleOpenEditModal = (mat: IperMatrixItem) => {
+    setEditingMatrix(mat);
+    setEditFormCode(mat.code);
+    setEditFormName(mat.name);
+    setEditFormWorkCenter(mat.workCenter);
+    setEditFormResponsible(mat.responsible);
+    setIsEditDataOpen(true);
+  };
+
+  // Save Edit Metadata
+  const handleSaveEditData = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMatrix) return;
+    setMatrices((prev) =>
+      prev.map((m) =>
+        m.id === editingMatrix.id
+          ? {
+              ...m,
+              code: editFormCode,
+              name: editFormName,
+              workCenter: editFormWorkCenter,
+              responsible: editFormResponsible,
+            }
+          : m
+      )
+    );
+    setIsEditDataOpen(false);
+    showToast(`Datos de matriz ${editFormCode} actualizados.`);
+  };
+
+  // Delete Matrix
+  const handleConfirmDelete = () => {
+    if (!matrixToDelete) return;
+    setMatrices((prev) => prev.filter((m) => m.id !== matrixToDelete.id));
+    setIsDeleteConfirmOpen(false);
+    showToast(`Matriz ${matrixToDelete.code} eliminada.`);
+    setMatrixToDelete(null);
+  };
+
+  // Submit Observation
+  const handleSubmitObservation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedObservationMatrix || !newObservationText.trim()) return;
+    updateMatrixStatus(
+      selectedObservationMatrix.id,
+      "Observada",
+      `Observación registrada en ${selectedObservationMatrix.code}. Estado cambiado a Observada.`
+    );
+    setIsAddObservationOpen(false);
+    setNewObservationText("");
+  };
+
+  // Submit Update Request
+  const handleSubmitUpdateRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedModificationMatrix || !newModReason.trim()) return;
+    updateMatrixStatus(
+      selectedModificationMatrix.id,
+      "En actualización",
+      `Solicitud de actualización enviada para ${selectedModificationMatrix.code}. Estado cambiado a En actualización.`
+    );
+    setIsCreateModRequestOpen(false);
+    setNewModReason("");
+  };
+
+  // Toggle Action Menu with Viewport Bounds Calculation
+  const handleToggleMenu = (e: React.MouseEvent<HTMLButtonElement>, matId: string) => {
+    e.stopPropagation();
+    if (activeMenuId === matId) {
+      setActiveMenuId(null);
+      setMenuPosition(null);
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dropdownEstimatedHeight = 330;
+    const spaceBelow = window.innerHeight - rect.bottom;
+
+    let top = rect.bottom + 6;
+    if (spaceBelow < dropdownEstimatedHeight && rect.top > dropdownEstimatedHeight) {
+      // Flip upwards if not enough room below
+      top = rect.top - dropdownEstimatedHeight - 6;
+    }
+
+    setMenuPosition({
+      top: Math.max(12, top),
+      right: Math.max(16, window.innerWidth - rect.right),
+    });
+    setActiveMenuId(matId);
+  };
+
+  // Actions Generator Based on Exact State Mappings from Design
+  const getMatrixActions = (mat: IperMatrixItem): MatrixActionItem[] => {
+    const status = mat.status;
+
+    const openMatrix = () => setSelectedMatrix(mat);
+    const editData = () => handleOpenEditModal(mat);
+    const copyLink = () => handleCopyLink(mat);
+    const deleteMatrix = () => {
+      setMatrixToDelete(mat);
+      setIsDeleteConfirmOpen(true);
+    };
+    const exportPdfXlsx = (isDraft: boolean) => handleExport(mat, isDraft);
+    const showHistory = () => {
+      setSelectedHistoryMatrix(mat);
+      setIsHistoryOpen(true);
+    };
+    const showObservations = () => {
+      setSelectedObservationMatrix(mat);
+      setIsObservationsOpen(true);
+    };
+    const observeMatrix = () => {
+      setSelectedObservationMatrix(mat);
+      setIsAddObservationOpen(true);
+    };
+    const showModificationReq = () => {
+      setSelectedModificationMatrix(mat);
+      setIsModRequestOpen(true);
+    };
+    const requestUpdate = () => {
+      setSelectedModificationMatrix(mat);
+      setIsCreateModRequestOpen(true);
+    };
+    const validateForApproval = () =>
+      updateMatrixStatus(mat.id, "En aprobación", `Matriz ${mat.code} validada para aprobación.`);
+    const approveAndPublish = () =>
+      updateMatrixStatus(mat.id, "Vigente", `Matriz ${mat.code} aprobada y publicada exitosamente.`);
+    const rejectMatrix = () =>
+      updateMatrixStatus(mat.id, "Rechazada", `Matriz ${mat.code} rechazada.`);
+    const revokeObservation = () =>
+      updateMatrixStatus(mat.id, "En revisión", `Observación revocada en ${mat.code}. Estado: En revisión.`);
+    const revokeUpdateRequest = () =>
+      updateMatrixStatus(mat.id, "Vigente", `Solicitud de actualización revocada. ${mat.code} vuelve a Vigente.`);
+    const revokeApprovalSubmission = () =>
+      updateMatrixStatus(mat.id, "En revisión", `Envío a aprobación revocado en ${mat.code}. Estado: En revisión.`);
+    const revokeRejection = () =>
+      updateMatrixStatus(mat.id, "En revisión", `Rechazo revocado en ${mat.code}. Estado: En revisión.`);
+    const sendToReview = () =>
+      updateMatrixStatus(mat.id, "En revisión", `Matriz ${mat.code} enviada a revisión técnica.`);
+
     switch (status) {
+      // 1. Vigente
       case "Vigente":
-        return "bg-[#ECFDF5] text-[#10B981] border-emerald-200";
+        return [
+          { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
+          { label: "Solicitar actualización", icon: LuRotateCw, action: requestUpdate },
+          { label: "Exportar en PDF/XLSX", icon: LuDownload, action: () => exportPdfXlsx(false) },
+          { label: "Historial de versiones", icon: LuHistory, action: showHistory },
+          { label: "Copiar enlace", icon: LuLink, action: copyLink },
+          { label: "Eliminar", icon: LuTrash2, action: deleteMatrix, isDanger: true },
+        ];
+
+      // 2. En revisión
       case "En revisión":
-        return "bg-[#EFF6FF] text-[#3B82F6] border-blue-200";
+        return [
+          { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
+          { label: "Validar matriz para aprobación", icon: LuCircleCheck, action: validateForApproval },
+          { label: "Observar matriz", icon: LuCircleAlert, action: observeMatrix },
+          { label: "Exportar borrador en PDF/XLSX", icon: LuDownload, action: () => exportPdfXlsx(true) },
+          { label: "Historial de versiones", icon: LuHistory, action: showHistory },
+          { label: "Copiar enlace", icon: LuLink, action: copyLink },
+          { label: "Eliminar", icon: LuTrash2, action: deleteMatrix, isDanger: true },
+        ];
+
+      // 3. Borrador / No iniciado
       case "Borrador":
-        return "bg-[#F3F4F6] text-[#4B5563] border-gray-200";
-      case "Observado":
-        return "bg-[#FEF3C7] text-[#D97706] border-amber-200";
-      case "En aprobación":
-        return "bg-[#FAF5FF] text-[#A855F7] border-purple-200";
-      case "En modificación":
-        return "bg-[#E0F2FE] text-[#0284C7] border-sky-200";
       case "No iniciado":
-        return "bg-[#F3F4F6] text-[#6B7280] border-gray-200";
+        return [
+          { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
+          { label: "Editar datos matriz", icon: LuPencil, action: editData },
+          { label: "Enviar a revisión", icon: LuSend, action: sendToReview },
+          { label: "Exportar borrador en PDF/XLSX", icon: LuDownload, action: () => exportPdfXlsx(true) },
+          { label: "Copiar enlace", icon: LuLink, action: copyLink },
+          { label: "Eliminar", icon: LuTrash2, action: deleteMatrix, isDanger: true },
+        ];
+
+      // 4. Observada / Observado
+      case "Observada":
+      case "Observado":
+        return [
+          { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
+          { label: "Ver observaciones", icon: LuMessageSquare, action: showObservations },
+          { label: "Revocar observación", icon: LuCircleX, action: revokeObservation },
+          { label: "Editar datos matriz", icon: LuPencil, action: editData },
+          { label: "Enviar a revisión", icon: LuSend, action: sendToReview },
+          { label: "Exportar en PDF/XLSX", icon: LuDownload, action: () => exportPdfXlsx(false) },
+          { label: "Copiar enlace", icon: LuLink, action: copyLink },
+          { label: "Eliminar", icon: LuTrash2, action: deleteMatrix, isDanger: true },
+        ];
+
+      // 5. En actualización / En modificación
+      case "En actualización":
+      case "En modificación":
+        return [
+          { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
+          { label: "Ver solicitud de modificación", icon: LuMessageSquare, action: showModificationReq },
+          { label: "Revocar solicitud de actualización", icon: LuCircleX, action: revokeUpdateRequest },
+          { label: "Editar datos matriz", icon: LuPencil, action: editData },
+          { label: "Enviar a revisión", icon: LuSend, action: sendToReview },
+          { label: "Exportar en PDF/XLSX", icon: LuDownload, action: () => exportPdfXlsx(false) },
+          { label: "Copiar enlace", icon: LuLink, action: copyLink },
+          { label: "Ver matriz", icon: LuEye, action: openMatrix },
+          { label: "Eliminar", icon: LuTrash2, action: deleteMatrix, isDanger: true },
+        ];
+
+      // 6. En aprobación
+      case "En aprobación":
+        return [
+          { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
+          { label: "Aprobar y publicar matriz", icon: LuCircleCheck, action: approveAndPublish },
+          { label: "Rechazar matriz", icon: LuCircleX, action: rejectMatrix },
+          { label: "Revocar envío a aprobación", icon: LuCircleX, action: revokeApprovalSubmission },
+          { label: "Exportar borrador en PDF/XLSX", icon: LuDownload, action: () => exportPdfXlsx(true) },
+          { label: "Copiar enlace", icon: LuLink, action: copyLink },
+          { label: "Eliminar", icon: LuTrash2, action: deleteMatrix, isDanger: true },
+        ];
+
+      // 7. Vencida / Vencido
+      case "Vencida":
       case "Vencido":
-        return "bg-[#FEE2E2] text-[#EF4444] border-red-200";
+        return [
+          { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
+          { label: "Solicitar actualización", icon: LuRotateCw, action: requestUpdate },
+          { label: "Exportar en PDF/XLSX", icon: LuDownload, action: () => exportPdfXlsx(false) },
+          { label: "Historial de versiones", icon: LuHistory, action: showHistory },
+          { label: "Copiar enlace", icon: LuLink, action: copyLink },
+          { label: "Eliminar", icon: LuTrash2, action: deleteMatrix, isDanger: true },
+        ];
+
+      // 8. Rechazada
+      case "Rechazada":
+        return [
+          { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
+          { label: "Revocar rechazo", icon: LuCircleX, action: revokeRejection },
+          { label: "Exportar en PDF/XLSX", icon: LuDownload, action: () => exportPdfXlsx(false) },
+          { label: "Historial de versiones", icon: LuHistory, action: showHistory },
+          { label: "Copiar enlace", icon: LuLink, action: copyLink },
+          { label: "Eliminar", icon: LuTrash2, action: deleteMatrix, isDanger: true },
+        ];
+
       default:
-        return "bg-gray-100 text-gray-700";
+        return [
+          { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
+          { label: "Copiar enlace", icon: LuLink, action: copyLink },
+          { label: "Eliminar", icon: LuTrash2, action: deleteMatrix, isDanger: true },
+        ];
     }
   };
 
@@ -326,12 +702,13 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
       totalRecords: 0,
       intolerableRisks: 0,
       expiryText: "Vencimiento: -",
-      status: "No iniciado",
+      status: "Borrador",
     };
 
     setMatrices([newItem, ...matrices]);
     setIsNewMatrixOpen(false);
     setNewName("");
+    showToast(`Matriz ${newItem.code} creada como Borrador.`);
   };
 
   const filteredMatrices = matrices.filter((m) => {
@@ -341,7 +718,13 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
       m.workCenter.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.responsible.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === "Todos" || m.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "Todos" ||
+      m.status === statusFilter ||
+      (statusFilter === "Observada" && m.status === "Observado") ||
+      (statusFilter === "En actualización" && m.status === "En modificación") ||
+      (statusFilter === "Vencida" && m.status === "Vencido");
+
     return matchesSearch && matchesStatus;
   });
 
@@ -365,8 +748,99 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
     );
   }
 
+  // Calculated Counters
+  const countVigentes = matrices.filter((m) => m.status === "Vigente").length;
+  const countRevision = matrices.filter((m) =>
+    ["En revisión", "En aprobación", "En actualización", "En modificación"].includes(m.status)
+  ).length;
+  const countObservadas = matrices.filter((m) =>
+    ["Observada", "Observado", "Rechazada"].includes(m.status)
+  ).length;
+  const countVencidas = matrices.filter(
+    (m) => ["Vencida", "Vencido"].includes(m.status) || m.isExpired
+  ).length;
+
   return (
-    <div className="flex flex-col gap-3 font-[family-name:var(--font-poppins)] animate-in fade-in duration-300">
+    <div className="flex flex-col gap-3 font-[family-name:var(--font-poppins)] animate-in fade-in duration-300 relative">
+      {/* Toast Flotante de Notificaciones */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <LuCircleCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+          <span className="text-xs font-medium">{toastMessage}</span>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-slate-400 hover:text-white ml-2 cursor-pointer"
+          >
+            <LuX className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Menú de Acciones Flotante Desacoplado del overflow (Fixed Portal Overlay) */}
+      {activeMenuId && menuPosition && (() => {
+        const currentMat = matrices.find((m) => m.id === activeMenuId);
+        if (!currentMat) return null;
+        const actions = getMatrixActions(currentMat);
+
+        return (
+          <>
+            {/* Backdrop para cerrar al hacer clic afuera */}
+            <div
+              className="fixed inset-0 z-40 cursor-default"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveMenuId(null);
+                setMenuPosition(null);
+              }}
+            />
+
+            {/* Tarjeta de Opciones Flotante */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: "fixed",
+                top: `${menuPosition.top}px`,
+                right: `${menuPosition.right}px`,
+                zIndex: 50,
+              }}
+              className="w-60 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 text-xs text-left animate-in fade-in zoom-in-95 duration-150"
+            >
+              <div className="px-3 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                Acciones
+              </div>
+              <div className="flex flex-col gap-0.5 mt-1 max-h-[380px] overflow-y-auto">
+                {actions.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenuId(null);
+                      setMenuPosition(null);
+                      opt.action();
+                    }}
+                    className={clsx(
+                      "w-full px-3 py-2 text-left rounded-xl flex items-center gap-2.5 transition text-xs font-medium cursor-pointer",
+                      opt.isDanger
+                        ? "text-red-600 hover:bg-red-50 hover:text-red-700 mt-1 border-t border-gray-100 pt-2"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                    )}
+                  >
+                    <opt.icon
+                      className={clsx(
+                        "w-4 h-4 flex-shrink-0",
+                        opt.isDanger ? "text-red-500" : "text-gray-500"
+                      )}
+                    />
+                    <span className="truncate">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
       {/* 1. Encabezado MIPER */}
       <div className="bg-white rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
@@ -406,26 +880,26 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
         <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-2xs hover:shadow-xs transition">
           <p className="text-xs font-medium text-gray-500">Matrices vigentes</p>
-          <p className="text-3xl font-bold text-gray-900 my-0.5">1</p>
-          <p className="text-[11px] text-gray-400">de 8 totales</p>
+          <p className="text-3xl font-bold text-gray-900 my-0.5">{countVigentes}</p>
+          <p className="text-[11px] text-gray-400">de {matrices.length} totales</p>
         </div>
 
         <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-2xs hover:shadow-xs transition">
-          <p className="text-xs font-medium text-gray-500">Lorem Ipsum</p>
-          <p className="text-3xl font-bold text-gray-900 my-0.5">0</p>
-          <p className="text-[11px] font-medium text-[#10B981]">+7,7% vs mes anterior</p>
+          <p className="text-xs font-medium text-gray-500">En revisión / aprobación</p>
+          <p className="text-3xl font-bold text-[#3B82F6] my-0.5">{countRevision}</p>
+          <p className="text-[11px] font-medium text-[#3B82F6]">Flujo de validación</p>
         </div>
 
         <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-2xs hover:shadow-xs transition">
-          <p className="text-xs font-medium text-gray-500">Lorem Ipsum</p>
-          <p className="text-3xl font-bold text-gray-900 my-0.5">0</p>
-          <p className="text-[11px] font-medium text-[#EAB308]">+7,7% vs mes anterior</p>
+          <p className="text-xs font-medium text-gray-500">Observadas / Rechazadas</p>
+          <p className="text-3xl font-bold text-[#D97706] my-0.5">{countObservadas}</p>
+          <p className="text-[11px] font-medium text-[#D97706]">Requieren atención</p>
         </div>
 
         <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-2xs hover:shadow-xs transition">
-          <p className="text-xs font-medium text-gray-500">Lorem Ipsum</p>
-          <p className="text-3xl font-bold text-gray-900 my-0.5">0</p>
-          <p className="text-[11px] font-medium text-[#EF4444]">+7,7% vs mes anterior</p>
+          <p className="text-xs font-medium text-gray-500">Matrices vencidas</p>
+          <p className="text-3xl font-bold text-[#EF4444] my-0.5">{countVencidas}</p>
+          <p className="text-[11px] font-medium text-[#EF4444]">Actualización obligatoria</p>
         </div>
       </div>
 
@@ -456,11 +930,11 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
               <option value="Vigente">Vigente</option>
               <option value="En revisión">En revisión</option>
               <option value="Borrador">Borrador</option>
-              <option value="Observado">Observado</option>
+              <option value="Observada">Observada</option>
+              <option value="En actualización">En actualización</option>
               <option value="En aprobación">En aprobación</option>
-              <option value="En modificación">En modificación</option>
-              <option value="No iniciado">No iniciado</option>
-              <option value="Vencido">Vencido</option>
+              <option value="Vencida">Vencida</option>
+              <option value="Rechazada">Rechazada</option>
             </select>
             <LuChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -516,7 +990,11 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
           {/* Botón Filtros */}
           <button
             type="button"
-            onClick={() => alert("Filtros avanzados disponibles:\n- Por Centro de Trabajo\n- Por Responsable\n- Por Rango de Fechas\n- Por Nivel de Riesgo")}
+            onClick={() =>
+              alert(
+                "Filtros avanzados disponibles:\n- Por Centro de Trabajo\n- Por Responsable\n- Por Rango de Fechas\n- Por Nivel de Riesgo"
+              )
+            }
             className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-700 hover:bg-gray-50 transition cursor-pointer"
           >
             <LuSlidersHorizontal className="w-3.5 h-3.5 text-gray-500" />
@@ -553,75 +1031,12 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
                       </span>
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenuId(activeMenuId === mat.id ? null : mat.id);
-                        }}
+                        onClick={(e) => handleToggleMenu(e, mat.id)}
                         className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-50 transition cursor-pointer"
+                        title="Acciones de la matriz"
                       >
                         <LuEllipsisVertical className="w-4 h-4" />
                       </button>
-
-                      {/* Dropdown de opciones */}
-                      {activeMenuId === mat.id && (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute right-3 top-10 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20 text-xs text-gray-700 animate-in fade-in"
-                        >
-                          <button
-                            onClick={() => {
-                              setSelectedMatrix(mat);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full px-3 py-1.5 text-left hover:bg-teal-50 text-teal-700 font-semibold flex items-center gap-2"
-                          >
-                            <LuSparkles className="w-3.5 h-3.5 text-teal-600" /> Iniciar edición
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedMatrix(mat);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full px-3 py-1.5 text-left hover:bg-gray-50 flex items-center gap-2"
-                          >
-                            <LuEye className="w-3.5 h-3.5 text-gray-500" /> Ver detalle
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedMatrix(mat);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full px-3 py-1.5 text-left hover:bg-teal-50 hover:text-teal-700 flex items-center gap-2"
-                          >
-                            <LuSquarePen className="w-3.5 h-3.5 text-gray-500" /> Editar matriz
-                          </button>
-                          <button
-                            onClick={() => {
-                              const duplicated: IperMatrixItem = {
-                                ...mat,
-                                id: `m-${Date.now()}`,
-                                code: `MA-00${matrices.length + 1}`,
-                                name: `${mat.name} (Copia)`,
-                              };
-                              setMatrices([...matrices, duplicated]);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full px-3 py-1.5 text-left hover:bg-gray-50 flex items-center gap-2"
-                          >
-                            <LuCopy className="w-3.5 h-3.5 text-gray-500" /> Duplicar
-                          </button>
-                          <div className="border-t border-gray-100 my-1" />
-                          <button
-                            onClick={() => {
-                              setMatrices(matrices.filter((item) => item.id !== mat.id));
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full px-3 py-1.5 text-left hover:bg-red-50 text-red-600 flex items-center gap-2"
-                          >
-                            <LuTrash2 className="w-3.5 h-3.5" /> Eliminar
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -739,11 +1154,9 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
                       <td className="py-3.5 px-4 text-center">
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedMatrix(mat);
-                          }}
+                          onClick={(e) => handleToggleMenu(e, mat.id)}
                           className="text-gray-400 hover:text-teal-700 p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                          title="Acciones"
                         >
                           <LuEllipsis className="w-4 h-4" />
                         </button>
@@ -1045,6 +1458,517 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
       )}
 
       {/* =========================================================================
+          MODAL: EDITAR DATOS MATRIZ
+          ========================================================================= */}
+      {isEditDataOpen && editingMatrix && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+            <button
+              onClick={() => setIsEditDataOpen(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <LuX className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="p-2 rounded-xl bg-teal-50 text-teal-700">
+                <LuPencil className="w-4 h-4" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Editar Datos Matriz</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Modifica la información general de la matriz IPER seleccionada.
+            </p>
+
+            <form onSubmit={handleSaveEditData} className="flex flex-col gap-3.5">
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">Código</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormCode}
+                  onChange={(e) => setEditFormCode(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">
+                  Nombre de la Matriz
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editFormName}
+                  onChange={(e) => setEditFormName(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
+                    Centro de Trabajo
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormWorkCenter}
+                    onChange={(e) => setEditFormWorkCenter(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
+                    Responsable
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormResponsible}
+                    onChange={(e) => setEditFormResponsible(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditDataOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-[#F04438] hover:bg-[#D92D20] rounded-xl transition cursor-pointer shadow-xs"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: HISTORIAL DE VERSIONES
+          ========================================================================= */}
+      {isHistoryOpen && selectedHistoryMatrix && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setIsHistoryOpen(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <LuX className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
+                <LuHistory className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Historial de Versiones</h3>
+                <p className="text-xs text-gray-500">
+                  {selectedHistoryMatrix.code} - {selectedHistoryMatrix.name}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 relative border-l-2 border-purple-200 ml-4 pl-5 flex flex-col gap-5">
+              {/* Versión Actual */}
+              <div className="relative">
+                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full bg-purple-600 border-2 border-white shadow-xs" />
+                <div className="bg-[#FAF5FF] border border-purple-100 rounded-xl p-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-purple-900">v1.2 (Versión actual)</span>
+                    <span className="text-[11px] text-purple-700 font-medium">Hace 2 días</span>
+                  </div>
+                  <p className="text-xs text-gray-700 mt-1">
+                    Actualización reglamentaria DS 44 y reevaluación de riesgos intolerables.
+                  </p>
+                  <div className="flex items-center gap-3 text-[11px] text-gray-400 mt-2">
+                    <span>Editor: {selectedHistoryMatrix.responsible}</span>
+                    <span>•</span>
+                    <span>Estado: {selectedHistoryMatrix.status}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Versión 1.1 */}
+              <div className="relative">
+                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full bg-gray-300 border-2 border-white" />
+                <div className="bg-gray-50 border border-gray-100 rounded-xl p-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-gray-800">v1.1</span>
+                    <span className="text-[11px] text-gray-400">15 Ene 2026</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Incorporación de nuevos controles operacionales y protocolos de emergencia.
+                  </p>
+                  <div className="text-[11px] text-gray-400 mt-2">
+                    Aprobado por: Carlos Mora Rocha
+                  </div>
+                </div>
+              </div>
+
+              {/* Versión 1.0 */}
+              <div className="relative">
+                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full bg-gray-300 border-2 border-white" />
+                <div className="bg-gray-50 border border-gray-100 rounded-xl p-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-gray-800">v1.0 (Publicación Inicial)</span>
+                    <span className="text-[11px] text-gray-400">02 Nov 2025</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Creación y publicación oficial de la matriz del centro de trabajo.
+                  </p>
+                  <div className="text-[11px] text-gray-400 mt-2">
+                    Creado por: Sergio A. Jara Astete
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-5 border-t border-gray-100 mt-5">
+              <button
+                type="button"
+                onClick={() => setIsHistoryOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: VER OBSERVACIONES
+          ========================================================================= */}
+      {isObservationsOpen && selectedObservationMatrix && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+            <button
+              onClick={() => setIsObservationsOpen(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <LuX className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+                <LuMessageSquare className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Observaciones Técnicas</h3>
+                <p className="text-xs text-gray-500">
+                  {selectedObservationMatrix.code} - {selectedObservationMatrix.name}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 my-4 max-h-[320px] overflow-y-auto pr-1">
+              <div className="p-3.5 rounded-xl bg-[#FEF9C3]/50 border border-amber-200 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-900">
+                    Falta especificar controles de polvo y sílice
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900">
+                    Pendiente
+                  </span>
+                </div>
+                <p className="text-xs text-gray-700">
+                  En el área de chancado no se detalla el sistema de aspersión ni los EPP certificados para material particulado respirable.
+                </p>
+                <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-1">
+                  <span>Auditor: Experto en Prevención</span>
+                  <span>•</span>
+                  <span>18 Feb 2026</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-700">
+                    Nivel de severidad en trabajos en altura
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Subsanada
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600">
+                  Se corrigió la probabilidad y severidad de caída a distinto nivel acorde al estándar corporativo.
+                </p>
+                <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-1">
+                  <span>Revisor Técnico</span>
+                  <span>•</span>
+                  <span>10 Feb 2026</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsObservationsOpen(false);
+                  handleOpenEditModal(selectedObservationMatrix);
+                }}
+                className="text-xs font-semibold text-teal-700 hover:text-teal-900 flex items-center gap-1.5 cursor-pointer"
+              >
+                <LuPencil className="w-3.5 h-3.5" />
+                Editar matriz para corregir
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsObservationsOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: INGRESAR NUEVA OBSERVACIÓN (OBSERVAR MATRIZ)
+          ========================================================================= */}
+      {isAddObservationOpen && selectedObservationMatrix && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+            <button
+              onClick={() => setIsAddObservationOpen(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <LuX className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+                <LuCircleAlert className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Observar Matriz</h3>
+                <p className="text-xs text-gray-500">{selectedObservationMatrix.code}</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-600 my-2">
+              Ingresa los motivos u observaciones técnicas. La matriz cambiará automáticamente al estado <strong>Observada</strong>.
+            </p>
+
+            <form onSubmit={handleSubmitObservation} className="flex flex-col gap-3.5 mt-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">
+                  Detalle de la Observación
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={newObservationText}
+                  onChange={(e) => setNewObservationText(e.target.value)}
+                  placeholder="Escribe aquí los puntos a corregir o complementar por el responsable..."
+                  className="w-full border border-gray-200 rounded-xl p-3 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddObservationOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition cursor-pointer shadow-xs"
+                >
+                  Registrar Observación
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: VER SOLICITUD DE MODIFICACIÓN
+          ========================================================================= */}
+      {isModRequestOpen && selectedModificationMatrix && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+            <button
+              onClick={() => setIsModRequestOpen(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <LuX className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="p-2 rounded-xl bg-sky-50 text-sky-700">
+                <LuMessageSquare className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Solicitud de Modificación</h3>
+                <p className="text-xs text-gray-500">{selectedModificationMatrix.code}</p>
+              </div>
+            </div>
+
+            <div className="bg-sky-50/50 border border-sky-200 rounded-xl p-4 my-4 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-gray-600">Solicitante:</span>
+                <span className="font-bold text-gray-900">Diego Morales Vera (Jefe de Operaciones)</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-gray-600">Fecha de Solicitud:</span>
+                <span className="text-gray-700">19 Feb 2026</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-gray-600">Prioridad:</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-200 text-sky-900">
+                  Alta
+                </span>
+              </div>
+              <div className="mt-2 pt-2 border-t border-sky-100">
+                <span className="font-semibold text-xs text-gray-700 block mb-1">Motivo:</span>
+                <p className="text-xs text-gray-800 leading-relaxed">
+                  Ingreso de nueva flota de camiones de alto tonelaje y modificación del flujo peatonal en patio de maniobras. Requiere actualizar mapa de peligros y controles críticos.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setIsModRequestOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsModRequestOpen(false);
+                  handleOpenEditModal(selectedModificationMatrix);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition cursor-pointer shadow-xs"
+              >
+                Editar Matriz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: SOLICITAR ACTUALIZACIÓN DE MATRIZ
+          ========================================================================= */}
+      {isCreateModRequestOpen && selectedModificationMatrix && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+            <button
+              onClick={() => setIsCreateModRequestOpen(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <LuX className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="p-2 rounded-xl bg-sky-50 text-sky-700">
+                <LuRotateCw className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Solicitar Actualización</h3>
+                <p className="text-xs text-gray-500">{selectedModificationMatrix.code}</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-600 my-2">
+              Envía una solicitud formal para actualizar los peligros y evaluaciones. La matriz pasará al estado <strong>En actualización</strong>.
+            </p>
+
+            <form onSubmit={handleSubmitUpdateRequest} className="flex flex-col gap-3.5 mt-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">
+                  Motivo de la Actualización
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={newModReason}
+                  onChange={(e) => setNewModReason(e.target.value)}
+                  placeholder="Ej: Cambio de proceso productivo, nuevo equipamiento o vencimiento reglamentario..."
+                  className="w-full border border-gray-200 rounded-xl p-3 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModRequestOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-xl transition cursor-pointer shadow-xs"
+                >
+                  Enviar Solicitud
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: CONFIRMAR ELIMINACIÓN DE MATRIZ
+          ========================================================================= */}
+      {isDeleteConfirmOpen && matrixToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 p-6 relative text-center">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3">
+              <LuTrash2 className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-lg font-bold text-gray-900 mb-1">¿Eliminar Matriz IPER?</h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Estás a punto de eliminar la matriz{" "}
+              <strong className="text-gray-800">
+                {matrixToDelete.code} - {matrixToDelete.name}
+              </strong>
+              . Esta acción eliminará permanentemente los registros asociados.
+            </p>
+
+            <div className="flex justify-center gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteConfirmOpen(false);
+                  setMatrixToDelete(null);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition cursor-pointer shadow-xs"
+              >
+                Eliminar Matriz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
           MODAL: IMPORTAR DESDE XLSX
           ========================================================================= */}
       {isImportOpen && (
@@ -1079,7 +2003,7 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
               <button
                 type="button"
                 onClick={() => {
-                  alert("Matriz importada con éxito desde archivo XLSX.");
+                  showToast("Matriz importada con éxito desde archivo XLSX.");
                   setIsImportOpen(false);
                 }}
                 className="px-4 py-2 text-xs font-semibold text-white bg-[#F04438] hover:bg-[#D92D20] rounded-xl transition cursor-pointer shadow-xs"

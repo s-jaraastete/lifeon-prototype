@@ -24,7 +24,7 @@ import {
   LuAtom,
   LuSlidersHorizontal,
 } from "react-icons/lu";
-import { IperMatrixItem, MatrixStatus } from "./IperMatrixView";
+import { IperMatrixItem, MatrixStatus, getStatusBadgeStyle } from "./IperMatrixView";
 import IperMatrixWizard from "./IperMatrixWizard";
 
 export interface IperEvaluationRow {
@@ -337,8 +337,9 @@ export default function IperMatrixDetailView({
       <IperMatrixWizard
         matrix={matrix}
         onClose={() => setIsWizardOpen(false)}
-        onFinish={(newEvaluation, updatedMatrix) => {
-          setEvaluations([newEvaluation, ...evaluations]);
+        onFinish={(newEvaluations, updatedMatrix) => {
+          const toAdd = Array.isArray(newEvaluations) ? newEvaluations : [newEvaluations];
+          setEvaluations([...toAdd, ...evaluations]);
           onUpdateMatrix(updatedMatrix);
           setIsWizardOpen(false);
         }}
@@ -366,7 +367,7 @@ export default function IperMatrixDetailView({
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition cursor-pointer shadow-xs"
           >
             <LuSparkles className="w-4 h-4" />
-            Iniciar edición (5 etapas)
+            Iniciar edición (6 etapas)
           </button>
 
           {onOpenAprVirtual && (
@@ -388,19 +389,6 @@ export default function IperMatrixDetailView({
             <LuFileSpreadsheet className="w-4 h-4 text-emerald-600" />
             Exportar XLSX / CSV
           </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              resetEvaluationForm();
-              setEditingRow(null);
-              setIsAddEvaluationOpen(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[#F04438] hover:bg-[#D92D20] transition cursor-pointer shadow-xs"
-          >
-            <LuPlus className="w-4 h-4" />
-            Agregar Peligro / Tarea
-          </button>
         </div>
       </div>
 
@@ -417,14 +405,7 @@ export default function IperMatrixDetailView({
                 <span
                   className={clsx(
                     "px-3 py-0.5 rounded-full text-xs font-bold border",
-                    matrix.status === "Vigente" && "bg-[#ECFDF5] text-[#10B981] border-emerald-200",
-                    matrix.status === "En revisión" && "bg-[#EFF6FF] text-[#3B82F6] border-blue-200",
-                    matrix.status === "Borrador" && "bg-[#F3F4F6] text-[#4B5563] border-gray-200",
-                    matrix.status === "Observado" && "bg-[#FEF3C7] text-[#D97706] border-amber-200",
-                    matrix.status === "En aprobación" && "bg-[#FAF5FF] text-[#A855F7] border-purple-200",
-                    matrix.status === "En modificación" && "bg-[#E0F2FE] text-[#0284C7] border-sky-200",
-                    matrix.status === "No iniciado" && "bg-[#F3F4F6] text-[#6B7280] border-gray-200",
-                    matrix.status === "Vencido" && "bg-[#FEE2E2] text-[#EF4444] border-red-200"
+                    getStatusBadgeStyle(matrix.status)
                   )}
                 >
                   {matrix.status}
@@ -972,11 +953,11 @@ export default function IperMatrixDetailView({
                   <option value="Vigente">Vigente</option>
                   <option value="En revisión">En revisión</option>
                   <option value="Borrador">Borrador</option>
-                  <option value="Observado">Observado</option>
+                  <option value="Observada">Observada</option>
+                  <option value="En actualización">En actualización</option>
                   <option value="En aprobación">En aprobación</option>
-                  <option value="En modificación">En modificación</option>
-                  <option value="No iniciado">No iniciado</option>
-                  <option value="Vencido">Vencido</option>
+                  <option value="Vencida">Vencida</option>
+                  <option value="Rechazada">Rechazada</option>
                 </select>
               </div>
 
