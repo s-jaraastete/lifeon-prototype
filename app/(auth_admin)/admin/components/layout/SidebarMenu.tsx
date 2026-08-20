@@ -44,7 +44,7 @@ export default function SidebarMenu({ collapsed, pathname }: SidebarProps) {
         })}
       >
         <Link
-          href="/admin"
+          href={process.env.NEXT_PUBLIC_LANDING_URL || "/"}
           className={clsx("font-semibold leading-tight", {
             "text-2xl": collapsed,
             "text-3xl": !collapsed,
