@@ -25,9 +25,9 @@ import {
   LuBriefcase,
   LuTag,
   LuFlame,
-  LuHeartHandshake,
-  LuAccessibility,
   LuChevronDown,
+  LuCircleAlert,
+  LuLock,
 } from "react-icons/lu";
 import { IperMatrixItem } from "./IperMatrixView";
 import { IperEvaluationRow } from "./IperMatrixDetailView";
@@ -271,10 +271,114 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
     );
   };
 
+  // Validación estricta por etapa para impedir avanzar si falta información
+  const stepValidation = useMemo(() => {
+    // Etapa 1: Área no vacía y al menos 1 proceso
+    const step1Valid = workArea.trim().length > 0 && processes.length > 0;
+    const step1Error = !workArea.trim()
+      ? "Debes ingresar el Área de Trabajo para continuar."
+      : processes.length === 0
+      ? "Debes agregar al menos un proceso a la matriz."
+      : null;
+
+    // Etapa 2: Al menos 1 tarea y todas las tareas con al menos 1 puesto
+    const step2Valid =
+      tasks.length > 0 && tasks.every((t) => t.positions && t.positions.length > 0);
+    const step2Error =
+      tasks.length === 0
+        ? "Debes registrar al menos una tarea en la matriz."
+        : !tasks.every((t) => t.positions && t.positions.length > 0)
+        ? "Cada tarea debe tener al menos un puesto de trabajo asignado con su dotación."
+        : null;
+
+    // Etapa 3: Al menos 1 peligro y cada tarea con al menos 1 peligro asignado
+    const step3Valid =
+      hazards.length > 0 && tasks.every((t) => hazards.some((h) => h.taskId === t.id));
+    const step3Error =
+      hazards.length === 0
+        ? "Debes identificar al menos un peligro con su riesgo asociado."
+        : !tasks.every((t) => hazards.some((h) => h.taskId === t.id))
+        ? "Todas las tareas registradas deben tener al menos un peligro asignado."
+        : null;
+
+    // Etapa 4: Todos los peligros deben estar evaluados
+    const step4Valid =
+      hazards.length > 0 &&
+      hazards.every((h) => {
+        const isSafety = h.riskClassification === "Seguridad" || h.riskClassification === "Emergencias";
+        if (isSafety) {
+          return h.probValue > 0 && h.sevValue > 0;
+        }
+        return (
+          (h.protocolApplied || "").trim().length > 0 &&
+          (h.exposureMagnitude || "").trim().length > 0 &&
+          (h.riskLevelType || "").trim().length > 0
+        );
+      });
+    const step4Error = !step4Valid
+      ? "Debes completar la evaluación inicial de todos los peligros registrados."
+      : null;
+
+    // Etapa 5: Todos los peligros deben tener al menos una medida de control
+    const step5Valid =
+      hazards.length > 0 &&
+      hazards.every((h) => h.controlsList && h.controlsList.length > 0);
+    const step5Error = !step5Valid
+      ? "Todos los peligros deben tener al menos una medida de control registrada bajo la jerarquía preventiva."
+      : null;
+
+    // Etapa 6: Reevaluación completada y residual menor o igual a inicial
+    const step6Valid =
+      hazards.length > 0 &&
+      hazards.every((h) => {
+        const isSafety = h.riskClassification === "Seguridad" || h.riskClassification === "Emergencias";
+        if (isSafety) {
+          return h.residualProb <= h.probValue && h.residualSev <= h.sevValue;
+        }
+        return !!h.residualRiskLevel;
+      });
+    const step6Error = !step6Valid
+      ? "Debes completar la reevaluación del riesgo residual (el cual debe ser menor o igual al inicial)."
+      : null;
+
+    const map: Record<number, { isValid: boolean; errorMsg: string | null }> = {
+      1: { isValid: step1Valid, errorMsg: step1Error },
+      2: { isValid: step2Valid, errorMsg: step2Error },
+      3: { isValid: step3Valid, errorMsg: step3Error },
+      4: { isValid: step4Valid, errorMsg: step4Error },
+      5: { isValid: step5Valid, errorMsg: step5Error },
+      6: { isValid: step6Valid, errorMsg: step6Error },
+    };
+
+    return map;
+  }, [workArea, processes, tasks, hazards]);
+
+  const canAdvanceCurrentStep = stepValidation[currentStep]?.isValid ?? false;
+  const currentStepError = stepValidation[currentStep]?.errorMsg;
+
+  // Manejador de navegación segura entre etapas
+  const handleStepNavigation = (targetStep: number) => {
+    if (targetStep < currentStep) {
+      setCurrentStep(targetStep);
+      return;
+    }
+    let allValid = true;
+    for (let s = 1; s < targetStep; s++) {
+      if (!stepValidation[s]?.isValid) {
+        allValid = false;
+        break;
+      }
+    }
+    if (allValid) {
+      setCurrentStep(targetStep);
+    }
+  };
+
   // Cálculo VEP para Seguridad / Emergencias: P (1, 2, 4) * C (1, 2, 4)
   const isSafetyOrEmergency = activeHazard
     ? activeHazard.riskClassification === "Seguridad" || activeHazard.riskClassification === "Emergencias"
     : true;
+
   const vepScore = activeHazard ? activeHazard.probValue * activeHazard.sevValue : 0;
   const getVepLevel = (score: number) => {
     if (score >= 16) return { label: "Crítico / Intolerable", color: "text-red-700 bg-red-50 border-red-200" };
@@ -562,84 +666,86 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
 
   return (
     <div className="fixed inset-0 z-50 bg-[#F8FAFC] flex flex-col font-[family-name:var(--font-poppins)] overflow-y-auto animate-in fade-in duration-200">
-      {/* 1. Header Superior del Wizard */}
-      <header className="bg-white border-b border-gray-200 py-3 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-lg font-black text-[#F04438] tracking-tight">Life</span>
-            <span className="text-lg font-black text-[#0D9488] tracking-tight">On</span>
+      {/* 1. Header Superior y Barra de Progreso FIJA */}
+      <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-2xs flex-shrink-0">
+        <header className="py-3 px-4 sm:px-6 flex items-center justify-between border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-black text-[#F04438] tracking-tight">Life</span>
+              <span className="text-lg font-black text-[#0D9488] tracking-tight">On</span>
+            </div>
+            <div className="h-4 w-px bg-gray-300 mx-1 hidden sm:block" />
+            <span className="text-xs font-semibold text-gray-700 hidden sm:inline">
+              Confección de Matriz IPER &bull; <span className="text-teal-700 font-bold">{matrix.code}</span>
+            </span>
           </div>
-          <div className="h-4 w-px bg-gray-300 mx-1 hidden sm:block" />
-          <span className="text-xs font-semibold text-gray-700 hidden sm:inline">
-            Confección de Matriz IPER &bull; <span className="text-teal-700 font-bold">{matrix.code}</span>
-          </span>
-        </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-xl transition cursor-pointer"
-          >
-            <LuSave className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Guardar borrador</span>
-            <span className="sm:hidden">Borrador</span>
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-xl transition cursor-pointer"
+            >
+              <LuSave className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Guardar borrador</span>
+              <span className="sm:hidden">Borrador</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
-          >
-            <LuX className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+            >
+              <LuX className="w-5 h-5" />
+            </button>
+          </div>
+        </header>
 
-      {/* 2. Barra de Progreso / Stepper */}
-      <div className="bg-white border-b border-gray-100 py-2.5 px-3 sm:px-6 shadow-2xs sticky top-[53px] z-10 overflow-hidden">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-1 sm:gap-2">
-          {stepsHeader.map((step, idx) => {
-            const isCompleted = step.num < currentStep;
-            const isCurrent = step.num === currentStep;
+        {/* Barra de Progreso / Stepper FIJA */}
+        <div className="py-2.5 px-3 sm:px-6 overflow-x-auto scrollbar-none">
+          <div className="max-w-5xl mx-auto flex items-center justify-between gap-1 sm:gap-2 min-w-[320px] sm:min-w-0">
+            {stepsHeader.map((step, idx) => {
+              const isCompleted = step.num < currentStep && stepValidation[step.num]?.isValid;
+              const isCurrent = step.num === currentStep;
 
-            return (
-              <div key={step.num} className="flex items-center gap-1 sm:gap-2 flex-1 last:flex-none">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(step.num)}
-                  className={clsx(
-                    "flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold transition cursor-pointer whitespace-nowrap",
-                    isCurrent && "text-teal-700 font-bold",
-                    isCompleted && "text-gray-700",
-                    !isCurrent && !isCompleted && "text-gray-400 hover:text-gray-600"
-                  )}
-                >
-                  <span
+              return (
+                <div key={step.num} className="flex items-center gap-1 sm:gap-2 flex-1 last:flex-none">
+                  <button
+                    type="button"
+                    onClick={() => handleStepNavigation(step.num)}
                     className={clsx(
-                      "w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] font-bold transition flex-shrink-0",
-                      isCurrent && "bg-teal-600 text-white shadow-xs",
-                      isCompleted && "bg-emerald-100 text-emerald-700 border border-emerald-300",
-                      !isCurrent && !isCompleted && "bg-gray-100 text-gray-400"
+                      "flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold transition cursor-pointer whitespace-nowrap",
+                      isCurrent && "text-teal-700 font-bold",
+                      isCompleted && "text-gray-700",
+                      !isCurrent && !isCompleted && "text-gray-400 hover:text-gray-600"
                     )}
                   >
-                    {isCompleted ? <LuCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : step.num}
-                  </span>
-                  <span className="hidden lg:inline">{step.label}</span>
-                  <span className="inline lg:hidden">{step.shortLabel}</span>
-                </button>
+                    <span
+                      className={clsx(
+                        "w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] font-bold transition flex-shrink-0",
+                        isCurrent && "bg-teal-600 text-white shadow-xs",
+                        isCompleted && "bg-emerald-100 text-emerald-700 border border-emerald-300",
+                        !isCurrent && !isCompleted && "bg-gray-100 text-gray-400"
+                      )}
+                    >
+                      {isCompleted ? <LuCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : step.num}
+                    </span>
+                    <span className="hidden lg:inline">{step.label}</span>
+                    <span className="inline lg:hidden">{step.shortLabel}</span>
+                  </button>
 
-                {idx < stepsHeader.length - 1 && (
-                  <div
-                    className={clsx(
-                      "flex-1 h-0.5 min-w-[6px] mx-1 sm:mx-2 transition-colors",
-                      step.num < currentStep ? "bg-teal-500" : "bg-gray-200"
-                    )}
-                  />
-                )}
-              </div>
-            );
-          })}
+                  {idx < stepsHeader.length - 1 && (
+                    <div
+                      className={clsx(
+                        "flex-1 h-0.5 min-w-[6px] mx-1 sm:mx-2 transition-colors",
+                        step.num < currentStep && stepValidation[step.num]?.isValid ? "bg-teal-500" : "bg-gray-200"
+                      )}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -1398,7 +1504,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       />
                     </div>
 
-                    {/* Paso 2 del orden: CLASIFICACIÓN DEL RIESGO CON TARJETAS */}
+                    {/* Paso 2 del orden: CLASIFICACIÓN DEL RIESGO CON TARJETAS (SIN ICONOS) */}
                     <div>
                       <label className="text-xs font-bold text-gray-800 block mb-2">
                         2. Clasificación del Riesgo
@@ -1406,19 +1512,19 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                         {(
                           [
-                            { key: "Seguridad", icon: "🛡️", label: "Seguridad" },
-                            { key: "Emergencias", icon: "🚨", label: "Emergencias" },
-                            { key: "Higiénicos", icon: "🧪", label: "Higiénicos" },
-                            { key: "Psicosociales", icon: "🧠", label: "Psicosociales" },
-                            { key: "Músculo-esquelético", icon: "🦾", label: "Músculo-esquelético" },
+                            "Seguridad",
+                            "Emergencias",
+                            "Higiénicos",
+                            "Psicosociales",
+                            "Músculo-esquelético",
                           ] as const
                         ).map((cat) => (
                           <button
-                            key={cat.key}
+                            key={cat}
                             type="button"
                             onClick={() => {
-                              setHazardFormClass(cat.key);
-                              const firstRisk = RISK_CATALOGS[cat.key]?.risks[0];
+                              setHazardFormClass(cat);
+                              const firstRisk = RISK_CATALOGS[cat]?.risks[0];
                               if (firstRisk) {
                                 setHazardFormCode(firstRisk.code);
                                 setHazardFormName(firstRisk.name);
@@ -1426,14 +1532,13 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                               }
                             }}
                             className={clsx(
-                              "p-2.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-1",
-                              hazardFormClass === cat.key
+                              "py-2.5 px-3 rounded-xl border text-center transition cursor-pointer flex items-center justify-center text-xs font-semibold",
+                              hazardFormClass === cat
                                 ? "bg-teal-50 border-teal-500 text-teal-900 font-bold ring-2 ring-teal-500/20 shadow-2xs"
                                 : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700 font-medium"
                             )}
                           >
-                            <span className="text-base">{cat.icon}</span>
-                            <span className="text-[11px] leading-tight">{cat.label}</span>
+                            <span>{cat}</span>
                           </button>
                         ))}
                       </div>
@@ -1575,46 +1680,44 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                 </div>
               ) : (
                 <>
-                  {/* Selector de Tarea y Riesgo para evaluación */}
+                  {/* Selector de Tarea y Riesgo (Apilados verticalmente: Tarea arriba, Peligro abajo) */}
                   <div className="bg-white border-2 border-teal-200/80 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-bold text-gray-700 block mb-1">
-                          Tarea Seleccionada
-                        </label>
-                        <select
-                          value={selectedTaskId}
-                          onChange={(e) => {
-                            setSelectedTaskId(e.target.value);
-                            const hForTask = hazards.filter((h) => h.taskId === e.target.value);
-                            if (hForTask.length > 0) setSelectedHazardId(hForTask[0].id);
-                          }}
-                          className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                        >
-                          {tasks.map((t, idx) => (
-                            <option key={t.id} value={t.id}>
-                              T{idx + 1}: {t.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                        1. Tarea Seleccionada:
+                      </label>
+                      <select
+                        value={selectedTaskId}
+                        onChange={(e) => {
+                          setSelectedTaskId(e.target.value);
+                          const hForTask = hazards.filter((h) => h.taskId === e.target.value);
+                          if (hForTask.length > 0) setSelectedHazardId(hForTask[0].id);
+                        }}
+                        className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                      >
+                        {tasks.map((t, idx) => (
+                          <option key={t.id} value={t.id}>
+                            T{idx + 1}: {t.name} [{t.taskType}] - Proceso: {t.processName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                      <div>
-                        <label className="text-[11px] font-bold text-gray-700 block mb-1">
-                          Peligro / Riesgo a Evaluar
-                        </label>
-                        <select
-                          value={activeHazard.id}
-                          onChange={(e) => setSelectedHazardId(e.target.value)}
-                          className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                        >
-                          {taskHazards.map((h, hIdx) => (
-                            <option key={h.id} value={h.id}>
-                              P{hIdx + 1}: {h.specificRiskCode} - {h.specificRiskName} ({h.riskClassification})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                        2. Peligro / Riesgo a Evaluar:
+                      </label>
+                      <select
+                        value={activeHazard.id}
+                        onChange={(e) => setSelectedHazardId(e.target.value)}
+                        className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                      >
+                        {taskHazards.map((h, hIdx) => (
+                          <option key={h.id} value={h.id}>
+                            P{hIdx + 1}: {h.specificRiskCode} - {h.specificRiskName} ({h.riskClassification})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     {/* Banner de Contexto Visual Destacado */}
@@ -1836,46 +1939,44 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                 </div>
               ) : (
                 <>
-                  {/* Selector de Tarea y Riesgo para incorporar controles */}
+                  {/* Selector de Tarea y Riesgo (Apilados verticalmente: Tarea arriba, Peligro abajo) */}
                   <div className="bg-white border-2 border-teal-200/80 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-bold text-gray-700 block mb-1">
-                          Tarea Seleccionada
-                        </label>
-                        <select
-                          value={selectedTaskId}
-                          onChange={(e) => {
-                            setSelectedTaskId(e.target.value);
-                            const hForTask = hazards.filter((h) => h.taskId === e.target.value);
-                            if (hForTask.length > 0) setSelectedHazardId(hForTask[0].id);
-                          }}
-                          className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                        >
-                          {tasks.map((t, idx) => (
-                            <option key={t.id} value={t.id}>
-                              T{idx + 1}: {t.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                        1. Tarea Seleccionada:
+                      </label>
+                      <select
+                        value={selectedTaskId}
+                        onChange={(e) => {
+                          setSelectedTaskId(e.target.value);
+                          const hForTask = hazards.filter((h) => h.taskId === e.target.value);
+                          if (hForTask.length > 0) setSelectedHazardId(hForTask[0].id);
+                        }}
+                        className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                      >
+                        {tasks.map((t, idx) => (
+                          <option key={t.id} value={t.id}>
+                            T{idx + 1}: {t.name} [{t.taskType}] - Proceso: {t.processName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                      <div>
-                        <label className="text-[11px] font-bold text-gray-700 block mb-1">
-                          Peligro / Riesgo Analizado
-                        </label>
-                        <select
-                          value={activeHazard.id}
-                          onChange={(e) => setSelectedHazardId(e.target.value)}
-                          className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                        >
-                          {taskHazards.map((h, hIdx) => (
-                            <option key={h.id} value={h.id}>
-                              P{hIdx + 1}: {h.specificRiskCode} - {h.specificRiskName} ({h.riskClassification})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                        2. Peligro / Riesgo Analizado:
+                      </label>
+                      <select
+                        value={activeHazard.id}
+                        onChange={(e) => setSelectedHazardId(e.target.value)}
+                        className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                      >
+                        {taskHazards.map((h, hIdx) => (
+                          <option key={h.id} value={h.id}>
+                            P{hIdx + 1}: {h.specificRiskCode} - {h.specificRiskName} ({h.riskClassification})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     {/* Banner de Contexto Visual */}
@@ -2025,46 +2126,44 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                 </div>
               ) : (
                 <>
-                  {/* Selector de Tarea y Riesgo para reevaluación */}
+                  {/* Selector de Tarea y Riesgo (Apilados verticalmente: Tarea arriba, Peligro abajo) */}
                   <div className="bg-white border-2 border-teal-200/80 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-bold text-gray-700 block mb-1">
-                          Tarea Seleccionada
-                        </label>
-                        <select
-                          value={selectedTaskId}
-                          onChange={(e) => {
-                            setSelectedTaskId(e.target.value);
-                            const hForTask = hazards.filter((h) => h.taskId === e.target.value);
-                            if (hForTask.length > 0) setSelectedHazardId(hForTask[0].id);
-                          }}
-                          className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                        >
-                          {tasks.map((t, idx) => (
-                            <option key={t.id} value={t.id}>
-                              T{idx + 1}: {t.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                        1. Tarea Seleccionada:
+                      </label>
+                      <select
+                        value={selectedTaskId}
+                        onChange={(e) => {
+                          setSelectedTaskId(e.target.value);
+                          const hForTask = hazards.filter((h) => h.taskId === e.target.value);
+                          if (hForTask.length > 0) setSelectedHazardId(hForTask[0].id);
+                        }}
+                        className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                      >
+                        {tasks.map((t, idx) => (
+                          <option key={t.id} value={t.id}>
+                            T{idx + 1}: {t.name} [{t.taskType}] - Proceso: {t.processName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                      <div>
-                        <label className="text-[11px] font-bold text-gray-700 block mb-1">
-                          Peligro / Riesgo a Reevaluar
-                        </label>
-                        <select
-                          value={activeHazard.id}
-                          onChange={(e) => setSelectedHazardId(e.target.value)}
-                          className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                        >
-                          {taskHazards.map((h, hIdx) => (
-                            <option key={h.id} value={h.id}>
-                              P{hIdx + 1}: {h.specificRiskCode} - {h.specificRiskName} ({h.riskClassification})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                        2. Peligro / Riesgo a Reevaluar:
+                      </label>
+                      <select
+                        value={activeHazard.id}
+                        onChange={(e) => setSelectedHazardId(e.target.value)}
+                        className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                      >
+                        {taskHazards.map((h, hIdx) => (
+                          <option key={h.id} value={h.id}>
+                            P{hIdx + 1}: {h.specificRiskCode} - {h.specificRiskName} ({h.riskClassification})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     {/* Banner Contextual */}
@@ -2083,64 +2182,84 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     </div>
                   </div>
 
-                  {/* Si es Seguridad / Emergencia: Probabilidad y Severidad Residual con 1, 2, 4 */}
+                  {/* Si es Seguridad / Emergencia: Probabilidad y Severidad Residual con 1, 2, 4 con bloqueo estricto */}
                   {isSafetyOrEmergency ? (
                     <div className="flex flex-col gap-4">
                       {/* Selector de Probabilidad Residual */}
                       <div>
-                        <label className="text-xs font-bold text-gray-800 block mb-1.5">
-                          Probabilidad Residual (después de aplicar controles)
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-bold text-gray-800">
+                            Probabilidad Residual (debe ser &le; Probabilidad Inicial {activeHazard.probValue}):
+                          </label>
+                          <span className="text-[10px] text-gray-400 font-medium">Opciones superiores bloqueadas</span>
+                        </div>
                         <div className="grid grid-cols-3 gap-3">
                           {[
                             { val: 1, label: "1 - Baja", desc: "Control eficaz y verificado" },
                             { val: 2, label: "2 - Media", desc: "Control parcial / En implementación" },
                             { val: 4, label: "4 - Alta", desc: "Requiere revisión urgente" },
-                          ].map((p) => (
-                            <button
-                              key={p.val}
-                              type="button"
-                              onClick={() => updateHazardItem(activeHazard.id, { residualProb: p.val })}
-                              className={clsx(
-                                "p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between",
-                                activeHazard.residualProb === p.val
-                                  ? "bg-emerald-50 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 font-bold shadow-2xs"
-                                  : "bg-white border-gray-200 hover:bg-gray-50"
-                              )}
-                            >
-                              <span className="text-xs font-bold">{p.label}</span>
-                              <span className="text-[10px] text-gray-500 font-normal mt-1">{p.desc}</span>
-                            </button>
-                          ))}
+                          ].map((p) => {
+                            const isBlocked = p.val > activeHazard.probValue;
+                            return (
+                              <button
+                                key={p.val}
+                                type="button"
+                                disabled={isBlocked}
+                                onClick={() => updateHazardItem(activeHazard.id, { residualProb: p.val })}
+                                className={clsx(
+                                  "p-3 rounded-xl border text-left transition flex flex-col justify-between",
+                                  isBlocked && "opacity-35 bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through",
+                                  !isBlocked && activeHazard.residualProb === p.val && "bg-emerald-50 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 font-bold shadow-2xs cursor-pointer",
+                                  !isBlocked && activeHazard.residualProb !== p.val && "bg-white border-gray-200 hover:bg-gray-50 cursor-pointer"
+                                )}
+                              >
+                                <span className="text-xs font-bold flex items-center justify-between">
+                                  {p.label}
+                                  {isBlocked && <LuLock className="w-3 h-3 text-gray-400" />}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-normal mt-1">{p.desc}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
                       {/* Selector de Severidad Residual */}
                       <div>
-                        <label className="text-xs font-bold text-gray-800 block mb-1.5">
-                          Severidad / Consecuencia Residual
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-bold text-gray-800">
+                            Severidad / Consecuencia Residual (debe ser &le; Severidad Inicial {activeHazard.sevValue}):
+                          </label>
+                          <span className="text-[10px] text-gray-400 font-medium">Opciones superiores bloqueadas</span>
+                        </div>
                         <div className="grid grid-cols-3 gap-3">
                           {[
                             { val: 1, label: "1 - Leve", desc: "Sin tiempo perdido / Daño menor" },
                             { val: 2, label: "2 - Moderada", desc: "Incapacidad temporal mitigada" },
                             { val: 4, label: "4 - Grave", desc: "Daño mayor persistente" },
-                          ].map((s) => (
-                            <button
-                              key={s.val}
-                              type="button"
-                              onClick={() => updateHazardItem(activeHazard.id, { residualSev: s.val })}
-                              className={clsx(
-                                "p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between",
-                                activeHazard.residualSev === s.val
-                                  ? "bg-emerald-50 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 font-bold shadow-2xs"
-                                  : "bg-white border-gray-200 hover:bg-gray-50"
-                              )}
-                            >
-                              <span className="text-xs font-bold">{s.label}</span>
-                              <span className="text-[10px] text-gray-500 font-normal mt-1">{s.desc}</span>
-                            </button>
-                          ))}
+                          ].map((s) => {
+                            const isBlocked = s.val > activeHazard.sevValue;
+                            return (
+                              <button
+                                key={s.val}
+                                type="button"
+                                disabled={isBlocked}
+                                onClick={() => updateHazardItem(activeHazard.id, { residualSev: s.val })}
+                                className={clsx(
+                                  "p-3 rounded-xl border text-left transition flex flex-col justify-between",
+                                  isBlocked && "opacity-35 bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through",
+                                  !isBlocked && activeHazard.residualSev === s.val && "bg-emerald-50 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 font-bold shadow-2xs cursor-pointer",
+                                  !isBlocked && activeHazard.residualSev !== s.val && "bg-white border-gray-200 hover:bg-gray-50 cursor-pointer"
+                                )}
+                              >
+                                <span className="text-xs font-bold flex items-center justify-between">
+                                  {s.label}
+                                  {isBlocked && <LuLock className="w-3 h-3 text-gray-400" />}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-normal mt-1">{s.desc}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -2168,26 +2287,33 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     <div className="flex flex-col gap-4">
                       <div>
                         <label className="text-xs font-bold text-gray-800 block mb-1.5">
-                          Nivel de Riesgo Residual
+                          Nivel de Riesgo Residual (Inicial: {activeHazard.riskLevelType})
                         </label>
                         <div className="flex items-center gap-3">
-                          {(["Bajo", "Medio", "Alto"] as const).map((lvl) => (
-                            <button
-                              key={lvl}
-                              type="button"
-                              onClick={() => updateHazardItem(activeHazard.id, { residualRiskLevel: lvl })}
-                              className={clsx(
-                                "flex-1 p-3 rounded-xl border text-center transition cursor-pointer text-xs font-bold",
-                                activeHazard.residualRiskLevel === lvl
-                                  ? "bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/20 shadow-2xs"
-                                  : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
-                              )}
-                            >
-                              {lvl === "Bajo" && "🟢 Residual Bajo (Controlado)"}
-                              {lvl === "Medio" && "🟡 Residual Medio"}
-                              {lvl === "Alto" && "🔴 Residual Alto"}
-                            </button>
-                          ))}
+                          {(["Bajo", "Medio", "Alto"] as const).map((lvl) => {
+                            const rankMap: Record<string, number> = { Bajo: 1, Medio: 2, Alto: 3 };
+                            const initialRank = rankMap[activeHazard.riskLevelType] || 2;
+                            const isBlocked = (rankMap[lvl] || 1) > initialRank;
+
+                            return (
+                              <button
+                                key={lvl}
+                                type="button"
+                                disabled={isBlocked}
+                                onClick={() => updateHazardItem(activeHazard.id, { residualRiskLevel: lvl })}
+                                className={clsx(
+                                  "flex-1 p-3 rounded-xl border text-center transition text-xs font-bold",
+                                  isBlocked && "opacity-35 bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through",
+                                  !isBlocked && activeHazard.residualRiskLevel === lvl && "bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/20 shadow-2xs cursor-pointer",
+                                  !isBlocked && activeHazard.residualRiskLevel !== lvl && "bg-white border-gray-200 hover:bg-gray-50 text-gray-700 cursor-pointer"
+                                )}
+                              >
+                                {lvl === "Bajo" && "🟢 Residual Bajo"}
+                                {lvl === "Medio" && "🟡 Residual Medio"}
+                                {lvl === "Alto" && "🔴 Residual Alto"}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -2220,8 +2346,16 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
             </div>
           )}
 
+          {/* Mensaje de Validación y Bloqueo si faltan datos */}
+          {currentStepError && (
+            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 mt-4 animate-in fade-in">
+              <LuCircleAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span className="font-medium">{currentStepError}</span>
+            </div>
+          )}
+
           {/* Botones de Navegación del Wizard */}
-          <div className="flex items-center justify-between pt-6 border-t border-gray-100 mt-6">
+          <div className="flex items-center justify-between pt-5 border-t border-gray-100 mt-5">
             <button
               type="button"
               onClick={() => {
@@ -2237,8 +2371,18 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
             {currentStep < 6 ? (
               <button
                 type="button"
-                onClick={() => setCurrentStep(currentStep + 1)}
-                className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-xs transition cursor-pointer"
+                onClick={() => {
+                  if (canAdvanceCurrentStep) {
+                    setCurrentStep(currentStep + 1);
+                  }
+                }}
+                disabled={!canAdvanceCurrentStep}
+                className={clsx(
+                  "flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white rounded-xl shadow-xs transition cursor-pointer",
+                  canAdvanceCurrentStep
+                    ? "bg-teal-600 hover:bg-teal-700"
+                    : "bg-gray-300 opacity-60 cursor-not-allowed"
+                )}
               >
                 Siguiente
                 <LuArrowRight className="w-4 h-4" />
@@ -2247,8 +2391,13 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
               <button
                 type="button"
                 onClick={handleFinishWizard}
-                disabled={tasks.length === 0 || hazards.length === 0}
-                className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-[#F04438] hover:bg-[#D92D20] disabled:opacity-50 disabled:pointer-events-none rounded-xl shadow-sm transition cursor-pointer"
+                disabled={!canAdvanceCurrentStep}
+                className={clsx(
+                  "flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white rounded-xl shadow-sm transition cursor-pointer",
+                  canAdvanceCurrentStep
+                    ? "bg-[#F04438] hover:bg-[#D92D20]"
+                    : "bg-gray-300 opacity-60 cursor-not-allowed"
+                )}
               >
                 <LuCircleCheck className="w-4 h-4" />
                 Finalizar e incorporar a la matriz

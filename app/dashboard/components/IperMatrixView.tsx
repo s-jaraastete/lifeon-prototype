@@ -585,6 +585,7 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
       case "Vigente":
         return [
           { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
+          { label: "Información de Riesgos Laborales (IRL)", icon: LuFileText, action: openMatrix },
           { label: "Solicitar actualización", icon: LuRotateCw, action: requestUpdate },
           { label: "Exportar en PDF/XLSX", icon: LuDownload, action: () => exportPdfXlsx(false) },
           { label: "Historial de versiones", icon: LuHistory, action: showHistory },

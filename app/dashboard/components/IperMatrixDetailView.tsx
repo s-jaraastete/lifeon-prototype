@@ -23,9 +23,12 @@ import {
   LuEye,
   LuAtom,
   LuSlidersHorizontal,
+  LuFileText,
+  LuLock,
 } from "react-icons/lu";
 import { IperMatrixItem, MatrixStatus, getStatusBadgeStyle } from "./IperMatrixView";
 import IperMatrixWizard from "./IperMatrixWizard";
+import IrlDocumentModal from "./IrlDocumentModal";
 
 export interface IperEvaluationRow {
   id: string;
@@ -136,18 +139,20 @@ export default function IperMatrixDetailView({
   onUpdateMatrix,
   onOpenAprVirtual,
 }: IperMatrixDetailViewProps) {
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [evaluations, setEvaluations] = useState<IperEvaluationRow[]>(
     matrix.status === "No iniciado" ? [] : DEFAULT_EVALUATIONS[matrix.code] || []
   );
-
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("Todos");
 
   // Modals State
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isIrlModalOpen, setIsIrlModalOpen] = useState(false);
   const [isAddEvaluationOpen, setIsAddEvaluationOpen] = useState(false);
   const [isEditGeneralOpen, setIsEditGeneralOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<IperEvaluationRow | null>(null);
+
+  const isMatrixVigente = matrix.status === "Vigente";
 
   // Form State for New/Edit Hazard Evaluation
   const [formProcess, setFormProcess] = useState(matrix.name);
@@ -340,6 +345,32 @@ export default function IperMatrixDetailView({
         </button>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Botón Información de Riesgos Laborales (IRL) */}
+          <button
+            type="button"
+            onClick={() => {
+              if (isMatrixVigente) {
+                setIsIrlModalOpen(true);
+              }
+            }}
+            disabled={!isMatrixVigente}
+            title={
+              isMatrixVigente
+                ? "Información de Riesgos Laborales (IRL)"
+                : "El documento IRL solo está disponible para matrices en estado Vigente"
+            }
+            className={clsx(
+              "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-2xs",
+              isMatrixVigente
+                ? "bg-white text-teal-900 hover:bg-teal-50 border border-teal-300 ring-2 ring-teal-500/10 cursor-pointer"
+                : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed opacity-60"
+            )}
+          >
+            <LuFileText className={clsx("w-4 h-4", isMatrixVigente ? "text-teal-600" : "text-gray-400")} />
+            <span>Información de Riesgos Laborales (IRL)</span>
+            {!isMatrixVigente && <LuLock className="w-3 h-3 text-gray-400" />}
+          </button>
+
           <button
             type="button"
             onClick={() => setIsWizardOpen(true)}
@@ -441,6 +472,57 @@ export default function IperMatrixDetailView({
               <p className="font-semibold text-gray-800">{evaluations.length} Registros activos</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 🌟 BANNER DESTACADO: INFORMACIÓN DE RIESGOS LABORALES (IRL) */}
+      <div className="bg-gradient-to-r from-teal-50/90 via-white to-emerald-50/50 rounded-2xl p-5 border border-teal-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">
+            <LuFileText className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-bold text-gray-900 tracking-tight">
+                Información de Riesgos Laborales (IRL)
+              </h3>
+              <span
+                className={clsx(
+                  "px-2.5 py-0.5 rounded-full text-[10px] font-bold border",
+                  isMatrixVigente
+                    ? "bg-teal-100 text-teal-800 border-teal-300"
+                    : "bg-amber-50 text-amber-800 border-amber-200"
+                )}
+              >
+                {isMatrixVigente ? "Habilitado / Vigente" : "Bloqueado (Requiere estado Vigente)"}
+              </span>
+            </div>
+            <p className="text-xs text-gray-600 mt-1 max-w-3xl leading-relaxed">
+              En cumplimiento del Artículo 21 del D.S. N° 40 y D.S. N° 44. Se alimenta directamente de los datos de esta matriz para informar los peligros, consecuencias, medidas de control y gestionar el registro de firmas.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0 self-start md:self-auto">
+          <button
+            type="button"
+            onClick={() => {
+              if (isMatrixVigente) {
+                setIsIrlModalOpen(true);
+              }
+            }}
+            disabled={!isMatrixVigente}
+            className={clsx(
+              "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-xs",
+              isMatrixVigente
+                ? "bg-teal-600 text-white hover:bg-teal-700 cursor-pointer shadow-teal-500/20"
+                : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed opacity-60"
+            )}
+          >
+            <LuFileText className="w-4 h-4" />
+            <span>{isMatrixVigente ? "Ver Información de Riesgos Laborales (IRL)" : "IRL Bloqueado"}</span>
+            {!isMatrixVigente && <LuLock className="w-3.5 h-3.5" />}
+          </button>
         </div>
       </div>
 
@@ -958,6 +1040,14 @@ export default function IperMatrixDetailView({
             </form>
           </div>
         </div>
+      )}
+      {/* Modal de Documento IRL por Cargo */}
+      {isIrlModalOpen && (
+        <IrlDocumentModal
+          matrix={matrix}
+          evaluations={evaluations}
+          onClose={() => setIsIrlModalOpen(false)}
+        />
       )}
     </div>
   );
