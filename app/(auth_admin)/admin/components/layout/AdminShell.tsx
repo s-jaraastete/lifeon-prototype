@@ -21,7 +21,7 @@ export default function AdminShell({ children }: AdminShellProps) {
         className={clsx(
           "mx-auto flex w-full flex-col gap-4 transition-all duration-300 lg:grid",
           collapsed
-            ? "lg:grid-cols-[75px_minmax(0,1fr)]"
+            ? "lg:grid-cols-[72px_minmax(0,1fr)]"
             : "lg:grid-cols-[270px_minmax(0,1fr)]",
         )}
       >
