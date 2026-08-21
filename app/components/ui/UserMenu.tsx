@@ -41,7 +41,10 @@ export default function UserMenu() {
             leaveFrom="opacity-100 translate-y-0"
             leaveTo="opacity-0 -translate-y-2"
           >
-            <MenuItems className="absolute right-0 mt-2 w-71 origin-top-right flex flex-col gap-3 rounded-xl bg-white p-3.75 shadow-lg ring-1 ring-black/5 focus:outline-none z-50">
+            <MenuItems
+              className="absolute right-0 mt-3 w-71 origin-top-right flex flex-col gap-3 rounded-xl bg-white p-3.75 shadow-lg ring-1 ring-black/5 focus:outline-none z-50"
+              modal={false}
+            >
               <MenuItem>
                 <Link
                   href="/admin/mi-cuenta"

@@ -11,21 +11,21 @@ import {
   getReferencePrice,
   getTotalDueToday,
 } from '@/utils/pricingHelpers'
-
+//TODO: remover todo
 
 const CartPricingBlock = ({ plan, ufValue }: { plan: CartItem; ufValue: number }) => {
   const { couponPreview } = useCart()
   const selectedPriceOption = getActivePriceOption(plan, plan.selectedBillingPeriod)
   const discountAmount = getDiscountAmount(selectedPriceOption)
   const discountLabel = getDiscountLabel(selectedPriceOption)
-  const referencePrice = getReferencePrice(selectedPriceOption, ufValue)
+  /* const referencePrice = getReferencePrice(plan.selectedBillingPeriod, ufValue) */
   const baseTotalDueToday = getTotalDueToday(selectedPriceOption)
   const totalDueToday = selectedPriceOption?.trial_days
     ? baseTotalDueToday
     : couponPreview?.total ?? baseTotalDueToday
-  const referenceFinalPrice = selectedPriceOption?.trial_days
+  /* const referenceFinalPrice = selectedPriceOption?.trial_days
     ? '0'
-    : getReferenceFinalPrice(selectedPriceOption, ufValue)
+    : getReferenceFinalPrice(plan.selectedBillingPeriod, ufValue) */
 
   return (
     <>
@@ -41,7 +41,7 @@ const CartPricingBlock = ({ plan, ufValue }: { plan: CartItem; ufValue: number }
               {plan.currency}
             </span>
             <span className="text-secondary-text ml-1.5">
-              (Ref: ${referencePrice}
+              {/* (Ref: ${referencePrice} */}
               {" "}
               {REFERENCE_CURRENCY})
             </span>
@@ -88,13 +88,13 @@ const CartPricingBlock = ({ plan, ufValue }: { plan: CartItem; ufValue: number }
               {" "}
               {plan.currency}
             </span>
-            {referenceFinalPrice && (
+            {/* {referenceFinalPrice && (
               <span className="text-sm text-secondary-text">
                 (Ref: ${referenceFinalPrice}
                 {" "}
                 {REFERENCE_CURRENCY})
               </span>
-            )}
+            )} */}
           </div>
         </div>
       </div>

@@ -21,7 +21,7 @@ import { LuChevronLeft, LuChevronRight, LuShoppingCart } from 'react-icons/lu'
 type CartResumeProps = {
   ufValue: number
 }
-
+// TODO: REMOVER TODO
 const CartResume = ({ ufValue }: CartResumeProps) => {
   const [isCouponOpen, setIsCouponOpen] = useState(false)
   const { items, couponPreview, isHydrated, removeItem, updateItemBillingPeriod } = useCart()
@@ -51,13 +51,13 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
     },
   ]
 
-  const handleBillingPeriodChange = (value: string) => {
-    if (!initialPlan) {
-      return
-    }
-
-    updateItemBillingPeriod(initialPlan.public_id, value as CartBillingPeriod)
-  }
+  /*   const handleBillingPeriodChange = (value: string) => {
+      if (!initialPlan) {
+        return
+      }
+  
+      updateItemBillingPeriod(initialPlan.id, value as CartBillingPeriod)
+    } */
 
   return (
     <div className="w-full bg-white px-4 xl:px-0">
@@ -123,7 +123,7 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
                   <div className="border border-gray-500 rounded-[22px] bg-white p-6">
                     <Listbox
                       value={selectedBillingPeriod}
-                      onValueChange={handleBillingPeriodChange}
+                      /* onValueChange={handleBillingPeriodChange} */
                       options={suscriptionOptions}
                       label="Suscripción"
                     />
@@ -151,11 +151,11 @@ const CartResume = ({ ufValue }: CartResumeProps) => {
 
                     {initialPlan?.selectedBillingPeriod === 'yearly' ? (
                       <p className="mt-10.5 bg-gray-100 rounded-[22px] py-2.5 px-5 text-xs leading-relaxed text-primary-text">
-                        Tu prueba de {trialDays}{" "} días comienza hoy por 0 UF y tu primer periodo 
+                        Tu prueba de {trialDays}{" "} días comienza hoy por 0 UF y tu primer periodo
                         facturado se iniciará el {getDateAfterDays(30)}{" "} por {formatApiAmount(recurringPrice)}{" "} UF anual.
-                        El botón &apos;Ir a pagar&apos; te redirigirá de forma segura para 
-                        inscribir tu método de pago y sellar tu activación, pero hoy 
-                        recibirás un comprobante por $0 CLP. 
+                        El botón &apos;Ir a pagar&apos; te redirigirá de forma segura para
+                        inscribir tu método de pago y sellar tu activación, pero hoy
+                        recibirás un comprobante por $0 CLP.
                         Tienes hasta el día {trialDays} para cancelar en tu panel sin ningún cobro.
                       </p>
                     ) : (
