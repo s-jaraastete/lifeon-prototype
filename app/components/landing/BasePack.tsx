@@ -1,9 +1,9 @@
-import Image from 'next/image';
+/* import Image from 'next/image';
 import { LuFileSearch2, LuTable } from 'react-icons/lu';
 import CardSlider from '../shared/CardSlider';
 import CardPack from './CardPack';
 import PricePack from './PricePack';
-
+//TODO
 export const CardData = [
   {
     chip: "Incluído en Paquete Base Esencial",
@@ -84,4 +84,6 @@ const BasePack = () => {
   )
 };
 
-export default BasePack;
+export default BasePack; */
+
+//TODO: REMOVER

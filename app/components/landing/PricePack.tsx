@@ -1,4 +1,4 @@
-"use client";
+/* "use client";
 
 import { useState } from 'react';
 import Image from 'next/image';
@@ -8,7 +8,7 @@ import StartTrialButton from '../shopping/StartTrialButton';
 // Icons
 import { LuFileSearch2, LuTable } from 'react-icons/lu';
 
-
+//TODO: ELIMINAR ESTO
 const PricePack = () => {
   const [isAnnual, setIsAnnual] = useState(false);
   
@@ -79,4 +79,6 @@ const PricePack = () => {
   )
 };
 
-export default PricePack;
+export default PricePack; */
+
+//TODO: REMOVER

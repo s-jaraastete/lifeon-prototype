@@ -1,4 +1,4 @@
-'use client'
+/* 'use client'
 
 import { useState } from 'react'
 import { CartBillingPeriod, CartItem, CartModule, CartPriceOption, useCart } from '@/providers/CartProvider'
@@ -120,3 +120,6 @@ const useBasePackCart = (slug: string): UseBasePackCartResult => {
 }
 
 export default useBasePackCart;
+ */
+
+//TODO: REMOVER

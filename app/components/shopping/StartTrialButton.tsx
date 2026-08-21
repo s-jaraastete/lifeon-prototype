@@ -1,4 +1,4 @@
-'use client'
+/* 'use client'
 
 import { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
@@ -56,3 +56,6 @@ const StartTrialButton = ({
 }
 
 export default StartTrialButton;
+ */
+
+//TODO: REMOVER
