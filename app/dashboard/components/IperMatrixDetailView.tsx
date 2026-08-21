@@ -138,28 +138,7 @@ export default function IperMatrixDetailView({
 }: IperMatrixDetailViewProps) {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [evaluations, setEvaluations] = useState<IperEvaluationRow[]>(
-    matrix.status === "No iniciado"
-      ? []
-      : DEFAULT_EVALUATIONS[matrix.code] || [
-          {
-            id: "EV-01",
-            process: matrix.name,
-            task: `Tarea operativa principal de ${matrix.name}`,
-            hazard: "Condición de riesgo no controlada en faena",
-            riskEvent: "Exposición a peligro potencial con daño a las personas o instalaciones",
-            probInitial: 3,
-            sevInitial: 4,
-            riskInitial: 12,
-            initialLevel: "Alto",
-            controls: "Procedimiento de Trabajo Seguro (PTS), charla de 5 minutos, uso obligatorio de EPP certificados según DS 594.",
-            probResidual: 1,
-            sevResidual: 2,
-            riskResidual: 2,
-            residualLevel: "Bajo",
-            controlStatus: "Implementado",
-            responsible: matrix.responsible,
-          },
-        ]
+    matrix.status === "No iniciado" ? [] : DEFAULT_EVALUATIONS[matrix.code] || []
   );
 
   const [search, setSearch] = useState("");
