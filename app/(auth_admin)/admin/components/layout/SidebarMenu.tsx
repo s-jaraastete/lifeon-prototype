@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
 export default function SidebarMenu({ collapsed, pathname }: SidebarProps) {
   return (
     <aside
-      className="flex h-full min-h-[calc(100vh-2rem)] flex-col p-3.5 rounded-2xl bg-surface-primary overflow-hidden"
+      className="flex h-full min-h-[calc(100vh-2rem)] flex-col p-3.5 rounded-2xl bg-surface-primary"
     >
       <div
         className={clsx("flex items-center gap-3 py-1.5 h-10", {
@@ -74,7 +74,7 @@ export default function SidebarMenu({ collapsed, pathname }: SidebarProps) {
               key={item.label}
               href={item.href}
               className={clsx(
-                "inline-flex rounded-lg px-3 py-2.5 w-full text-base transition-colors duration-300",
+                "group relative inline-flex rounded-lg px-3 py-2.5 w-full text-base transition-colors duration-300",
                 {
                   "lg:p-3 w-min": collapsed,
                   "font-medium text-primary": isActive,
@@ -88,6 +88,7 @@ export default function SidebarMenu({ collapsed, pathname }: SidebarProps) {
                   className={clsx("h-5 w-5", {
                     "text-primary": isActive,
                     "text-neutral-primary": !isActive,
+                    "group-hover:text-primary": !isActive && collapsed,
                   })}
                 />
                 <span
@@ -98,6 +99,23 @@ export default function SidebarMenu({ collapsed, pathname }: SidebarProps) {
                   {item.label}
                 </span>
               </div>
+              {/* Tooltip on hover when collapsed */}
+              {collapsed && (
+                <span
+                  className={clsx(
+                    "pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2",
+                    "whitespace-nowrap rounded-lg bg-grey-300 px-2 py-0.5",
+                    "text-xs leading-5 text-neutral-primary",
+                    "opacity-0 transition-opacity duration-150",
+                    "group-hover:opacity-100 group-hover:delay-500",
+                    "before:absolute before:right-full before:top-1/2 before:-translate-y-1/2",
+                    "before:border-y-[5px] before:border-y-transparent",
+                    "before:border-r-[5px] before:border-r-grey-300",
+                  )}
+                >
+                  {item.label}
+                </span>
+              )}
             </Link>
           );
         })}
