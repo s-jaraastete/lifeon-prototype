@@ -278,8 +278,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
     const step1Error = !workArea.trim()
       ? "Debes ingresar el Área de Trabajo para continuar."
       : processes.length === 0
-      ? "Debes agregar al menos un proceso a la matriz."
-      : null;
+        ? "Debes agregar al menos un proceso a la matriz."
+        : null;
 
     // Etapa 2: Al menos 1 tarea y todas las tareas con al menos 1 puesto
     const step2Valid =
@@ -288,8 +288,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
       tasks.length === 0
         ? "Debes registrar al menos una tarea en la matriz."
         : !tasks.every((t) => t.positions && t.positions.length > 0)
-        ? "Cada tarea debe tener al menos un puesto de trabajo asignado con su dotación."
-        : null;
+          ? "Cada tarea debe tener al menos un puesto de trabajo asignado con su dotación."
+          : null;
 
     // Etapa 3: Al menos 1 peligro y cada tarea con al menos 1 peligro asignado
     const step3Valid =
@@ -298,8 +298,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
       hazards.length === 0
         ? "Debes identificar al menos un peligro con su riesgo asociado."
         : !tasks.every((t) => hazards.some((h) => h.taskId === t.id))
-        ? "Todas las tareas registradas deben tener al menos un peligro asignado."
-        : null;
+          ? "Todas las tareas registradas deben tener al menos un peligro asignado."
+          : null;
 
     // Etapa 4: Todos los peligros deben estar evaluados
     const step4Valid =
@@ -601,15 +601,15 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
           ? initialScore >= 16
             ? "Crítico"
             : initialScore >= 8
-            ? "Alto"
-            : initialScore >= 4
-            ? "Medio"
-            : "Bajo"
+              ? "Alto"
+              : initialScore >= 4
+                ? "Medio"
+                : "Bajo"
           : hItem.riskLevelType === "Alto"
-          ? "Alto"
-          : hItem.riskLevelType === "Medio"
-          ? "Medio"
-          : "Bajo";
+            ? "Alto"
+            : hItem.riskLevelType === "Medio"
+              ? "Medio"
+              : "Bajo";
 
         const residualLvl: "Crítico" | "Alto" | "Medio" | "Bajo" = isSafety
           ? residualScore >= 8
@@ -753,7 +753,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Columna Izquierda: Formulario de la Etapa (8 cols) */}
         <div className="lg:col-span-8 bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[540px]">
-          
+
           {/* =========================================================================
               ETAPA 1: ÁREA Y PROCESOS
               ========================================================================= */}
@@ -1886,8 +1886,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                   ? lvl === "Alto"
                                     ? "bg-red-50 border-red-500 text-red-700 ring-2 ring-red-500/20 shadow-2xs"
                                     : lvl === "Medio"
-                                    ? "bg-amber-50 border-amber-500 text-amber-800 ring-2 ring-amber-500/20 shadow-2xs"
-                                    : "bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/20 shadow-2xs"
+                                      ? "bg-amber-50 border-amber-500 text-amber-800 ring-2 ring-amber-500/20 shadow-2xs"
+                                      : "bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/20 shadow-2xs"
                                   : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
                               )}
                             >
