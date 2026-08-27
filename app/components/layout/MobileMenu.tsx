@@ -105,7 +105,7 @@ const MobileMenu = ({ isOpen, onClose }: {
                             </div>
                             {item.title}
                             {item.chipText && (
-                              <span className="text-[10px] font-medium bg-[#DBEAFE] text-[#155DFC] px-1.5 py-0.5 rounded-lg">
+                              <span className="text-[10px] font-medium bg-[#DBEAFE] text-blue-600 px-1.5 py-0.5 rounded-lg">
                                 {item.chipText}
                               </span>
                             )}

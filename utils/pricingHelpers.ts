@@ -3,7 +3,7 @@ import { CartBillingPeriod, CartItem, CartPriceOption } from '@/providers/CartPr
 export const REFERENCE_CURRENCY = 'CLP' as const
 
 
-const formatReferenceAmount = (value: number) => {
+export const formatReferenceAmount = (value: number) => {
   return new Intl.NumberFormat('es-CL', {
     maximumFractionDigits: 0,
   }).format(Math.trunc(value))
