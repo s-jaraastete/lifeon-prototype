@@ -39,7 +39,7 @@ const statusStyles: Record<SubscriptionStatus, string> = {
 };
 
 const statusLabels: Record<SubscriptionStatus, string> = {
-  pending_payment_method: "Pendiente método de pago",
+  pending_payment_method: /* "Pendiente método de pago" */ "Pendiente",
   pending_initial_payment: "Pendiente de pago inicial",
   trialing: "En prueba",
   active: "Activa",

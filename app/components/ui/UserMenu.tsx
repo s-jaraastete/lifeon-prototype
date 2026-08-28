@@ -47,8 +47,9 @@ export default function UserMenu() {
             >
               <MenuItem>
                 <Link
-                  href="/admin/mi-cuenta"
-                  className="flex items-center gap-2.5 w-full cursor-pointer text-neutral-primary data-focus:text-secondary transition-colors"
+                  href="/admin"
+                  className="flex items-center gap-2.5 w-full cursor-pointer text-neutral-primary data-focus:text-secondary 
+                  transition-colors duration-200 rounded-lg py-1.5 hover:bg-grey-100"
                 >
                   <div className="relative h-8 w-8">
                     <Image

@@ -37,7 +37,10 @@ export default function Header({ collapsed, onToggle }: HeaderProps) {
           </button>
 
           <span className="rounded-lg bg-grey-300 px-1.5 py-1 text-[10px] font-medium text-neutral-primary">
-            Admin
+            Panel de Administración
+          </span>
+          <span className="text-xs font-medium text-neutral-tertiary">
+            Valor UF: CLP $40.000
           </span>
         </div>
 
