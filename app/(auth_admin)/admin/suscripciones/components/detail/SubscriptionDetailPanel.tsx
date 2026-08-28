@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import clsx from "clsx";
 import SlideOver from "@/app/components/ui/SlideOver";
@@ -12,6 +14,7 @@ import {
 } from "react-icons/lu";
 
 type SubscriptionDetailPanelProps = {
+  open: boolean;
   subscription: Subscription | null;
   onClose: () => void;
 };
@@ -70,12 +73,13 @@ const PanelTitle = (
 );
 
 export default function SubscriptionDetailPanel({
+  open,
   subscription,
   onClose,
 }: SubscriptionDetailPanelProps) {
   return (
     <SlideOver
-      open={!!subscription}
+      open={open}
       onClose={onClose}
       title={PanelTitle}
       size="w-150"

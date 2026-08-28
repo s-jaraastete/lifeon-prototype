@@ -1,31 +1,34 @@
-import { getServerData } from "@/lib/requests";
-import { PaginatedResponse, Subscription } from "@/types/admin";
-import SubscriptionsTable from "./components/SubscriptionsTable";
 import SubscriptionDashboard from "./components/SubscriptionDashboard";
+import SubscriptionsTable from "./components/SubscriptionsTable";
+import SubscriptionDetailProvider from "./components/detail/SubscriptionDetailProvider";
+import TableFilters from "./components/TableFilters";
 
-const SuscripcionesPage = async () => {
-  let initialData: PaginatedResponse<Subscription> | null = null;
+type PageProps = {
+  searchParams: Promise<{
+    page?: string;
+    search?: string;
+    status?: string
+  }>;
+};
 
-  try {
-    const response = await getServerData(
-      "/admin-overview/subscriptions/?page=1&page_size=10",
-      {
-        useAccessToken: true,
-        cache: "no-store",
-      }
-    );
-    initialData = response?.data ?? null;
-  } catch {
-    initialData = null;
-  }
+const SuscripcionesPage = async ({ searchParams }: PageProps) => {
+  const params = await searchParams;
 
   return (
-    <div className="w-full mx-auto flex flex-col gap-4">
-      <SubscriptionDashboard />
-      <div className="rounded-2xl bg-surface-primary p-6">
-        <SubscriptionsTable initialData={initialData} />
+    <SubscriptionDetailProvider>
+      <div className="w-full mx-auto flex flex-col gap-4">
+        <SubscriptionDashboard />
+        <div className="rounded-2xl bg-surface-primary p-6">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-2xl font-semibold text-neutral-primary">
+              Todas las suscripciones
+            </h2>
+            <TableFilters />
+            <SubscriptionsTable params={params} />
+          </div>
+        </div>
       </div>
-    </div>
+    </SubscriptionDetailProvider>
   );
 };
 
