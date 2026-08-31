@@ -8,7 +8,7 @@ type SubscriptionsTableProps = {
   params: { [key: string]: string };
 };
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 const headers = [
   "ID Suscripción",
