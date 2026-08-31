@@ -17,6 +17,12 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
         >
           Ver detalle
         </MenuItem>
+        {/* <MenuItem
+          icon={<EyeIcon />}
+          onClick={() => removeSub(subscription.plublic_id)}
+        >
+          Elimnar
+        </MenuItem> */}
       </GenericMenu>
     </div>
   );
