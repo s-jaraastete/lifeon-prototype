@@ -10,10 +10,32 @@ body {
   --color-primary: var(--color-red-500);
   --color-primary-hover: var(--color-red-600);
   --color-primary-pressed: var(--color-red-800);
+  --color-primary-50: var(--color-red-50);
+  --color-primary-100: var(--color-red-100);
+  --color-primary-200: var(--color-red-200);
+  --color-primary-300: var(--color-red-300);
+  --color-primary-400: var(--color-red-400);
+  --color-primary-500: var(--color-red-500);
+  --color-primary-600: var(--color-red-600);
+  --color-primary-700: var(--color-red-700);
+  --color-primary-800: var(--color-red-800);
+  --color-primary-900: var(--color-red-900);
+  --color-primary-950: var(--color-red-950);
 
   --color-secondary: var(--color-teal-500);
   --color-secondary-hover: var(--color-teal-600);
   --color-secondary-pressed: var(--color-teal-800);
+  --color-secondary-50: var(--color-teal-50);
+  --color-secondary-100: var(--color-teal-100);
+  --color-secondary-200: var(--color-teal-200);
+  --color-secondary-300: var(--color-teal-300);
+  --color-secondary-400: var(--color-teal-400);
+  --color-secondary-500: var(--color-teal-500);
+  --color-secondary-600: var(--color-teal-600);
+  --color-secondary-700: var(--color-teal-700);
+  --color-secondary-800: var(--color-teal-800);
+  --color-secondary-900: var(--color-teal-900);
+  --color-secondary-950: var(--color-teal-950);
 
   /* --- TEXT--- */
   --color-base-black: #202124;
@@ -254,10 +276,215 @@ body {
   --color-azure-800: #004B77;
   --color-azure-900: #002F4B;
   --color-azure-950: #00131F;
+
+  /* --- TYPOGRAPHY --- */
+  --text-h1: 64px;
+  --text-h1--line-height: 72px;
+  --text-h2: 48px;
+  --text-h2--line-height: 56px;
+  --text-h3: 40px;
+  --text-h3--line-height: 48px;
+  --text-h4: 32px;
+  --text-h4--line-height: 40px;
+  --text-h5: 24px;
+  --text-h5--line-height: 32px;
+  --text-h6: 20px;
+  --text-h6--line-height: 28px;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 26px;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 22px;
+  --text-caption: 12px;
+  --text-caption--line-height: 20px;
+  --text-micro: 10px;
+  --text-micro--line-height: 18px;
+}
+
+/*
+ * The admin section reuses legacy components written against the source
+ * theme's `gray`/`zinc`/`slate`/`amber` neutrals, while the landing page owns
+ * a distinct `gray` ramp. Scoping these remaps below a single ancestor
+ * (`admin-scope`) lets every such class inside the admin resolve to the `grey`
+ * ramp without touching the landing colors.
+ */
+.admin-scope {
+  --color-gray-50: var(--color-grey-50);
+  --color-gray-100: var(--color-grey-100);
+  --color-gray-200: var(--color-grey-200);
+  --color-gray-300: var(--color-grey-300);
+  --color-gray-400: var(--color-grey-400);
+  --color-gray-500: var(--color-grey-500);
+  --color-gray-600: var(--color-grey-600);
+  --color-gray-700: var(--color-grey-700);
+  --color-gray-800: var(--color-grey-800);
+  --color-gray-900: var(--color-grey-900);
+  --color-gray-950: var(--color-grey-950);
+
+  --color-zinc-50: var(--color-grey-50);
+  --color-zinc-100: var(--color-grey-100);
+  --color-zinc-200: var(--color-grey-200);
+  --color-zinc-300: var(--color-grey-300);
+  --color-zinc-400: var(--color-grey-400);
+  --color-zinc-500: var(--color-grey-500);
+  --color-zinc-600: var(--color-grey-600);
+  --color-zinc-700: var(--color-grey-700);
+  --color-zinc-800: var(--color-grey-800);
+  --color-zinc-900: var(--color-grey-900);
+  --color-zinc-950: var(--color-grey-950);
+
+  --color-slate-50: var(--color-grey-50);
+  --color-slate-100: var(--color-grey-100);
+  --color-slate-200: var(--color-grey-200);
+  --color-slate-300: var(--color-grey-300);
+  --color-slate-400: var(--color-grey-400);
+  --color-slate-500: var(--color-grey-500);
+  --color-slate-600: var(--color-grey-600);
+  --color-slate-700: var(--color-grey-700);
+  --color-slate-800: var(--color-grey-800);
+  --color-slate-900: var(--color-grey-900);
+  --color-slate-950: var(--color-grey-950);
+
+  --color-amber-50: var(--color-yellow-50);
+  --color-amber-100: var(--color-yellow-100);
+  --color-amber-200: var(--color-yellow-200);
+  --color-amber-300: var(--color-yellow-300);
+  --color-amber-400: var(--color-yellow-400);
+  --color-amber-500: var(--color-yellow-500);
+  --color-amber-600: var(--color-yellow-600);
+  --color-amber-700: var(--color-yellow-700);
+  --color-amber-800: var(--color-yellow-800);
+  --color-amber-900: var(--color-yellow-900);
+  --color-amber-950: var(--color-yellow-950);
 }
 
 @utility shadow-soft {
   box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.02);
+}
+
+@utility h1 {
+  @apply text-h1 font-semibold mb-8 mt-8 text-neutral-primary;
+}
+
+@utility h1-regular {
+  @apply text-h1 font-normal mb-8 mt-8 text-neutral-primary;
+}
+
+@utility h2 {
+  @apply text-h2 font-semibold mb-4 mt-6 text-neutral-primary;
+}
+
+@utility h2-regular {
+  @apply text-h2 font-normal mb-4 mt-6 text-neutral-primary;
+}
+
+@utility h3 {
+  @apply text-h3 font-semibold mb-2 mt-4 text-neutral-primary;
+}
+
+@utility h3-regular {
+  @apply text-h3 font-normal mb-2 mt-4 text-neutral-primary;
+}
+
+@utility h4 {
+  @apply text-h4 font-semibold mb-1 mt-2 text-neutral-primary;
+}
+
+@utility h4-regular {
+  @apply text-h4 font-normal mb-1 mt-2 text-neutral-primary;
+}
+
+@utility h5 {
+  @apply text-h5 font-semibold mb-1 mt-2 text-neutral-primary;
+}
+
+@utility h5-regular {
+  @apply text-h5 font-normal mb-1 mt-2 text-neutral-primary;
+}
+
+@utility h6 {
+  @apply text-h6 font-medium mb-1 mt-2 text-neutral-primary;
+}
+
+@utility h6-regular {
+  @apply text-h6 font-normal mb-1 mt-2 text-neutral-primary;
+}
+
+@utility body-lg {
+  @apply text-body-lg font-normal text-neutral-primary;
+}
+
+@utility body-lg-medium {
+  @apply text-body-lg font-medium text-neutral-primary;
+}
+
+@utility body-lg-semibold {
+  @apply text-body-lg font-semibold text-neutral-primary;
+}
+
+@utility body-lg-bold {
+  @apply text-body-lg font-bold text-neutral-primary;
+}
+
+@utility body-lg-italic {
+  @apply text-body-lg font-normal italic text-neutral-primary;
+}
+
+@utility body-md {
+  @apply text-body-md font-normal text-neutral-primary;
+}
+
+@utility body-md-medium {
+  @apply text-body-md font-medium text-neutral-primary;
+}
+
+@utility body-md-semibold {
+  @apply text-body-md font-semibold text-neutral-primary;
+}
+
+@utility body-md-bold {
+  @apply text-body-md font-bold text-neutral-primary;
+}
+
+@utility body-md-italic {
+  @apply text-body-md font-normal italic text-neutral-primary;
+}
+
+@utility body-sm {
+  @apply text-body-sm font-normal text-neutral-primary;
+}
+
+@utility body-sm-medium {
+  @apply text-body-sm font-medium text-neutral-primary;
+}
+
+@utility body-sm-semibold {
+  @apply text-body-sm font-semibold text-neutral-primary;
+}
+
+@utility body-sm-italic {
+  @apply text-body-sm font-normal italic text-neutral-primary;
+}
+
+@utility caption {
+  @apply text-caption font-normal text-neutral-primary;
+}
+
+@utility caption-medium {
+  @apply text-caption font-medium text-neutral-primary;
+}
+
+@utility micro-caption {
+  @apply text-micro font-light text-neutral-primary;
+}
+
+@utility micro-caption-medium {
+  @apply text-micro font-medium text-neutral-primary;
+}
+
+@utility p {
+  @apply text-body-md font-normal text-neutral-secondary hyphens-auto;
 }
 
 @utility input-base {

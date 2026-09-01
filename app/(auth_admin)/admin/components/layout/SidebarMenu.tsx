@@ -104,7 +104,7 @@ export default function SidebarMenu({ collapsed, pathname }: SidebarProps) {
                 <span
                   className={clsx(
                     "pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2",
-                    "whitespace-nowrap rounded-lg bg-grey-300 px-2 py-0.5",
+                    "whitespace-nowrap rounded-lg bg-gray-300 px-2 py-0.5",
                     "text-xs leading-5 text-neutral-primary",
                     "opacity-0 transition-opacity duration-150",
                     "group-hover:opacity-100 group-hover:delay-500",

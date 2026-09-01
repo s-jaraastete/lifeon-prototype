@@ -1,10 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import clsx from "clsx";
-import SlideOver from "@/app/components/ui/SlideOver";
-import { Subscription, SubscriptionStatus } from "@/types/admin";
-import { formatDateShort } from "@/utils/formatDate";
 import {
   LuBadgeCheck,
   LuBan,
@@ -12,6 +7,12 @@ import {
   LuEllipsis,
   LuRocket,
 } from "react-icons/lu";
+import Image from "next/image";
+import clsx from "clsx";
+import SlideOver from "@/app/components/ui/SlideOver";
+import { Subscription, SubscriptionStatus } from "@/types/admin";
+import { formatDateShort } from "@/utils/formatDate";
+import { formatApiAmount } from "@/utils/pricingHelpers";
 
 type SubscriptionDetailPanelProps = {
   open: boolean;
@@ -41,6 +42,9 @@ const statusLabels: Record<SubscriptionStatus, string> = {
   cancelled: "Cancelada",
   expired: "Expirada",
 };
+
+const clientType = (value: string | null) =>
+ value === "individual" ? "Individual" : "Organización";
 
 const billingPeriodLabel = (period: Subscription["billing_period"]) =>
   period === "monthly" ? "Mensual" : "Anual";
@@ -116,7 +120,7 @@ export default function SubscriptionDetailPanel({
                 ID Suscripción: {subscription.subscription_id}
               </p>
               <p className="text-sm text-neutral-secondary">
-                {subscription.client_type === "individual" ? "Individual" : "Organización"}
+                {clientType(subscription.client_type)}
               </p>
             </div>
           </div>
@@ -153,7 +157,7 @@ export default function SubscriptionDetailPanel({
             <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
               <DetailRow
                 label="Plan"
-                value={`${subscription.pack_name_snapshot} / ${subscription.client_type ?? "Individual"}`}
+                value={`${subscription.pack_name_snapshot} / ${clientType(subscription.client_type)}`}
               />
               <DetailRow
                 label="Ciclo"
@@ -165,7 +169,7 @@ export default function SubscriptionDetailPanel({
               />
               <DetailRow
                 label="MRR"
-                value={`${subscription.mrr_uf} UF /mes`}
+                value={`$${formatApiAmount(subscription.mrr_clp)} CLP /mes`}
               />
             </div>
           </section>
@@ -183,7 +187,7 @@ export default function SubscriptionDetailPanel({
                     className="flex items-center justify-between text-sm text-neutral-primary"
                   >
                     <div className="flex items-center gap-3">
-                      <LuBox className="h-4 w-4 text-blue-500" />
+                      <LuBox className="h-4 w-4 text-secondary" />
                       <span>{item.display_name}</span>
                     </div>
                   </li>

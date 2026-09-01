@@ -5,7 +5,7 @@ import StatusTabs from "./filters/StatusTabs";
 
 const TableFilters = () => {
   return (
-    <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex items-center justify-between gap-4 flex-wrap pb-1">
       <SearchInput />
       <StatusTabs />
     </div>
