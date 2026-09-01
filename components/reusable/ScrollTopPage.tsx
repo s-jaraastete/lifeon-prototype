@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowUp } from 'lucide-react';
+import { ArrowUpIcon } from '@heroicons/react/24/solid';
 import { useEffect, useState } from 'react';
 
 const ScrollToTopButton = () => {
@@ -33,7 +33,7 @@ const ScrollToTopButton = () => {
         className="fixed bottom-7 right-7 bg-secondary-600 text-white border-none p-3 rounded-full cursor-pointer shadow-lg z-1000"
         aria-label="Volver al inicio"
       >
-        <ArrowUp />
+        <ArrowUpIcon className="size-6" />
       </button>
     )
   );

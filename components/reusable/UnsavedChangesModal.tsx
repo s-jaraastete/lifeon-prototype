@@ -1,7 +1,8 @@
+'use client'
+
 import Button from '@/components/reusable/Button'
-import Modal, { ModalActionButtons, ModalBody, ModalTitle } from '@/app/components/generic/Modal'
-import { ArrowRightCircleIcon, ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/solid'
-import { SaveIcon } from 'lucide-react'
+import Modal, { ModalActionButtons, ModalBody, ModalTitle } from '@/components/reusable/Modal'
+import { ArrowRightCircleIcon, BookmarkSquareIcon, ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { ReactNode } from 'react'
 
 type UnsavedChangesModalProps = {
@@ -53,7 +54,7 @@ const UnsavedChangesModal = (props: UnsavedChangesModalProps) => {
           Continuar sin Guardar
         </Button>
         {canSave ? (
-          <Button color='danger' icon={<SaveIcon className='size-6' />} onClick={props.onSave} loading={isSaving}>
+          <Button color='danger' icon={<BookmarkSquareIcon className='size-6' />} onClick={props.onSave} loading={isSaving}>
             Guardar y Continuar
           </Button>
         ) : null}

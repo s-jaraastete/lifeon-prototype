@@ -1,19 +1,17 @@
 "use client"
 
-import {useNotification} from "@/components/providers/NotificationProvider";
-import Modal, {ModalActionButtons, ModalBody, ModalTitle} from "./../Modal";
+import Modal, {ModalActionButtons, ModalBody, ModalTitle, ModalProps} from "./../Modal";
 import {ExclamationTriangleIcon, TrashIcon} from "@heroicons/react/24/solid";
 import Button from "./../Button";
 import React from "react";
 
-interface RemoveAttachedImageModalProps extends ModalProps {
+interface RemoveAttachedImageModalProps extends Omit<ModalProps, 'children' | 'onClose'> {
+  setOpen: (open: boolean) => void,
   setFile: (value: File | null) => void,
   setUrl: (value: string | null) => void
 }
 
 const RemoveAttachedImageModal = (props: RemoveAttachedImageModalProps) => {
-  const showNotification = useNotification()
-
   const handleClose = () => {
     props.setOpen(false)
   }
@@ -21,10 +19,6 @@ const RemoveAttachedImageModal = (props: RemoveAttachedImageModalProps) => {
   const handleRemove = async () => {
     props.setFile(null)
     props.setUrl(null)
-    showNotification({
-      message: 'Se ha eliminado el archivo de manera exitosa',
-      type: 'success'
-    })
     handleClose()
   }
 

@@ -15,6 +15,6 @@ const useFormActionState = <OtherPayload>(
   other: OtherPayload,
   action: (other: OtherPayload, state: Awaited<FormActionState> | null, payload: FormData) => FormActionState | Promise<FormActionState>,
   permalink?: string,
-) => useActionState(serverActionHandler.bind(null, action, other), null, permalink)
+) => useActionState((state: Awaited<FormActionState> | null, payload: FormData) => serverActionHandler(action, other, state, payload), null, permalink)
 
 export default useFormActionState

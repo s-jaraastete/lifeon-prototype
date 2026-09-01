@@ -17,10 +17,12 @@ const AttachPhotoButton = (props: AttachPhotoButtonProps) => {
   const [urlFile, setUrlFile] = useState<string | null>(props.urlFile ?? null)
   const [openRemoveImageModal, setOpenRemoveImageModal] = useState<boolean>(false)
 
-  const handleFileChange = (e: ChangeEvent) => {
-    if (props.file !== null && e.target.files.length === 0) return;
-    props.setFile(e.target.files[0])
-    setUrlFile(URL.createObjectURL(e.target.files[0]))
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0]
+    if (!file) return;
+    props.setFile(file)
+    setUrlFile(URL.createObjectURL(file))
     props.afterChange?.()
   }
 

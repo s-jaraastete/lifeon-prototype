@@ -1,4 +1,4 @@
-import useCustomInfiniteQuery from "@/components/hooks/useCustomInfiniteQuery";
+import useCustomInfiniteQuery from "@/hooks/useCustomInfiniteQuery";
 import axiosManager from "@/lib/axios_manager";
 import LoadingState from "@/components/reusable/LoadingState";
 import InformationCard from "@/components/reusable/InformationCard";

@@ -7,7 +7,7 @@ import clsx from 'clsx'
 
 const ModalCloseContext = createContext<(() => void) | null>(null)
 
-interface ModalProps {
+export interface ModalProps {
   open: boolean,
   onClose: () => void,
   children: ReactNode,

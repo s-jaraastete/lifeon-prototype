@@ -3,9 +3,9 @@
 import React, {ReactNode, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import { Combobox, ComboboxButton, ComboboxOption, ComboboxInput, ComboboxOptions } from '@headlessui/react'
 import {CheckCircleIcon, ChevronDownIcon, PlusCircleIcon} from "@heroicons/react/24/solid";
-import useCustomInfiniteQuery from "@/components/hooks/useCustomInfiniteQuery";
+import useCustomInfiniteQuery from "@/hooks/useCustomInfiniteQuery";
 import axiosFetcher from "@/lib/axios_fetcher";
-import useDebounce from "@/components/hooks/useDebounce";
+import useDebounce from "@/hooks/useDebounce";
 import Spinner from "@/components/reusable/Spinner";
 import Chip from "./Chip";
 import clsx from 'clsx'

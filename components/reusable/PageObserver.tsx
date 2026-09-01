@@ -1,6 +1,6 @@
 'use client'
 
-import {UseCustomInifiteQueryResult} from "@/components/hooks/useCustomInfiniteQuery";
+import {UseCustomInifiteQueryResult} from "@/hooks/useCustomInfiniteQuery";
 import Button from "@/components/reusable/Button";
 import {ArrowPathIcon, ExclamationTriangleIcon} from "@heroicons/react/24/solid";
 

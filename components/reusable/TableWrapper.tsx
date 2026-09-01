@@ -3,7 +3,7 @@
 import axiosManager from '@/lib/axios_manager'
 import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon } from '@heroicons/react/24/outline'
 import React, { ReactNode, useState } from 'react'
 import TableWrapperCore from './TableWrapperCore'
 
@@ -30,7 +30,7 @@ export const PageTableControls = ({page, setPage, lastPage, isLoading}: PageTabl
         disabled={atStart || isLoading}
         icon
       >
-        <ChevronsLeft className='size-4' />
+        <ChevronDoubleLeftIcon className='size-4' />
       </PaginationButton>
       <PaginationButton
         aria-label='Página anterior'
@@ -38,7 +38,7 @@ export const PageTableControls = ({page, setPage, lastPage, isLoading}: PageTabl
         disabled={atStart || isLoading}
         icon
       >
-        <ChevronLeft className='size-4' />
+        <ChevronLeftIcon className='size-4' />
       </PaginationButton>
       {lastPage <= 5 ? (
         Array.from({ length: lastPage }, (_, i) => (
@@ -110,7 +110,7 @@ export const PageTableControls = ({page, setPage, lastPage, isLoading}: PageTabl
         disabled={atEnd || isLoading}
         icon
       >
-        <ChevronRight className='size-4' />
+        <ChevronRightIcon className='size-4' />
       </PaginationButton>
       <PaginationButton
         aria-label='Última página'
@@ -118,7 +118,7 @@ export const PageTableControls = ({page, setPage, lastPage, isLoading}: PageTabl
         disabled={atEnd || isLoading}
         icon
       >
-        <ChevronsRight className='size-4' />
+        <ChevronDoubleRightIcon className='size-4' />
       </PaginationButton>
     </div>
   )

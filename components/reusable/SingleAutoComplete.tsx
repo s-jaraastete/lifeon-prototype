@@ -3,8 +3,8 @@
 import React, {Fragment, ReactNode, useState} from "react";
 import {Combobox, Transition} from "@headlessui/react";
 import {CheckIcon, ChevronUpDownIcon} from "@heroicons/react/24/solid";
-import useCustomInfiniteQuery from "@/components/hooks/useCustomInfiniteQuery";
-import useDebounce from "@/components/hooks/useDebounce";
+import useCustomInfiniteQuery from "@/hooks/useCustomInfiniteQuery";
+import useDebounce from "@/hooks/useDebounce";
 import Spinner from "@/components/reusable/Spinner";
 import axiosManager from "@/lib/axios_manager";
 
@@ -21,7 +21,7 @@ interface AutocompleteProps<T extends InterfaceWithId>  {
   label?: keyof T,
   endpoint: string,
   queryKey: string[],
-  domain?: LifeonModules
+  domain?: string
 } 
 
 
@@ -37,7 +37,7 @@ const SingleAutocomplete = <T extends InterfaceWithId, >({selected, setSelected,
   const rData = useCustomInfiniteQuery({
     queryKey: props.queryKey,
     queryFn: async ({pageParam="1"}) => 
-      axiosManager(`${props.endpoint}${filterSeparator}&page=${pageParam}&search=${query}`,null,{useAccessToken:true,method:'get', module: props.domain  ? 'admin' : 'backend'})
+      axiosManager(`${props.endpoint}${filterSeparator}&page=${pageParam}&search=${query}`,null,{useAccessToken:true,method:'get'})
   })
   const data: T[] = rData.fdata ?? []
 

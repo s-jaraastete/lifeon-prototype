@@ -1,4 +1,4 @@
-import LoadingState from '@/app/components/generic/LoadingState'
+import LoadingState from './LoadingState'
 import { DocumentIcon, DocumentPlusIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { useState, ChangeEvent, useCallback } from 'react'
@@ -32,13 +32,16 @@ const FileUploadBox = ({fileInputRef, ...props}: FileUploadBoxProps) => {
   const isInteractionBlocked = Boolean(props.loading || props.disabled)
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files.length === 0) {
+    if (!e.target.files || e.target.files.length === 0) {
       return
     }
     if (props.multiple) {
       props.setFiles(Array.from(e.target.files))
     } else {
-      props.setFile(e.target.files[0])
+      const file = e.target.files[0]
+      if (file) {
+        props.setFile(file)
+      }
     }
   }
 
