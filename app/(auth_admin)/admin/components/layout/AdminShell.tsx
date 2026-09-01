@@ -32,7 +32,9 @@ export default function AdminShell({ children }: AdminShellProps) {
             collapsed={collapsed}
             onToggle={() => setCollapsed((value) => !value)}
           />
-          <main className="flex min-w-0 flex-col gap-4">{children}</main>
+          <div className="flex justify-center">
+            <main className="flex min-w-0 max-w-354 flex-col gap-4">{children}</main>
+          </div>
         </div>
       </div>
     </div>

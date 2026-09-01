@@ -26,7 +26,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LuHouse },
   { label: "Usuarios", href: "/admin/usuarios", icon: LuUsers },
   { label: "Suscripciones", href: "/admin/suscripciones", icon: LuBadgeCheck },
-  { label: "Pagos", href: "/admin/pagos", icon: LuCreditCard },
+  { label: "Facturación", href: "/admin/facturacion", icon: LuCreditCard },
   { label: "Módulos", href: "/admin/modulos", icon: LuLayoutGrid },
   { label: "Estado plataforma", href: "/admin/estado-plataforma", icon: LuBatteryFull },
   { label: "Configuración", href: "/admin/configuracion", icon: LuSettings },

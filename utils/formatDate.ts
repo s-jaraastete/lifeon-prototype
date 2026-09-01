@@ -9,6 +9,17 @@ export function formatDate(dateInput: string | Date): string {
   });
 }
 
+// Format - 15 dic 2026
+export function formatDateShort(dateInput: string | Date): string {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
+  return date.toLocaleDateString('es-CL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 // Format - 18/07/2026
 export function formatDateDDMMAAAA(dateInput: string | Date): string {
   const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput

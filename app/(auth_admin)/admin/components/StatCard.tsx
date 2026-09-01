@@ -1,9 +1,11 @@
+import type { ReactNode } from "react";
+
 type StatTone = "default" | "success" | "danger";
 
 type StatCardProps = {
   label: string;
   value: string;
-  note: string;
+  note: ReactNode;
   tone?: StatTone;
 };
 
@@ -20,7 +22,7 @@ export default function StatCard({ label, value, note, tone = "default" }: StatC
       <p className="mt-2 text-[32px] font-semibold tracking-tight text-neutral-primary">
         {value}
       </p>
-      <p className={`mt-2 text-xs ${toneClasses[tone]}`}>{note}</p>
+      <p className={`mt-2 text-xs font-medium ${toneClasses[tone]}`}>{note}</p>
     </article>
   );
 }
