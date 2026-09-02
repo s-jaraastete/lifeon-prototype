@@ -8,7 +8,7 @@ const statusTabs: { label: string; value: string | null }[] = [
   { label: "Activas", value: "active" },
   { label: "Suspendidas", value: "suspended" },
   { label: "Canceladas", value: "cancelled" },
-  { label: "Pendientes", value: "pending_payment_method" },
+  // { label: "Pendientes", value: "pending_payment_method" },
 ];
 
 const StatusTabs = () => {
@@ -33,7 +33,7 @@ const StatusTabs = () => {
           type="button"
           onClick={() => updateStatus(tab.value)}
           className={clsx(
-            "rounded-lg px-4 py-2 text-sm font-medium transition-colors cursor-pointer",
+            "rounded-lg px-2 py-1.5 text-sm font-medium transition-colors cursor-pointer",
             (currentStatus ?? null) === tab.value
               ? "bg-surface-primary text-neutral-primary"
               : "text-neutral-secondary hover:bg-stroke hover:text-neutral-primary"

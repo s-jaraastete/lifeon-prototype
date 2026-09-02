@@ -7,7 +7,10 @@ type PageProps = {
   searchParams: Promise<{
     page?: string;
     search?: string;
-    status?: string
+    status?: string;
+    pack_name_snapshot?: string;
+    billing_period?: string;
+    ordering?: string;
   }>;
 };
 

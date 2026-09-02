@@ -10,56 +10,24 @@ import {
 import Image from "next/image";
 import clsx from "clsx";
 import SlideOver from "@/app/components/ui/SlideOver";
-import { Subscription, SubscriptionStatus } from "@/types/admin";
-import { formatDateShort } from "@/utils/formatDate";
-import { formatApiAmount } from "@/utils/pricingHelpers";
+import { Subscription } from "@/types/admin";
+import {
+  DISPLAY_FALLBACK,
+  SUBSCRIPTION_STATUS_LABELS,
+  SUBSCRIPTION_STATUS_STYLES,
+  formatPaymentDetail,
+  formatSubscriptionDate,
+  getBillingPeriodLabel,
+  getClientTypeLabel,
+  getMrrDisplay,
+  getPaymentMethodLabel,
+  getPlanWithClientTypeLabel,
+} from "../../utils/subscriptionDisplay";
 
 type SubscriptionDetailPanelProps = {
   open: boolean;
   subscription: Subscription | null;
   onClose: () => void;
-};
-
-const statusStyles: Record<SubscriptionStatus, string> = {
-  pending_payment_method: "bg-yellow-100 text-yellow-800",
-  pending_initial_payment: "bg-yellow-100 text-yellow-800",
-  trialing: "bg-blue-100 text-blue-800",
-  active: "bg-green-100 text-green-800",
-  past_due: "bg-red-100 text-red-800",
-  suspended: "bg-orange-100 text-orange-800",
-  cancelled: "bg-gray-100 text-gray-800",
-  expired: "bg-gray-100 text-gray-800",
-};
-
-// TODO: Actualizar labels de status
-const statusLabels: Record<SubscriptionStatus, string> = {
-  pending_payment_method: "Pendiente",
-  pending_initial_payment: "Pendiente",
-  trialing: "En prueba",
-  active: "Activo",
-  past_due: "Pago pendiente",
-  suspended: "Suspendida",
-  cancelled: "Cancelada",
-  expired: "Expirada",
-};
-
-const clientType = (value: string | null) =>
- value === "individual" ? "Individual" : "Organización";
-
-const billingPeriodLabel = (period: Subscription["billing_period"]) =>
-  period === "monthly" ? "Mensual" : "Anual";
-
-const paymentMethod = (value: string | null) => {
-  if (!value) return "N/A";
-  return value.charAt(0).toUpperCase() + value.slice(1);
-};
-
-const formatPaymentDetail = (
-  cardType: string | null,
-  cardLastFour: string | null
-) => {
-  if (!cardType || !cardLastFour) return "N/A";
-  return `Tarjeta ${cardType} •••• ${cardLastFour}`;
 };
 
 const DetailRow = ({ label, value }: { label: string; value: string }) => (
@@ -109,10 +77,10 @@ export default function SubscriptionDetailPanel({
                 <span
                   className={clsx(
                     "inline-flex w-fit rounded-full px-2.5 py-0.5 text-xs font-medium",
-                    statusStyles[subscription.status]
+                    SUBSCRIPTION_STATUS_STYLES[subscription.status]
                   )}
                 >
-                  {statusLabels[subscription.status]}
+                  {SUBSCRIPTION_STATUS_LABELS[subscription.status]}
                 </span>
               </div>
 
@@ -120,7 +88,7 @@ export default function SubscriptionDetailPanel({
                 ID Suscripción: {subscription.subscription_id}
               </p>
               <p className="text-sm text-neutral-secondary">
-                {clientType(subscription.client_type)}
+                {getClientTypeLabel(subscription.client_type)}
               </p>
             </div>
           </div>
@@ -157,19 +125,25 @@ export default function SubscriptionDetailPanel({
             <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
               <DetailRow
                 label="Plan"
-                value={`${subscription.pack_name_snapshot} / ${clientType(subscription.client_type)}`}
+                value={getPlanWithClientTypeLabel(
+                  subscription.pack_name_snapshot,
+                  subscription.client_type
+                )}
               />
               <DetailRow
                 label="Ciclo"
-                value={billingPeriodLabel(subscription.billing_period)}
+                value={getBillingPeriodLabel(subscription.billing_period)}
               />
               <DetailRow
                 label="Renovación"
-                value={formatDateShort(subscription.next_billing_at ?? "")}
+                value={formatSubscriptionDate(subscription.next_billing_at)}
               />
               <DetailRow
                 label="MRR"
-                value={`$${formatApiAmount(subscription.mrr_clp)} CLP /mes`}
+                value={(() => {
+                  const v = getMrrDisplay(subscription.mrr_clp);
+                  return v === DISPLAY_FALLBACK ? v : `${v} /mes`;
+                })()}
               />
             </div>
           </section>
@@ -204,7 +178,7 @@ export default function SubscriptionDetailPanel({
             <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
               <DetailRow
                 label="Modalidad"
-                value={paymentMethod(subscription.payment_method)}
+                value={getPaymentMethodLabel(subscription.payment_method)}
               />
               <DetailRow
                 label="Detalle"
@@ -215,7 +189,7 @@ export default function SubscriptionDetailPanel({
               />
               <DetailRow
                 label="Correo DTE"
-                value={subscription.billing_email ?? "—"}
+                value={subscription.billing_email || DISPLAY_FALLBACK}
               />
             </div>
           </section>
