@@ -9,7 +9,7 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
   const detail = useSubscriptionDetail();
 
   return (
-    <div className="flex justify-end">
+    <div className="flex justify-center">
       <GenericMenu>
         <MenuItem
           icon={<EyeIcon />}

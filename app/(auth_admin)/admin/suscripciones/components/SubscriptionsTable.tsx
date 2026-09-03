@@ -11,7 +11,7 @@ import {
   getBillingPeriodLabel,
   getClientTypeLabel,
   getMrrDisplay,
-} from "../../suscripciones/utils/subscriptionDisplay";
+} from "../utils/subscriptionDisplay";
 
 type SubscriptionsTableProps = {
   params: { [key: string]: string };
@@ -85,6 +85,7 @@ const SubscriptionsTable = ({ params }: SubscriptionsTableProps) => {
       params={params}
       pageSize={PAGE_SIZE}
       noDataMessage="No se encontraron suscripciones"
+      stickyLastColumn
     />
   );
 };
