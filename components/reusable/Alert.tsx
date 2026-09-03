@@ -21,7 +21,7 @@ const AlertBody = (props: AlertBodyProps) => {
     error: <ExclamationCircleIcon/>
   }
   return (
-    <div className='flex gap-2'>
+    <div className='flex gap-2 z-50'>
       <div>
         <div className={`w-6 h-6 ${titleColor[props.type]}`}>
           {icon[props.type]}

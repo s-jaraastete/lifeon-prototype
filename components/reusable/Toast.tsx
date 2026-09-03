@@ -1,6 +1,7 @@
 "use client"
 
 import React, {ReactNode, useEffect} from "react";
+import {createPortal} from "react-dom";
 import {Transition} from "@headlessui/react";
 
 export interface ToastProps {
@@ -21,9 +22,11 @@ const Toast = (props: ToastProps) => {
   }, [props.open])
 
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <Transition show={props.open}>
-      <div className='fixed z-30 w-full left-0 top-0 flex justify-center' onClick={props.onClose}>
+      <div className='fixed z-50 w-full left-0 top-0 flex justify-center' onClick={props.onClose}>
         <Transition.Child
           enter="transition-opacity duration-200"
           enterFrom="opacity-0"
@@ -32,12 +35,13 @@ const Toast = (props: ToastProps) => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className='rounded-lg border-solid border-gray-200 border shadow-md bg-white max-w-2xl min-w-[400px] mt-4 py-4 px-4'>
+          <div className='rounded-lg border-solid border-gray-200 border shadow-md bg-white max-w-2xl min-w-100 mt-4 py-4 px-4'>
             {props.children}
           </div>
         </Transition.Child>
       </div>
-    </Transition>
+    </Transition>,
+    document.body,
   )
 }
 
