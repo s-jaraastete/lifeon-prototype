@@ -45,7 +45,7 @@ export default function Header({ collapsed, onToggle, ufValue }: HeaderProps) {
             )}
           </button>
 
-          <span className="rounded-lg bg-grey-300 px-1.5 py-1 text-[10px] font-medium text-neutral-primary">
+          <span className="rounded-lg bg-gray-300 px-1.5 py-1 text-[10px] font-medium text-neutral-primary">
             Panel de Administración
           </span>
           <span className="text-xs font-medium text-neutral-tertiary">

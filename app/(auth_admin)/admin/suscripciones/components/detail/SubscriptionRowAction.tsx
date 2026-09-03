@@ -319,7 +319,7 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
 
   return (
     <>
-      <div className="flex justify-end">
+      <div className="flex justify-center">
         <GenericMenu>
           <MenuItem
             icon={<EyeIcon />}

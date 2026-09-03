@@ -8,7 +8,16 @@ type PageProps = {
   searchParams: Promise<{
     page?: string;
     search?: string;
-    status?: string
+    status?: string;
+    pack_name_snapshot?: string;
+    billing_period?: string;
+    ordering?: string;
+    created__gte?: string;
+    created__lte?: string;
+    next_billing_at__gte?: string;
+    next_billing_at__lte?: string;
+    mrr_clp__gte?: string;
+    mrr_clp__lte?: string;
   }>;
 };
 

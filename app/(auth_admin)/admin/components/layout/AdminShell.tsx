@@ -17,7 +17,7 @@ export default function AdminShell({ children, ufValue }: AdminShellProps) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-teal-50 p-3 text-neutral-primary">
+    <div className="admin-scope min-h-screen bg-teal-50 p-3 text-neutral-primary">
       <div
         className={clsx(
           "mx-auto flex w-full flex-col gap-4 transition-all duration-300 lg:grid",

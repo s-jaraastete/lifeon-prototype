@@ -41,7 +41,7 @@ const SearchInput = () => {
         placeholder="Buscar por ID Suscripción, nombre..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="h-10 pl-9"
+        className="h-10 pl-9 ring-stroke-primary"
       />
     </div>
   );
