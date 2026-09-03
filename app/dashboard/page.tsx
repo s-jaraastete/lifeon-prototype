@@ -25,6 +25,7 @@ import {
   LuFileCheck,
   LuTable,
   LuLayers,
+  LuDatabase,
 } from "react-icons/lu";
 
 import DashboardKpis from "./components/DashboardKpis";
@@ -33,6 +34,7 @@ import PreventiveDocsView from "./components/PreventiveDocsView";
 import AprVirtualView from "./components/AprVirtualView";
 import InitialOnboardingWizard from "./components/onboarding/InitialOnboardingWizard";
 import InteractivePlatformTour from "./components/onboarding/InteractivePlatformTour";
+import SupabaseSyncModal from "./components/SupabaseSyncModal";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import {
   NotificationsDropdown,
@@ -93,6 +95,7 @@ export default function DashboardPage() {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState("");
@@ -193,11 +196,25 @@ export default function DashboardPage() {
         )}
       >
         <div className="w-full flex flex-col">
-          {/* Logo LifeOn */}
-          <div className="flex items-center gap-1 px-2 pt-2 mb-8">
-            <Link href="/" className="flex items-center">
-              <span className="text-2xl font-bold text-[#F04438]">Life</span>
-              <span className="text-2xl font-extrabold text-[#0D9488]">On</span>
+          {/* Logo LifeOn / LO (cambio automático al colapsar el sidebar) */}
+          <div
+            className={clsx(
+              "flex items-center pt-2 mb-8 transition-all duration-200",
+              sidebarOpen ? "px-2 justify-start" : "justify-center w-full"
+            )}
+          >
+            <Link href="/" className="flex items-center select-none" title="LifeOn">
+              {sidebarOpen ? (
+                <div className="flex items-center">
+                  <span className="text-2xl font-bold text-[#F04438]">Life</span>
+                  <span className="text-2xl font-extrabold text-[#0D9488]">On</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center tracking-tighter" title="LifeOn">
+                  <span className="text-2xl font-black text-[#F04438] leading-none">L</span>
+                  <span className="text-2xl font-black text-[#0D9488] leading-none">O</span>
+                </div>
+              )}
             </Link>
           </div>
 
@@ -231,9 +248,10 @@ export default function DashboardPage() {
               {sidebarOpen && <span>Matriz IPER</span>}
             </button>
 
-            {/* Programa y Documentos */}
+            {/* Planificación y Documentación */}
             <button
               onClick={() => setActiveMenu("docs")}
+              title="Planificación y Documentación Preventiva"
               className={clsx(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
                 activeMenu === "docs"
@@ -242,7 +260,7 @@ export default function DashboardPage() {
               )}
             >
               <LuFileText className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span className="truncate">Programa y Documen...</span>}
+              {sidebarOpen && <span className="truncate">Planificación y Doc...</span>}
             </button>
 
             {/* APR Virtual */}
@@ -395,6 +413,16 @@ export default function DashboardPage() {
               title="Abrir Asistente APR Virtual con IA"
             >
               <LuAtom className="w-4 h-4" />
+            </button>
+
+            {/* Base de Datos Supabase (Rama Personal) */}
+            <button
+              type="button"
+              onClick={() => setIsSupabaseModalOpen(true)}
+              className="p-2 rounded-xl text-gray-600 hover:bg-teal-50 hover:text-teal-700 border border-gray-100 transition cursor-pointer"
+              title="Base de Datos Supabase (Pruebas Rama Personal)"
+            >
+              <LuDatabase className="w-4 h-4 text-teal-600" />
             </button>
 
             {/* Notificaciones */}
@@ -810,6 +838,10 @@ export default function DashboardPage() {
       <SubscriptionUpgradeModal
         isOpen={isSubscriptionModalOpen}
         onClose={() => setIsSubscriptionModalOpen(false)}
+      />
+      <SupabaseSyncModal
+        isOpen={isSupabaseModalOpen}
+        onClose={() => setIsSupabaseModalOpen(false)}
       />
 
       {/* Tutorial Interactivo con Efecto Spotlight */}

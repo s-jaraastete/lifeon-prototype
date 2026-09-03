@@ -39,10 +39,15 @@ import {
   LuFileText,
   LuCalendar,
   LuShieldAlert,
+  LuFolderTree,
+  LuActivity,
+  LuShieldCheck,
 } from "react-icons/lu";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import { getSectorRiskProfile } from "@/data/sectorRiskTemplates";
 import IperMatrixDetailView from "./IperMatrixDetailView";
+import OrgStructureModal from "./OrgStructureModal";
+import { useOrgStructure } from "@/hooks/useOrgStructure";
 
 export type MatrixStatus =
   | "Vigente"
@@ -69,6 +74,39 @@ export interface IperMatrixItem {
   expiryText: string;
   isExpired?: boolean;
   status: MatrixStatus;
+}
+
+export interface SafetyEmergencyRiskItem {
+  id: string;
+  title: string;
+  category: "Seguridad" | "Emergencia";
+  area: string;
+  aspect: string;
+  // Escala 5x5
+  prob5x5: number;
+  impact5x5: number;
+  val5x5: number;
+  // Escala 3x3 VEP (DS 44)
+  prob3x3: number;
+  severidad3x3: number;
+  vep: number;
+  vepLevel: "Bajo" | "Medio" | "Alto" | "Crítico";
+  evaluatedScore: string;
+}
+
+export interface ProtocolRiskItem {
+  id: string;
+  title: string;
+  riskFamily: "Higiénico" | "Psicosocial" | "Musculoesquelético";
+  protocolName: string;
+  normativeBasis: string;
+  area: string;
+  jobPosition: string;
+  magnitude: string;
+  exposureType: "Cuantitativa" | "Cualitativa / Lista Chequeo";
+  riskLevel: "Bajo" | "Medio" | "Crítico";
+  actionRequired: string;
+  lastEvaluationDate: string;
 }
 
 export interface SignificanceImpactItem {
@@ -111,7 +149,7 @@ export const getStatusBadgeStyle = (status: MatrixStatus) => {
   }
 };
 
-const INITIAL_MATRICES: IperMatrixItem[] = [
+export const INITIAL_MATRICES: IperMatrixItem[] = [
   {
     id: "1",
     code: "MA-001",
@@ -204,73 +242,257 @@ const INITIAL_MATRICES: IperMatrixItem[] = [
   },
 ];
 
-const INITIAL_IMPACTS: SignificanceImpactItem[] = [
+const INITIAL_SAFETY_EMERGENCY_RISKS: SafetyEmergencyRiskItem[] = [
   {
-    id: "imp-1",
-    title: "Contaminación de aguas superficiales",
-    score: 19,
-    scoreLabel: "PTO 19",
-    area: "Planta",
-    aspect: "Derrame potencial de aceites y lubricantes",
-    evaluatedScore: "10 pts",
-    prob: 2,
-    impact: 5,
+    id: "sec-1",
+    title: "Caída de distinto nivel en faena (> 1.80m)",
+    category: "Seguridad",
+    area: "Montaje y Estructuras",
+    aspect: "Trabajos en andamios y plataformas elevadas",
+    prob5x5: 2,
+    impact5x5: 5,
+    val5x5: 19,
+    prob3x3: 4,
+    severidad3x3: 4,
+    vep: 16,
+    vepLevel: "Crítico",
+    evaluatedScore: "VEP 16 (Crítico)",
   },
   {
-    id: "imp-2",
-    title: "Contaminación del suelo",
-    score: 17,
-    scoreLabel: "PTO 17",
-    area: "Planta",
-    aspect: "Generación de residuos peligrosos",
-    evaluatedScore: "12 pts",
-    prob: 3,
-    impact: 4,
+    id: "sec-2",
+    title: "Atrapamiento en faja transportadora",
+    category: "Seguridad",
+    area: "Planta de Chancado",
+    aspect: "Limpieza o inspección con maquinaria en movimiento",
+    prob5x5: 3,
+    impact5x5: 4,
+    val5x5: 17,
+    prob3x3: 2,
+    severidad3x3: 4,
+    vep: 8,
+    vepLevel: "Alto",
+    evaluatedScore: "VEP 8 (Alto)",
   },
   {
-    id: "imp-3",
-    title: "Agotamiento de recursos naturales",
-    score: 16,
-    scoreLabel: "PTO 16",
-    area: "Servicios Generales",
-    aspect: "Consumo de agua",
-    evaluatedScore: "8 pts",
-    prob: 2,
-    impact: 4,
+    id: "sec-3",
+    title: "Contacto eléctrico directo con tablero energizado",
+    category: "Seguridad",
+    area: "Subestación Eléctrica",
+    aspect: "Intervención de circuitos sin bloqueo LOTO",
+    prob5x5: 1,
+    impact5x5: 5,
+    val5x5: 18,
+    prob3x3: 1,
+    severidad3x3: 4,
+    vep: 4,
+    vepLevel: "Medio",
+    evaluatedScore: "VEP 4 (Medio)",
   },
   {
-    id: "imp-4",
-    title: "Aumento de residuos a disposición final",
-    score: 15,
-    scoreLabel: "PTO 15",
-    area: "Planta",
-    aspect: "Generación de residuos no peligrosos",
-    evaluatedScore: "10 pts",
-    prob: 4,
-    impact: 3,
+    id: "sec-4",
+    title: "Incendio en bodega de sustancias inflamables",
+    category: "Emergencia",
+    area: "Bodega de Químicos y Combustibles",
+    aspect: "Fuga de vapores y fuentes de ignición en almacenamiento",
+    prob5x5: 2,
+    impact5x5: 4,
+    val5x5: 16,
+    prob3x3: 2,
+    severidad3x3: 4,
+    vep: 8,
+    vepLevel: "Alto",
+    evaluatedScore: "VEP 8 (Alto)",
   },
   {
-    id: "imp-5",
-    title: "Exposición a vapores orgánicos y solventes",
-    score: 13,
-    scoreLabel: "PTO 13",
-    area: "Bodega Química",
-    aspect: "Almacenamiento y trasvasije",
-    evaluatedScore: "9 pts",
-    prob: 5,
-    impact: 2,
+    id: "sec-5",
+    title: "Colisión de maquinaria pesada y camionetas de faena",
+    category: "Seguridad",
+    area: "Ruta y Patio de Maniobras",
+    aspect: "Tránsito simultáneo con puntos ciegos y exceso de velocidad",
+    prob5x5: 3,
+    impact5x5: 3,
+    val5x5: 14,
+    prob3x3: 2,
+    severidad3x3: 2,
+    vep: 4,
+    vepLevel: "Medio",
+    evaluatedScore: "VEP 4 (Medio)",
   },
   {
-    id: "imp-6",
-    title: "Emisión de material particulado MP10 / MP2.5",
-    score: 8,
-    scoreLabel: "PTO 8",
-    area: "Mina / Cantera",
-    aspect: "Tránsito de camiones tolva",
-    evaluatedScore: "6 pts",
-    prob: 3,
-    impact: 2,
+    id: "sec-6",
+    title: "Derrame mayor de ácido concentrado",
+    category: "Emergencia",
+    area: "Lixiviación / Patio Químico",
+    aspect: "Falla en válvula o rotura de manguera de trasvasije",
+    prob5x5: 1,
+    impact5x5: 4,
+    val5x5: 12,
+    prob3x3: 1,
+    severidad3x3: 2,
+    vep: 2,
+    vepLevel: "Bajo",
+    evaluatedScore: "VEP 2 (Bajo)",
   },
+  {
+    id: "sec-7",
+    title: "Golpe o corte por herramientas manuales en taller",
+    category: "Seguridad",
+    area: "Taller Mecánico",
+    aspect: "Uso de esmeril angular y llaves de impacto",
+    prob5x5: 4,
+    impact5x5: 2,
+    val5x5: 9,
+    prob3x3: 4,
+    severidad3x3: 1,
+    vep: 4,
+    vepLevel: "Medio",
+    evaluatedScore: "VEP 4 (Medio)",
+  },
+  {
+    id: "sec-8",
+    title: "Sismo de alta magnitud con desprendimiento de carga",
+    category: "Emergencia",
+    area: "Bodega Central / Racks",
+    aspect: "Movimiento telúrico que compromete anclajes estructurales",
+    prob5x5: 2,
+    impact5x5: 5,
+    val5x5: 19,
+    prob3x3: 1,
+    severidad3x3: 4,
+    vep: 4,
+    vepLevel: "Medio",
+    evaluatedScore: "VEP 4 (Medio)",
+  },
+];
+
+const INITIAL_PROTOCOL_RISKS: ProtocolRiskItem[] = [
+  {
+    id: "prot-1",
+    title: "Movimiento repetitivo extremidad superior en envasado",
+    riskFamily: "Musculoesquelético",
+    protocolName: "TMERT-EESS (D.Ex. 804 Minsal)",
+    normativeBasis: "Norma Técnica Minsal TMERT / DS 594",
+    area: "Línea de Envasado",
+    jobPosition: "Operario de Empaque y Sellado",
+    magnitude: "Ciclos de trabajo < 30 seg repetidos por más del 50% de la jornada laboral sin pausa ergonómica",
+    exposureType: "Cualitativa / Lista Chequeo",
+    riskLevel: "Crítico",
+    actionRequired: "Rediseño de puesto de trabajo y pausas activas obligatorias. Envío a vigilancia médica mutual.",
+    lastEvaluationDate: "12-01-2026",
+  },
+  {
+    id: "prot-2",
+    title: "Exposición a ruido ocupacional continuo en chancador",
+    riskFamily: "Higiénico",
+    protocolName: "PREXOR (D.Ex. 1029 Minsal)",
+    normativeBasis: "Protocolo PREXOR / DS 594 Art. 75",
+    area: "Chancado Primario",
+    jobPosition: "Operador de Planta de Chancado",
+    magnitude: "Dosis diaria: 142% (Nivel continuo equivalente Leq: 87.8 dBA, excede criterio de acción de 82 dBA)",
+    exposureType: "Cuantitativa",
+    riskLevel: "Crítico",
+    actionRequired: "Aislamiento acústico de cabina, uso de doble protección auditiva (copa + tapón) y audiometría.",
+    lastEvaluationDate: "20-11-2025",
+  },
+  {
+    id: "prot-3",
+    title: "Exposición a polvo de sílice libre cristalizada",
+    riskFamily: "Higiénico",
+    protocolName: "PLANESI (ISP / Minsal)",
+    normativeBasis: "Plan Nacional Erradicación Silicosis / DS 594 Art. 66",
+    area: "Perforación y Frente de Avance",
+    jobPosition: "Perforista Minero",
+    magnitude: "Concentración medida: 0.054 mg/m³ fracción respirable (Límite Permisible Ponderado: 0.040 mg/m³)",
+    exposureType: "Cuantitativa",
+    riskLevel: "Crítico",
+    actionRequired: "Perforación húmeda obligatoria, sistema de aspiración localizada y mascarilla medio rostro P100.",
+    lastEvaluationDate: "05-12-2025",
+  },
+  {
+    id: "prot-4",
+    title: "Carga de trabajo y ritmo acelerado (Factores Psicosociales)",
+    riskFamily: "Psicosocial",
+    protocolName: "CEAL-SM / SUSESO (Res. Ex. 1448)",
+    normativeBasis: "Cuestionario CEAL-SM / SUSESO / DS 44",
+    area: "Operaciones y Logística",
+    jobPosition: "Coordinadores y Despachadores",
+    magnitude: "Dimensión 'Carga y Ritmo de Trabajo' con 72% de trabajadores en nivel desfavorable (Riesgo Alto)",
+    exposureType: "Cualitativa / Lista Chequeo",
+    riskLevel: "Crítico",
+    actionRequired: "Comité de aplicación activo. Plan de rediseño de turnos y redistribución de cargas acordado.",
+    lastEvaluationDate: "15-01-2026",
+  },
+  {
+    id: "prot-5",
+    title: "Exposición a radiación ultravioleta de origen solar",
+    riskFamily: "Higiénico",
+    protocolName: "Radiación UV Solar (DS 594 Art. 109a)",
+    normativeBasis: "Guía Técnica Radiación UV / DS 594",
+    area: "Patio de Acopio Exterior",
+    jobPosition: "Cuadrilla de Patio y Choferes",
+    magnitude: "Índice UV diario promedio entre 8 y 11 (Muy Alto a Extremo) en el horario de 11:00 a 16:30 hrs",
+    exposureType: "Cuantitativa",
+    riskLevel: "Medio",
+    actionRequired: "Uso de legionario (cubrenuca), protector solar FPS 50+ cada 2 horas y áreas sombreadas en descanso.",
+    lastEvaluationDate: "02-02-2026",
+  },
+  {
+    id: "prot-6",
+    title: "Manejo manual de carga reiterado en bodega de insumos",
+    riskFamily: "Musculoesquelético",
+    protocolName: "MMC (Ley 20.949 / DS 63)",
+    normativeBasis: "Ley 20.949 'Ley del Saco' / DS 63",
+    area: "Bodega de Reactivos",
+    jobPosition: "Bodeguero Auxiliar",
+    magnitude: "Levantamiento manual de sacos de 25 kg desde nivel de piso a 1.6m con frecuencia de 60 levantamientos/hora",
+    exposureType: "Cualitativa / Lista Chequeo",
+    riskLevel: "Medio",
+    actionRequired: "Instalación de mesa elevadora hidráulica y transpaleta eléctrica. Capacitación en técnica de MMC.",
+    lastEvaluationDate: "18-01-2026",
+  },
+  {
+    id: "prot-7",
+    title: "Exposición a vibración mano-brazo por uso de rotomartillo",
+    riskFamily: "Higiénico",
+    protocolName: "Vibraciones (DS 594 Art. 83-94)",
+    normativeBasis: "DS 594 / Guía ISP Vibración Mano-Brazo",
+    area: "Mantenimiento Obras Civiles",
+    jobPosition: "Maestro Albañil / Demoledor",
+    magnitude: "Aceleración equivalente ponderada A(8) de 2.2 m/s² (por debajo del límite de acción de 2.5 m/s²)",
+    exposureType: "Cuantitativa",
+    riskLevel: "Bajo",
+    actionRequired: "Mantenimiento preventivo de herramientas antivibratorias y uso de guantes certificados.",
+    lastEvaluationDate: "10-01-2026",
+  },
+];
+
+export interface Grid3x3Cell {
+  prob: number;
+  severidad: number;
+  vep: number;
+  color: "green" | "yellow" | "orange" | "red";
+  level: "Bajo" | "Medio" | "Alto" | "Crítico";
+}
+
+const GRID_3X3_VEP: Grid3x3Cell[][] = [
+  // Severidad 4: Fatal / Grave (Fila 0)
+  [
+    { prob: 1, severidad: 4, vep: 4, color: "yellow", level: "Medio" },
+    { prob: 2, severidad: 4, vep: 8, color: "orange", level: "Alto" },
+    { prob: 4, severidad: 4, vep: 16, color: "red", level: "Crítico" },
+  ],
+  // Severidad 2: Moderada / Grave (Fila 1)
+  [
+    { prob: 1, severidad: 2, vep: 2, color: "green", level: "Bajo" },
+    { prob: 2, severidad: 2, vep: 4, color: "yellow", level: "Medio" },
+    { prob: 4, severidad: 2, vep: 8, color: "orange", level: "Alto" },
+  ],
+  // Severidad 1: Leve (Fila 2)
+  [
+    { prob: 1, severidad: 1, vep: 1, color: "green", level: "Bajo" },
+    { prob: 2, severidad: 1, vep: 2, color: "green", level: "Bajo" },
+    { prob: 4, severidad: 1, vep: 4, color: "yellow", level: "Medio" },
+  ],
 ];
 
 // Matrix Heatmap Definition (5 Rows x 5 Cols)
@@ -332,15 +554,33 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
 
   const [viewMode, setViewMode] = useState<"grid" | "list" | "significance">("grid");
   const [matrices, setMatrices] = useState<IperMatrixItem[]>(INITIAL_MATRICES);
-  const [impacts, setImpacts] = useState<SignificanceImpactItem[]>(INITIAL_IMPACTS);
   const [selectedMatrix, setSelectedMatrix] = useState<IperMatrixItem | null>(null);
   const [openWizardOnSelect, setOpenWizardOnSelect] = useState(false);
 
+  // Mapa de Clasificación de Riesgos (3x3 VEP vs 5x5 según Onboarding)
+  const [activeGridScale, setActiveGridScale] = useState<"3x3" | "5x5">(() =>
+    preferences.riskEvaluationMethod === "matrix5x5" ? "5x5" : "3x3"
+  );
+
+  useEffect(() => {
+    setActiveGridScale(preferences.riskEvaluationMethod === "matrix5x5" ? "5x5" : "3x3");
+  }, [preferences.riskEvaluationMethod]);
+
+  const [safetyRisks, setSafetyRisks] = useState<SafetyEmergencyRiskItem[]>(INITIAL_SAFETY_EMERGENCY_RISKS);
+  const [protocolRisks, setProtocolRisks] = useState<ProtocolRiskItem[]>(INITIAL_PROTOCOL_RISKS);
+
+  const [selectedCell3x3, setSelectedCell3x3] = useState<{ prob: number; severidad: number; vep: number } | null>(null);
+  const [selectedCell5x5, setSelectedCell5x5] = useState<{ prob: number; impact: number; val: number } | null>(null);
+
+  const [safetyCategoryFilter, setSafetyCategoryFilter] = useState<"Todos" | "Seguridad" | "Emergencia">("Todos");
+  const [protocolFamilyFilter, setProtocolFamilyFilter] = useState<"Todos" | "Higiénico" | "Psicosocial" | "Musculoesquelético">("Todos");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
-  const [selectedCell, setSelectedCell] = useState<{ prob: number; impact: number; val: number } | null>(null);
 
   // Modals and Active Dropdown State
+  const { totalAreasCount } = useOrgStructure();
+  const [isOrgStructureOpen, setIsOrgStructureOpen] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
   const [isNewMatrixOpen, setIsNewMatrixOpen] = useState(false);
@@ -749,9 +989,32 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
     return matchesSearch && matchesStatus;
   });
 
-  const filteredImpacts = impacts.filter((imp) => {
-    if (!selectedCell) return true;
-    return imp.prob === selectedCell.prob && imp.impact === selectedCell.impact;
+  // Filtro de Riesgos de Seguridad y Emergencias (P x C / VEP)
+  const filteredSafetyRisks = safetyRisks.filter((r) => {
+    const matchesCategory =
+      safetyCategoryFilter === "Todos" || r.category === safetyCategoryFilter;
+    if (!matchesCategory) return false;
+
+    if (activeGridScale === "3x3" && selectedCell3x3) {
+      return (
+        r.prob3x3 === selectedCell3x3.prob &&
+        r.severidad3x3 === selectedCell3x3.severidad
+      );
+    }
+    if (activeGridScale === "5x5" && selectedCell5x5) {
+      return (
+        r.prob5x5 === selectedCell5x5.prob &&
+        r.impact5x5 === selectedCell5x5.impact
+      );
+    }
+    return true;
+  });
+
+  // Filtro de Riesgos Protocolares (Higiénicos, Psicosociales, Musculoesqueléticos)
+  const filteredProtocolRisks = protocolRisks.filter((r) => {
+    return (
+      protocolFamilyFilter === "Todos" || r.riskFamily === protocolFamilyFilter
+    );
   });
 
   // Si hay una matriz seleccionada, mostrar la vista detallada de inspección y edición
@@ -900,6 +1163,21 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Botón Destacado: Gestión de Áreas / Estructura Organizacional */}
+          <button
+            type="button"
+            onClick={() => setIsOrgStructureOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-teal-900 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-300 hover:border-teal-400 hover:from-teal-100 hover:to-emerald-100 shadow-2xs transition-all cursor-pointer group"
+          >
+            <div className="w-5 h-5 rounded-lg bg-teal-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+              <LuFolderTree className="w-3.5 h-3.5" />
+            </div>
+            <span>Estructura Organizacional</span>
+            <span className="hidden sm:inline text-[10px] bg-teal-200/80 text-teal-900 font-extrabold px-2 py-0.5 rounded-full">
+              {totalAreasCount} Áreas
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={() => setIsImportOpen(true)}
@@ -1015,11 +1293,11 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
               <LuList className="w-4 h-4" />
             </button>
 
-            {/* Vista 3: Matriz de Significancia */}
+            {/* Vista 3: Mapa de Clasificación de Riesgos */}
             <button
               type="button"
               onClick={() => setViewMode("significance")}
-              title="Vista Matriz de Significancia"
+              title="Mapa de Clasificación de Riesgos"
               className={clsx(
                 "p-1.5 rounded-lg transition cursor-pointer",
                 viewMode === "significance"
@@ -1220,182 +1498,454 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
       )}
 
       {/* =========================================================================
-          VISTA 3: MATRIZ DE SIGNIFICANCIA (FRECUENCIA VS SEVERIDAD)
+          VISTA 3: MAPA DE CLASIFICACIÓN DE RIESGOS (SEGURIDAD/EMERGENCIAS Y GRÁFICA PROTOCOLAR)
           ========================================================================= */}
       {viewMode === "significance" && (
-        <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            {/* Columna Izquierda: Grilla 5x5 de Significancia (8 cols) */}
-            <div className="lg:col-span-7 xl:col-span-8 bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between">
-              {/* Encabezado */}
-              <div className="flex items-center gap-2 mb-6">
-                <LuTriangleAlert className="w-4 h-4 text-teal-600" />
-                <h3 className="text-sm font-bold text-gray-900">
-                  Matriz de Significancia (Frecuencia vs Severidad)
+        <div className="flex flex-col gap-4 animate-in fade-in duration-200">
+          {/* Encabezado Superior con selector de Metodología Onboarding */}
+          <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="w-8 h-8 rounded-xl bg-red-50 text-[#F04438] flex items-center justify-center shadow-2xs">
+                  <LuFlame className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 tracking-tight">
+                  Mapa de Clasificación de Riesgos
                 </h3>
+                <span className="bg-teal-50 text-teal-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-teal-200">
+                  {activeGridScale === "3x3"
+                    ? "Metodología DS 44 / VEP (3 × 3)"
+                    : "Metodología Matriz 5 × 5"}
+                </span>
+                <span className="text-[10px] text-gray-400 font-medium">
+                  {preferences.riskEvaluationMethod === "ds44" && activeGridScale === "3x3"
+                    ? "✓ Selección en Onboarding: DS 44 / VEP"
+                    : preferences.riskEvaluationMethod === "matrix5x5" && activeGridScale === "5x5"
+                    ? "✓ Selección en Onboarding: Matriz 5×5"
+                    : "Modo alternativo"}
+                </span>
               </div>
-
-              {/* Contenedor con Ejes X e Y y Matriz 5x5 */}
-              <div className="flex items-center justify-center my-2">
-                <div className="flex items-center gap-3">
-                  {/* Eje Y: IMPACTO */}
-                  <div className="flex flex-col items-center justify-between h-[280px]">
-                    <div className="h-full bg-slate-100/90 rounded-full px-2 py-3 flex items-center justify-center border border-slate-200/60 shadow-2xs">
-                      <span className="[writing-mode:vertical-lr] rotate-180 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
-                        IMPACTO
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Números del Eje Y (5 a 1) */}
-                  <div className="flex flex-col justify-between h-[280px] py-3 text-xs font-semibold text-gray-400">
-                    <span>5</span>
-                    <span>4</span>
-                    <span>3</span>
-                    <span>2</span>
-                    <span>1</span>
-                  </div>
-
-                  {/* Grilla 5x5 y Eje X */}
-                  <div className="flex flex-col gap-2">
-                    {/* Grilla de Celdas 5x5 */}
-                    <div className="grid grid-rows-5 gap-1.5 w-[280px] sm:w-[320px] md:w-[360px] h-[280px]">
-                      {SIGNIFICANCE_GRID.map((row, rIdx) => (
-                        <div key={rIdx} className="grid grid-cols-5 gap-1.5">
-                          {row.map((cell, cIdx) => {
-                            const isSelected =
-                              selectedCell?.prob === cell.prob &&
-                              selectedCell?.impact === cell.impact;
-
-                            return (
-                              <button
-                                key={cIdx}
-                                type="button"
-                                onClick={() =>
-                                  setSelectedCell(
-                                    isSelected
-                                      ? null
-                                      : { prob: cell.prob, impact: cell.impact, val: cell.val }
-                                  )
-                                }
-                                className={clsx(
-                                  "rounded-lg flex items-center justify-center relative font-semibold text-xs transition cursor-pointer shadow-2xs",
-                                  cell.color === "green" && "bg-[#4ADE80] hover:bg-[#22C55E] text-white",
-                                  cell.color === "yellow" && "bg-[#FACC15] hover:bg-[#EAB308] text-white",
-                                  cell.color === "orange" && "bg-[#FB923C] hover:bg-[#F97316] text-white",
-                                  cell.color === "red" && "bg-[#EF4444] hover:bg-[#DC2626] text-white",
-                                  isSelected && "ring-4 ring-slate-900/30 scale-105 z-10 font-black"
-                                )}
-                              >
-                                <span>{cell.val}</span>
-
-                                {/* Badge circular con cantidad de registros si count > 0 */}
-                                {cell.count > 0 && (
-                                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white text-gray-800 font-bold text-[11px] flex items-center justify-center shadow-md border border-gray-100">
-                                    {cell.count}
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Números del Eje X (1 a 5) */}
-                    <div className="grid grid-cols-5 text-center text-xs font-semibold text-gray-400 pt-1">
-                      <span>1</span>
-                      <span>2</span>
-                      <span>3</span>
-                      <span>4</span>
-                      <span>5</span>
-                    </div>
-
-                    {/* Eje X: PROBABILIDAD (RESIDUAL) */}
-                    <div className="bg-slate-100/90 rounded-full py-1 text-center border border-slate-200/60 shadow-2xs mt-1">
-                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
-                        PROBABILIDAD (RESIDUAL)
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Leyenda Inferior */}
-              <div className="flex items-center justify-center gap-5 mt-6 pt-4 border-t border-gray-100 text-xs font-medium text-gray-600 flex-wrap">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#4ADE80]" />
-                  <span>Bajo (1-5)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FACC15]" />
-                  <span>Medio (6-12)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FB923C]" />
-                  <span>Alto (13-19)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
-                  <span>Crítico (20-25)</span>
-                </div>
-              </div>
+              <p className="text-xs text-gray-500 mt-1 max-w-3xl">
+                El mapa clasifica exclusivamente riesgos de <strong>Seguridad y Emergencias</strong> mediante Probabilidad × Consecuencia (VEP o P×C).
+                Los riesgos <strong>Higiénicos, Psicosociales y Musculoesqueléticos</strong> se evalúan en la gráfica adyacente según su metodología protocolar ministerial (Protocolo, Magnitud y Nivel).
+              </p>
             </div>
 
-            {/* Columna Derecha: Impactos Registrados (4 cols) */}
-            <div className="lg:col-span-5 xl:col-span-4 bg-white rounded-2xl p-5 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[440px]">
-              <div>
-                <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+            {/* Alternador de Escala (3x3 VEP vs 5x5) */}
+            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl flex-shrink-0 self-start md:self-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveGridScale("3x3");
+                  setSelectedCell3x3(null);
+                }}
+                className={clsx(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5",
+                  activeGridScale === "3x3"
+                    ? "bg-white text-teal-900 shadow-2xs"
+                    : "text-gray-500 hover:text-gray-800"
+                )}
+              >
+                <span>DS 44 - VEP (3 × 3)</span>
+                {preferences.riskEvaluationMethod === "ds44" && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveGridScale("5x5");
+                  setSelectedCell5x5(null);
+                }}
+                className={clsx(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5",
+                  activeGridScale === "5x5"
+                    ? "bg-white text-teal-900 shadow-2xs"
+                    : "text-gray-500 hover:text-gray-800"
+                )}
+              >
+                <span>Matriz 5 × 5</span>
+                {preferences.riskEvaluationMethod === "matrix5x5" && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Grilla Principal de 2 Columnas */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+            {/* =========================================================================
+                COLUMNA 1: MAPA P x C (SEGURIDAD Y EMERGENCIAS) (7 cols)
+                ========================================================================= */}
+            <div className="xl:col-span-7 flex flex-col gap-4">
+              <div className="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 flex flex-col justify-between">
+                {/* Cabecera del Mapa */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-gray-100">
                   <div>
-                    <h4 className="text-sm font-bold text-gray-900">
-                      Impactos Registrados ({filteredImpacts.length})
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <LuTriangleAlert className="w-4 h-4 text-teal-600" />
+                      <h4 className="text-sm font-bold text-gray-900">
+                        {activeGridScale === "3x3"
+                          ? "Clasificación VEP 3 × 3 (Seguridad y Emergencias)"
+                          : "Clasificación P × C 5 × 5 (Seguridad y Emergencias)"}
+                      </h4>
+                    </div>
                     <p className="text-[11px] text-gray-400 mt-0.5">
-                      Haz clic en una celda de la matriz para filtrar
+                      Frecuencia / Probabilidad vs Severidad / Consecuencia
                     </p>
                   </div>
-                  {selectedCell && (
+
+                  {/* Filtro Rápido Seguridad vs Emergencia */}
+                  <div className="flex items-center gap-1">
+                    {(["Todos", "Seguridad", "Emergencia"] as const).map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setSafetyCategoryFilter(cat)}
+                        className={clsx(
+                          "px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer",
+                          safetyCategoryFilter === cat
+                            ? "bg-teal-600 text-white shadow-2xs"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        )}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Renderizado de la Grilla (3x3 VEP vs 5x5) */}
+                {activeGridScale === "3x3" ? (
+                  /* ======================= GRILLA 3x3 VEP ======================= */
+                  <div className="flex items-center justify-center my-2">
+                    <div className="flex items-center gap-3">
+                      {/* Eje Y: SEVERIDAD */}
+                      <div className="flex flex-col items-center justify-between h-[270px]">
+                        <div className="h-full bg-slate-100/90 rounded-full px-2 py-3 flex items-center justify-center border border-slate-200/60 shadow-2xs">
+                          <span className="[writing-mode:vertical-lr] rotate-180 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+                            SEVERIDAD (C)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Etiquetas Eje Y (4, 2, 1) */}
+                      <div className="flex flex-col justify-between h-[270px] py-4 text-xs font-semibold text-gray-500 text-right pr-1">
+                        <span title="Fatal / Grave">4 (Fatal / Grave)</span>
+                        <span title="Moderada">2 (Media)</span>
+                        <span title="Leve">1 (Leve)</span>
+                      </div>
+
+                      {/* Celdas 3x3 y Eje X */}
+                      <div className="flex flex-col gap-2">
+                        <div className="grid grid-rows-3 gap-2 w-[280px] sm:w-[320px] md:w-[360px] h-[270px]">
+                          {GRID_3X3_VEP.map((row, rIdx) => (
+                            <div key={rIdx} className="grid grid-cols-3 gap-2">
+                              {row.map((cell, cIdx) => {
+                                const count = safetyRisks.filter(
+                                  (r) =>
+                                    (safetyCategoryFilter === "Todos" ||
+                                      r.category === safetyCategoryFilter) &&
+                                    r.prob3x3 === cell.prob &&
+                                    r.severidad3x3 === cell.severidad
+                                ).length;
+
+                                const isSelected =
+                                  selectedCell3x3?.prob === cell.prob &&
+                                  selectedCell3x3?.severidad === cell.severidad;
+
+                                return (
+                                  <button
+                                    key={cIdx}
+                                    type="button"
+                                    onClick={() =>
+                                      setSelectedCell3x3(
+                                        isSelected
+                                          ? null
+                                          : {
+                                              prob: cell.prob,
+                                              severidad: cell.severidad,
+                                              vep: cell.vep,
+                                            }
+                                      )
+                                    }
+                                    className={clsx(
+                                      "rounded-xl flex flex-col items-center justify-center relative font-bold text-sm transition cursor-pointer shadow-2xs",
+                                      cell.color === "green" &&
+                                        "bg-[#4ADE80] hover:bg-[#22C55E] text-white",
+                                      cell.color === "yellow" &&
+                                        "bg-[#FACC15] hover:bg-[#EAB308] text-white",
+                                      cell.color === "orange" &&
+                                        "bg-[#FB923C] hover:bg-[#F97316] text-white",
+                                      cell.color === "red" &&
+                                        "bg-[#EF4444] hover:bg-[#DC2626] text-white",
+                                      isSelected &&
+                                        "ring-4 ring-slate-900/30 scale-105 z-10 font-black"
+                                    )}
+                                  >
+                                    <span className="text-xs opacity-80">
+                                      VEP {cell.vep}
+                                    </span>
+                                    <span className="text-[10px] font-semibold opacity-90">
+                                      {cell.level}
+                                    </span>
+
+                                    {/* Badge con cantidad de riesgos */}
+                                    {count > 0 && (
+                                      <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white text-gray-800 font-black text-[10px] flex items-center justify-center shadow-md border border-gray-100">
+                                        {count}
+                                      </span>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Etiquetas Eje X (1, 2, 4) */}
+                        <div className="grid grid-cols-3 text-center text-xs font-semibold text-gray-500 pt-1">
+                          <span>1 (Baja)</span>
+                          <span>2 (Media)</span>
+                          <span>4 (Alta)</span>
+                        </div>
+
+                        {/* Eje X: PROBABILIDAD */}
+                        <div className="bg-slate-100/90 rounded-full py-1 text-center border border-slate-200/60 shadow-2xs mt-0.5">
+                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                            PROBABILIDAD (P)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ======================= GRILLA 5x5 ======================= */
+                  <div className="flex items-center justify-center my-2">
+                    <div className="flex items-center gap-3">
+                      {/* Eje Y: IMPACTO */}
+                      <div className="flex flex-col items-center justify-between h-[280px]">
+                        <div className="h-full bg-slate-100/90 rounded-full px-2 py-3 flex items-center justify-center border border-slate-200/60 shadow-2xs">
+                          <span className="[writing-mode:vertical-lr] rotate-180 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+                            CONSECUENCIA (C)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Números del Eje Y (5 a 1) */}
+                      <div className="flex flex-col justify-between h-[280px] py-3 text-xs font-semibold text-gray-400">
+                        <span>5</span>
+                        <span>4</span>
+                        <span>3</span>
+                        <span>2</span>
+                        <span>1</span>
+                      </div>
+
+                      {/* Grilla 5x5 y Eje X */}
+                      <div className="flex flex-col gap-2">
+                        <div className="grid grid-rows-5 gap-1.5 w-[280px] sm:w-[320px] md:w-[360px] h-[280px]">
+                          {SIGNIFICANCE_GRID.map((row, rIdx) => (
+                            <div key={rIdx} className="grid grid-cols-5 gap-1.5">
+                              {row.map((cell, cIdx) => {
+                                const count = safetyRisks.filter(
+                                  (r) =>
+                                    (safetyCategoryFilter === "Todos" ||
+                                      r.category === safetyCategoryFilter) &&
+                                    r.prob5x5 === cell.prob &&
+                                    r.impact5x5 === cell.impact
+                                ).length;
+
+                                const isSelected =
+                                  selectedCell5x5?.prob === cell.prob &&
+                                  selectedCell5x5?.impact === cell.impact;
+
+                                return (
+                                  <button
+                                    key={cIdx}
+                                    type="button"
+                                    onClick={() =>
+                                      setSelectedCell5x5(
+                                        isSelected
+                                          ? null
+                                          : {
+                                              prob: cell.prob,
+                                              impact: cell.impact,
+                                              val: cell.val,
+                                            }
+                                      )
+                                    }
+                                    className={clsx(
+                                      "rounded-lg flex items-center justify-center relative font-semibold text-xs transition cursor-pointer shadow-2xs",
+                                      cell.color === "green" &&
+                                        "bg-[#4ADE80] hover:bg-[#22C55E] text-white",
+                                      cell.color === "yellow" &&
+                                        "bg-[#FACC15] hover:bg-[#EAB308] text-white",
+                                      cell.color === "orange" &&
+                                        "bg-[#FB923C] hover:bg-[#F97316] text-white",
+                                      cell.color === "red" &&
+                                        "bg-[#EF4444] hover:bg-[#DC2626] text-white",
+                                      isSelected &&
+                                        "ring-4 ring-slate-900/30 scale-105 z-10 font-black"
+                                    )}
+                                  >
+                                    <span>{cell.val}</span>
+                                    {count > 0 && (
+                                      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white text-gray-800 font-bold text-[11px] flex items-center justify-center shadow-md border border-gray-100">
+                                        {count}
+                                      </span>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Números del Eje X (1 a 5) */}
+                        <div className="grid grid-cols-5 text-center text-xs font-semibold text-gray-400 pt-1">
+                          <span>1</span>
+                          <span>2</span>
+                          <span>3</span>
+                          <span>4</span>
+                          <span>5</span>
+                        </div>
+
+                        {/* Eje X: PROBABILIDAD */}
+                        <div className="bg-slate-100/90 rounded-full py-1 text-center border border-slate-200/60 shadow-2xs mt-1">
+                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                            PROBABILIDAD (P)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Leyenda Inferior */}
+                <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-100 text-xs font-medium text-gray-600 flex-wrap">
+                  {activeGridScale === "3x3" ? (
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#4ADE80]" />
+                        <span>Bajo / Tolerable (1-2)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#FACC15]" />
+                        <span>Moderado (4)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#FB923C]" />
+                        <span>Importante (8)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
+                        <span>Intolerable / Crítico (16)</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#4ADE80]" />
+                        <span>Bajo (1-5)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#FACC15]" />
+                        <span>Medio (6-12)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#FB923C]" />
+                        <span>Alto (13-19)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
+                        <span>Crítico (20-25)</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Listado de Riesgos de Seguridad y Emergencias Clasificados */}
+              <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-3">
+                <div className="flex items-center justify-between pb-2.5 border-b border-gray-100">
+                  <div>
+                    <h5 className="text-xs font-bold text-gray-900">
+                      Riesgos de Seguridad y Emergencias ({filteredSafetyRisks.length})
+                    </h5>
+                    <p className="text-[11px] text-gray-400">
+                      {selectedCell3x3 || selectedCell5x5
+                        ? "Filtrado por celda seleccionada en la cuadrícula"
+                        : "Haz clic en una celda para filtrar eventos específicos"}
+                    </p>
+                  </div>
+
+                  {(selectedCell3x3 || selectedCell5x5) && (
                     <button
                       type="button"
-                      onClick={() => setSelectedCell(null)}
-                      className="text-[10px] font-semibold text-teal-600 hover:underline cursor-pointer"
+                      onClick={() => {
+                        setSelectedCell3x3(null);
+                        setSelectedCell5x5(null);
+                      }}
+                      className="text-[11px] font-bold text-teal-700 hover:underline cursor-pointer"
                     >
-                      Limpiar filtro
+                      Limpiar filtro de celda
                     </button>
                   )}
                 </div>
 
-                {/* Lista de Tarjetas de Impacto */}
-                <div className="flex flex-col gap-2.5 mt-3 max-h-[380px] overflow-y-auto pr-1">
-                  {filteredImpacts.length === 0 ? (
-                    <p className="text-xs text-gray-400 py-10 text-center">
-                      No hay impactos registrados en esta celda evaluada.
+                <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+                  {filteredSafetyRisks.length === 0 ? (
+                    <p className="text-xs text-gray-400 py-6 text-center">
+                      No hay eventos en esta celda evaluada.
                     </p>
                   ) : (
-                    filteredImpacts.map((item) => (
+                    filteredSafetyRisks.map((item) => (
                       <div
                         key={item.id}
-                        className="bg-[#F8FAFC] border border-gray-100 rounded-xl p-3.5 hover:border-teal-200 transition"
+                        className="bg-[#F8FAFC] border border-gray-100 rounded-xl p-3 hover:border-teal-200 transition flex items-start justify-between gap-3"
                       >
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <h5 className="text-xs font-bold text-gray-900 leading-snug">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={clsx(
+                                "text-[9px] font-bold px-2 py-0.5 rounded-md uppercase",
+                                item.category === "Seguridad"
+                                  ? "bg-slate-200 text-slate-800"
+                                  : "bg-red-100 text-red-800"
+                              )}
+                            >
+                              {item.category}
+                            </span>
+                            <span className="text-[10px] text-gray-400">
+                              Área: <strong className="text-gray-700">{item.area}</strong>
+                            </span>
+                          </div>
+                          <h6 className="text-xs font-bold text-gray-900 mt-1 line-clamp-1">
                             {item.title}
-                          </h5>
-                          <span className="bg-[#FB923C] text-white text-[10px] font-black px-2 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
-                            {item.scoreLabel}
-                          </span>
+                          </h6>
+                          <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
+                            Aspecto: {item.aspect}
+                          </p>
                         </div>
 
-                        <div className="text-[11px] text-gray-500 flex flex-col gap-0.5 mt-1">
-                          <p>
-                            <span className="text-gray-400">Área:</span> {item.area}
-                          </p>
-                          <p className="line-clamp-1">
-                            <span className="text-gray-400">Aspecto:</span> {item.aspect}
-                          </p>
-                          <p className="text-gray-400 text-[10px] mt-1">
-                            Puntaje Total Evaluado: {item.evaluatedScore}
-                          </p>
+                        <div className="text-right flex-shrink-0">
+                          <span
+                            className={clsx(
+                              "text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs inline-block",
+                              item.vepLevel === "Crítico" && "bg-red-600 text-white",
+                              item.vepLevel === "Alto" && "bg-orange-500 text-white",
+                              item.vepLevel === "Medio" && "bg-amber-500 text-white",
+                              item.vepLevel === "Bajo" && "bg-emerald-600 text-white"
+                            )}
+                          >
+                            {activeGridScale === "3x3"
+                              ? `VEP ${item.vep}`
+                              : `Score ${item.val5x5}`}
+                          </span>
+                          <span className="text-[10px] text-gray-400 block mt-0.5 font-medium">
+                            {item.vepLevel}
+                          </span>
                         </div>
                       </div>
                     ))
@@ -1403,12 +1953,182 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
                 </div>
               </div>
             </div>
-          </div>
 
-          <p className="text-xs text-gray-400 mt-2">
-            Mostrando <span className="font-semibold text-gray-700">{filteredImpacts.length}</span> de{" "}
-            <span className="font-semibold text-gray-700">{impacts.length}</span> registros
-          </p>
+            {/* =========================================================================
+                COLUMNA 2: GRÁFICA PROTOCOLAR (HIGIÉNICOS, PSICOSOCIALES, MUSCULOESQUELÉTICOS) (5 cols)
+                ========================================================================= */}
+            <div className="xl:col-span-5 flex flex-col gap-4">
+              <div className="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 flex flex-col gap-3.5">
+                {/* Cabecera de la Gráfica Protocolar */}
+                <div className="flex items-start justify-between gap-3 pb-3 border-b border-gray-100">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shadow-2xs">
+                        <LuActivity className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-gray-900 tracking-tight">
+                          Evaluación Protocolar (Minsal / SUSESO)
+                        </h4>
+                        <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                          Metodología: Protocolo • Magnitud • Nivel
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-1.5">
+                      Riesgos de Higiene Ocupacional, Factores Psicosociales y Ergonomía evaluados cuantitativa y cualitativamente según normativa legal.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Resumen Gráfico / Semáforo de Riesgo Protocolar */}
+                <div className="grid grid-cols-3 gap-2 bg-gray-50/70 p-2.5 rounded-xl border border-gray-200/60 text-center">
+                  <div className="bg-white p-2 rounded-lg border border-red-200 shadow-2xs">
+                    <span className="text-xs font-bold text-red-600 block">
+                      🔴 4 Crítico
+                    </span>
+                    <span className="text-[10px] text-gray-500">Nivel 3 / No Aceptable</span>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg border border-amber-200 shadow-2xs">
+                    <span className="text-xs font-bold text-amber-600 block">
+                      🟡 2 Medio
+                    </span>
+                    <span className="text-[10px] text-gray-500">Nivel 2 / Observado</span>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg border border-emerald-200 shadow-2xs">
+                    <span className="text-xs font-bold text-emerald-600 block">
+                      🟢 1 Bajo
+                    </span>
+                    <span className="text-[10px] text-gray-500">Nivel 1 / Aceptable</span>
+                  </div>
+                </div>
+
+                {/* Filtros por Familia Protocolar */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
+                  {(
+                    [
+                      "Todos",
+                      "Higiénico",
+                      "Psicosocial",
+                      "Musculoesquelético",
+                    ] as const
+                  ).map((fam) => (
+                    <button
+                      key={fam}
+                      type="button"
+                      onClick={() => setProtocolFamilyFilter(fam)}
+                      className={clsx(
+                        "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer flex-shrink-0",
+                        protocolFamilyFilter === fam
+                          ? "bg-teal-600 text-white shadow-2xs"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      )}
+                    >
+                      {fam}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Lista Gráfica de Agentes Protocolizados */}
+                <div className="flex flex-col gap-2.5 max-h-[520px] overflow-y-auto pr-1">
+                  {filteredProtocolRisks.length === 0 ? (
+                    <p className="text-xs text-gray-400 py-8 text-center">
+                      No hay agentes protocolizados en esta familia.
+                    </p>
+                  ) : (
+                    filteredProtocolRisks.map((agent) => {
+                      const isCritico = agent.riskLevel === "Crítico";
+                      const isMedio = agent.riskLevel === "Medio";
+
+                      return (
+                        <div
+                          key={agent.id}
+                          className={clsx(
+                            "rounded-xl p-3.5 border transition flex flex-col gap-2 shadow-2xs",
+                            isCritico &&
+                              "bg-red-50/20 border-red-200 hover:border-red-300",
+                            isMedio &&
+                              "bg-amber-50/20 border-amber-200 hover:border-amber-300",
+                            !isCritico &&
+                              !isMedio &&
+                              "bg-emerald-50/20 border-emerald-200 hover:border-emerald-300"
+                          )}
+                        >
+                          {/* Cabecera del Agente */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span
+                                  className={clsx(
+                                    "text-[9px] font-bold px-2 py-0.5 rounded-md uppercase",
+                                    agent.riskFamily === "Musculoesquelético" &&
+                                      "bg-purple-100 text-purple-800",
+                                    agent.riskFamily === "Higiénico" &&
+                                      "bg-blue-100 text-blue-800",
+                                    agent.riskFamily === "Psicosocial" &&
+                                      "bg-amber-100 text-amber-800"
+                                  )}
+                                >
+                                  {agent.riskFamily}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-medium">
+                                  {agent.area}
+                                </span>
+                              </div>
+                              <h5 className="text-xs font-bold text-gray-900 mt-1">
+                                {agent.title}
+                              </h5>
+                              <p className="text-[10px] text-gray-500 font-semibold">
+                                Puesto: {agent.jobPosition}
+                              </p>
+                            </div>
+
+                            {/* Semáforo de Nivel de Riesgo */}
+                            <span
+                              className={clsx(
+                                "text-[10px] font-black px-2 py-1 rounded-lg flex-shrink-0 flex items-center gap-1 shadow-2xs",
+                                isCritico && "bg-[#F04438] text-white",
+                                isMedio && "bg-amber-500 text-white",
+                                !isCritico && !isMedio && "bg-emerald-600 text-white"
+                              )}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                              Nivel {agent.riskLevel}
+                            </span>
+                          </div>
+
+                          {/* Protocolo y Magnitud */}
+                          <div className="bg-white/90 p-2.5 rounded-lg border border-gray-200/80 flex flex-col gap-1 text-[11px]">
+                            <div className="flex items-center justify-between text-[10px] text-teal-800 font-bold">
+                              <span>📋 {agent.protocolName}</span>
+                              <span className="text-gray-400 font-normal">
+                                {agent.exposureType}
+                              </span>
+                            </div>
+
+                            <p className="text-gray-700 leading-snug">
+                              <strong className="text-gray-900">Magnitud:</strong>{" "}
+                              {agent.magnitude}
+                            </p>
+
+                            <p className="text-gray-600 text-[10px] mt-0.5">
+                              <strong className="text-teal-900">Medida Exigida:</strong>{" "}
+                              {agent.actionRequired}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[10px] text-gray-400 pt-1">
+                            <span>Base: {agent.normativeBasis}</span>
+                            <span>Eval: {agent.lastEvaluationDate}</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -2094,6 +2814,12 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
           </div>
         </div>
       )}
+
+      {/* Modal de Gestión de Áreas y Estructura Organizacional */}
+      <OrgStructureModal
+        isOpen={isOrgStructureOpen}
+        onClose={() => setIsOrgStructureOpen(false)}
+      />
     </div>
   );
 }

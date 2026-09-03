@@ -379,7 +379,7 @@ export default function IperMatrixDetailView({
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition cursor-pointer shadow-xs"
           >
             <LuSparkles className="w-4 h-4" />
-            Iniciar edición (6 etapas)
+            Confeccionar matriz (5 etapas)
           </button>
 
           {onOpenAprVirtual && (

@@ -7,6 +7,10 @@ import {
   TerminologyDictionary,
   getTermLabels,
 } from "@/types/preferences";
+import {
+  fetchPreferencesFromSupabase,
+  savePreferencesToSupabase,
+} from "@/lib/services/supabaseService";
 
 export const PREFERENCES_STORAGE_KEY = "lifeon_org_preferences";
 
@@ -50,6 +54,20 @@ export default function LifeOnPreferencesProvider({
           },
         }));
       }
+
+      // Si Supabase está disponible, hidratar en segundo plano desde la nube
+      fetchPreferencesFromSupabase().then((cloudPrefs) => {
+        if (cloudPrefs) {
+          setPreferences((prev) => ({
+            ...prev,
+            ...cloudPrefs,
+            modules: {
+              ...prev.modules,
+              ...(cloudPrefs.modules || {}),
+            },
+          }));
+        }
+      });
     } catch (e) {
       console.warn("No se pudo cargar preferencias desde localStorage:", e);
     } finally {
@@ -57,13 +75,16 @@ export default function LifeOnPreferencesProvider({
     }
   }, []);
 
-  // Guardar en localStorage ante cada modificación
+  // Guardar en localStorage y Supabase ante cada modificación
   const persistPreferences = useCallback((newPrefs: OrganizationPreferences) => {
     try {
       window.localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(newPrefs));
     } catch (e) {
       console.warn("No se pudo persistir preferencias en localStorage:", e);
     }
+
+    // Persistir en Supabase en segundo plano
+    savePreferencesToSupabase(newPrefs);
   }, []);
 
   const updatePreferences = useCallback(

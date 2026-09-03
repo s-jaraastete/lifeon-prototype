@@ -28,10 +28,13 @@ import {
   LuChevronDown,
   LuCircleAlert,
   LuLock,
+  LuBuilding2,
 } from "react-icons/lu";
 import { IperMatrixItem } from "./IperMatrixView";
 import { IperEvaluationRow } from "./IperMatrixDetailView";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
+import { useOrgStructure } from "@/hooks/useOrgStructure";
+import OrgStructureModal from "./OrgStructureModal";
 import {
   getSectorRiskProfile,
   SectorHazardSuggestion,
@@ -56,6 +59,8 @@ export interface JobPositionItem {
 
 export interface TaskItem {
   id: string;
+  areaId?: string;
+  areaName?: string;
   processId: string;
   processName: string;
   subprocessName?: string;
@@ -207,17 +212,14 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   }, [preferences.organizationSector]);
 
   const [currentStep, setCurrentStep] = useState<number>(1);
+  const { areas } = useOrgStructure();
+  const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
 
-  // 1. Estado de Área y Procesos (Campo libre sin precargar Centro de Trabajo)
-  const [workArea, setWorkArea] = useState<string>("");
-  const [processes, setProcesses] = useState<ProcessItem[]>([]);
-  const [newProcessName, setNewProcessName] = useState("");
-  const [newSubprocessInput, setNewSubprocessInput] = useState("");
-
-  // 2. Estado de Tareas (Sin precargar datos ficticios)
+  // 1. Estado de Tareas (Sin precargar datos ficticios)
   const [tasks, setTasks] = useState<TaskItem[]>([]);
 
-  // Formulario de Tarea en Etapa 2
+  // Formulario de Tarea en Etapa 1
+  const [taskFormAreaId, setTaskFormAreaId] = useState("");
   const [taskFormProcessId, setTaskFormProcessId] = useState("");
   const [taskFormSubprocess, setTaskFormSubprocess] = useState("");
   const [taskFormName, setTaskFormName] = useState("");
@@ -273,6 +275,29 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
     if (taskHazards.length > 0) return taskHazards[0];
     return hazards[0] || null;
   }, [hazards, selectedHazardId, activeTask, taskHazards]);
+
+  // Área y procesos actuales calculados para el formulario de tareas
+  const currentArea = useMemo(() => {
+    if (areas.length === 0) return null;
+    return areas.find((a) => a.id === taskFormAreaId) || areas[0];
+  }, [areas, taskFormAreaId]);
+
+  const currentAreaProcesses = useMemo(() => {
+    if (!currentArea) return [];
+    return currentArea.processes || [];
+  }, [currentArea]);
+
+  const currentProcess = useMemo(() => {
+    if (currentAreaProcesses.length === 0) return null;
+    return (
+      currentAreaProcesses.find((p) => p.id === taskFormProcessId) || currentAreaProcesses[0]
+    );
+  }, [currentAreaProcesses, taskFormProcessId]);
+
+  const currentSubprocesses = useMemo(() => {
+    if (!currentProcess) return [];
+    return currentProcess.subprocesses || [];
+  }, [currentProcess]);
 
   // Actualizar un peligro existente
   const updateHazardItem = (hazardId: string, updates: Partial<HazardItem>) => {
@@ -367,38 +392,30 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
     }
   };
 
-  // Validación estricta por etapa para impedir avanzar si falta información
+  // Validación estricta por etapa para impedir avanzar si falta información (5 etapas)
   const stepValidation = useMemo(() => {
-    // Etapa 1: Área no vacía y al menos 1 proceso
-    const step1Valid = workArea.trim().length > 0 && processes.length > 0;
-    const step1Error = !workArea.trim()
-      ? "Debes ingresar el Área de Trabajo para continuar."
-      : processes.length === 0
-        ? "Debes agregar al menos un proceso a la matriz."
-        : null;
-
-    // Etapa 2: Al menos 1 tarea y todas las tareas con al menos 1 puesto
-    const step2Valid =
+    // Etapa 1: Al menos 1 tarea y todas las tareas con al menos 1 puesto
+    const step1Valid =
       tasks.length > 0 && tasks.every((t) => t.positions && t.positions.length > 0);
-    const step2Error =
+    const step1Error =
       tasks.length === 0
         ? "Debes registrar al menos una tarea en la matriz."
         : !tasks.every((t) => t.positions && t.positions.length > 0)
           ? "Cada tarea debe tener al menos un puesto de trabajo asignado con su dotación."
           : null;
 
-    // Etapa 3: Al menos 1 peligro y cada tarea con al menos 1 peligro asignado
-    const step3Valid =
+    // Etapa 2: Al menos 1 peligro y cada tarea con al menos 1 peligro asignado
+    const step2Valid =
       hazards.length > 0 && tasks.every((t) => hazards.some((h) => h.taskId === t.id));
-    const step3Error =
+    const step2Error =
       hazards.length === 0
         ? "Debes identificar al menos un peligro con su riesgo asociado."
         : !tasks.every((t) => hazards.some((h) => h.taskId === t.id))
           ? "Todas las tareas registradas deben tener al menos un peligro asignado."
           : null;
 
-    // Etapa 4: Todos los peligros deben estar evaluados
-    const step4Valid =
+    // Etapa 3: Todos los peligros deben estar evaluados
+    const step3Valid =
       hazards.length > 0 &&
       hazards.every((h) => {
         const isSafety = h.riskClassification === "Seguridad" || h.riskClassification === "Emergencias";
@@ -411,20 +428,20 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
           (h.riskLevelType || "").trim().length > 0
         );
       });
-    const step4Error = !step4Valid
+    const step3Error = !step3Valid
       ? "Debes completar la evaluación inicial de todos los peligros registrados."
       : null;
 
-    // Etapa 5: Todos los peligros deben tener al menos una medida de control
-    const step5Valid =
+    // Etapa 4: Todos los peligros deben tener al menos una medida de control
+    const step4Valid =
       hazards.length > 0 &&
       hazards.every((h) => h.controlsList && h.controlsList.length > 0);
-    const step5Error = !step5Valid
+    const step4Error = !step4Valid
       ? "Todos los peligros deben tener al menos una medida de control registrada bajo la jerarquía preventiva."
       : null;
 
-    // Etapa 6: Reevaluación completada y residual menor o igual a inicial
-    const step6Valid =
+    // Etapa 5: Reevaluación completada y residual menor o igual a inicial
+    const step5Valid =
       hazards.length > 0 &&
       hazards.every((h) => {
         const isSafety = h.riskClassification === "Seguridad" || h.riskClassification === "Emergencias";
@@ -433,7 +450,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
         }
         return !!h.residualRiskLevel;
       });
-    const step6Error = !step6Valid
+    const step5Error = !step5Valid
       ? "Debes completar la reevaluación del riesgo residual (el cual debe ser menor o igual al inicial)."
       : null;
 
@@ -443,11 +460,10 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
       3: { isValid: step3Valid, errorMsg: step3Error },
       4: { isValid: step4Valid, errorMsg: step4Error },
       5: { isValid: step5Valid, errorMsg: step5Error },
-      6: { isValid: step6Valid, errorMsg: step6Error },
     };
 
     return map;
-  }, [workArea, processes, tasks, hazards]);
+  }, [tasks, hazards]);
 
   const canAdvanceCurrentStep = stepValidation[currentStep]?.isValid ?? false;
   const currentStepError = stepValidation[currentStep]?.errorMsg;
@@ -486,46 +502,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   const residualScoreCalc = activeHazard ? activeHazard.residualProb * activeHazard.residualSev : 0;
 
   // =========================================================================
-  // HANDLERS: ETAPA 1 (PROCESOS Y SUBPROCESOS)
-  // =========================================================================
-  const handleAddProcess = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProcessName.trim()) return;
-
-    const subprocsList = newSubprocessInput
-      .split(",")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    const newProc: ProcessItem = {
-      id: `proc-${Date.now()}`,
-      name: newProcessName.trim(),
-      subprocesses: subprocsList,
-      workArea: workArea,
-    };
-    const updatedProcs = [...processes, newProc];
-    setProcesses(updatedProcs);
-    if (!taskFormProcessId) {
-      setTaskFormProcessId(newProc.id);
-    }
-    setNewProcessName("");
-    setNewSubprocessInput("");
-  };
-
-  const handleRemoveSubprocessFromProc = (procId: string, subIndex: number) => {
-    setProcesses(
-      processes.map((p) =>
-        p.id === procId ? { ...p, subprocesses: p.subprocesses.filter((_, idx) => idx !== subIndex) } : p
-      )
-    );
-  };
-
-  const handleRemoveProcess = (id: string) => {
-    setProcesses(processes.filter((p) => p.id !== id));
-  };
-
-  // =========================================================================
-  // HANDLERS: ETAPA 2 (TAREAS Y PUESTOS INDIVIDUALES: CARGO > DOTACIÓN)
+  // HANDLERS: ETAPA 1 (TAREAS Y PUESTOS INDIVIDUALES)
   // =========================================================================
   const handleAddPositionToTaskForm = (e: React.FormEvent) => {
     e.preventDefault();
@@ -556,8 +533,10 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!taskFormName.trim() || processes.length === 0) return;
-    const selectedProc = processes.find((p) => p.id === taskFormProcessId) || processes[0];
+    if (!taskFormName.trim()) return;
+
+    const selectedArea = currentArea || areas[0];
+    const selectedProc = currentProcess || selectedArea?.processes[0];
 
     const finalPositions = taskFormPositionsList.length > 0 ? taskFormPositionsList : [
       {
@@ -576,8 +555,10 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
 
     const newTask: TaskItem = {
       id: `task-${Date.now()}`,
-      processId: selectedProc.id,
-      processName: selectedProc.name,
+      areaId: selectedArea?.id,
+      areaName: selectedArea?.name,
+      processId: selectedProc?.id || "proc-generic",
+      processName: selectedProc?.name || "Proceso Operativo",
       subprocessName: taskFormSubprocess.trim() || undefined,
       name: taskFormName.trim(),
       taskType: taskFormType,
@@ -715,8 +696,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
 
         const row: IperEvaluationRow = {
           id: `EV-${Date.now().toString().slice(-4)}-${task.id.slice(-3)}-${idx + 1}`,
-          process: task.processName,
-          task: task.name,
+          process: task.areaName ? `${task.areaName} › ${task.processName}` : task.processName,
+          task: task.subprocessName ? `[${task.subprocessName}] ${task.name}` : task.name,
           hazard: hItem.hazardDescription || hItem.specificRiskName,
           riskEvent: `[${hItem.specificRiskCode}] ${hItem.specificRiskName} (${hItem.riskClassification})`,
           probInitial: hItem.probValue,
@@ -752,12 +733,11 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   };
 
   const stepsHeader = [
-    { num: 1, label: "Área y procesos", shortLabel: "Área" },
-    { num: 2, label: "Tareas", shortLabel: "Tareas" },
-    { num: 3, label: "Peligros", shortLabel: "Peligros" },
-    { num: 4, label: "Evaluación del riesgo", shortLabel: "Evaluación" },
-    { num: 5, label: "Medidas de control", shortLabel: "Controles" },
-    { num: 6, label: "Reevaluación del riesgo", shortLabel: "Reevaluación" },
+    { num: 1, label: "Tareas y puestos", shortLabel: "Tareas" },
+    { num: 2, label: "Peligros y riesgos", shortLabel: "Peligros" },
+    { num: 3, label: "Evaluación del riesgo", shortLabel: "Evaluación" },
+    { num: 4, label: "Medidas de control", shortLabel: "Controles" },
+    { num: 5, label: "Reevaluación del riesgo", shortLabel: "Reevaluación" },
   ];
 
   return (
@@ -870,219 +850,9 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
         <div className="lg:col-span-8 bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[540px]">
 
           {/* =========================================================================
-              ETAPA 1: ÁREA Y PROCESOS
+              ETAPA 1: TAREAS Y PUESTOS (SELECCIÓN DESDE ESTRUCTURA ORGANIZACIONAL)
               ========================================================================= */}
           {currentStep === 1 && (
-            <div className="flex flex-col gap-5 animate-in fade-in duration-200">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="p-2 rounded-xl bg-teal-50 text-teal-700">
-                    <LuMapPin className="w-4 h-4" />
-                  </span>
-                  <div>
-                    <h3 className="text-base font-bold text-gray-900">Área y Procesos Operativos</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Define el área de trabajo y los procesos de la faena. Cada proceso puede tener uno o más subprocesos (opcionales).
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sugerencias de Procesos habituales según el Rubro (ej: Minería) */}
-              <div className="bg-gradient-to-r from-teal-50/80 via-emerald-50/50 to-blue-50/40 border border-teal-200/80 rounded-2xl p-4 flex flex-col gap-2.5 shadow-2xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center text-xs">
-                    <LuSparkles className="w-3.5 h-3.5" />
-                  </span>
-                  <div>
-                    <h4 className="text-xs font-bold text-teal-950">
-                      Procesos habituales en tu rubro: <span className="text-teal-700 font-extrabold">{sectorProfile.sector}</span>
-                    </h4>
-                    <p className="text-[11px] text-teal-800">
-                      Carga procesos estándar de la industria y sus subprocesos con un solo clic:
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap pt-1">
-                  {sectorProfile.recommendedProcesses.map((recProc, rIdx) => {
-                    const isAlreadyAdded = processes.some(
-                      (p) => p.name.toLowerCase() === recProc.name.toLowerCase()
-                    );
-                    return (
-                      <button
-                        key={rIdx}
-                        type="button"
-                        onClick={() => {
-                          if (!workArea) setWorkArea(recProc.workArea);
-                          if (!isAlreadyAdded) {
-                            const newP: ProcessItem = {
-                              id: `proc-rec-${Date.now()}-${rIdx}`,
-                              name: recProc.name,
-                              subprocesses: [...recProc.subprocesses],
-                              workArea: workArea || recProc.workArea,
-                            };
-                            setProcesses((prev) => [...prev, newP]);
-                            if (!taskFormProcessId) setTaskFormProcessId(newP.id);
-                          }
-                        }}
-                        disabled={isAlreadyAdded}
-                        className={clsx(
-                          "px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer",
-                          isAlreadyAdded
-                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300 opacity-80 cursor-default"
-                            : "bg-white hover:bg-teal-50 text-teal-900 border border-teal-200 shadow-2xs"
-                        )}
-                      >
-                        {isAlreadyAdded ? (
-                          <LuCheck className="w-3.5 h-3.5 text-emerald-600" />
-                        ) : (
-                          <LuPlus className="w-3.5 h-3.5 text-teal-600" />
-                        )}
-                        <span>{recProc.name}</span>
-                        <span className="text-[10px] text-gray-400 font-normal">
-                          ({recProc.subprocesses.length} subs)
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Área de Trabajo */}
-              <div>
-                <label className="text-xs font-semibold text-gray-700 block mb-1">
-                  Área de Trabajo
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Bodega Central, Maestranza, Sector Chancado, Área de Envasado..."
-                  value={workArea}
-                  onChange={(e) => setWorkArea(e.target.value)}
-                  className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-3 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-semibold"
-                />
-              </div>
-
-              {/* Formulario para agregar procesos y subprocesos */}
-              <div className="bg-gray-50/70 border border-gray-200/80 rounded-2xl p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-                    <LuFolderTree className="w-3.5 h-3.5 text-teal-600" />
-                    + Agregar Proceso y Subprocesos
-                  </h4>
-                  <span className="text-[11px] text-gray-400 font-medium">Subprocesos opcionales</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Nombre del Proceso</label>
-                    <input
-                      type="text"
-                      placeholder="Ej: Operaciones de Faena, Bodega Química, Mantenimiento"
-                      value={newProcessName}
-                      onChange={(e) => setNewProcessName(e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">
-                      Subprocesos (Opcional, separados por coma)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ej: Izaje, Montaje estructural, Soldadura"
-                      value={newSubprocessInput}
-                      onChange={(e) => setNewSubprocessInput(e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleAddProcess}
-                    disabled={!newProcessName.trim()}
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:pointer-events-none rounded-xl transition cursor-pointer shadow-xs"
-                  >
-                    <LuPlus className="w-3.5 h-3.5" />
-                    Agregar Proceso
-                  </button>
-                </div>
-              </div>
-
-              {/* Lista de Procesos y Subprocesos Configurados */}
-              <div>
-                <h4 className="text-xs font-bold text-gray-800 mb-2">
-                  Estructura de Procesos ({processes.length})
-                </h4>
-                {processes.length === 0 ? (
-                  <div className="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-center text-xs text-gray-500">
-                    Aún no se han agregado procesos. Ingresa el nombre del primer proceso arriba para comenzar.
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    {processes.map((proc, idx) => (
-                      <div
-                        key={proc.id}
-                        className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col gap-2.5 shadow-2xs hover:border-teal-300 transition"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-2.5">
-                            <span className="w-6 h-6 rounded-lg bg-teal-50 text-teal-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
-                              {idx + 1}
-                            </span>
-                            <div>
-                              <p className="text-xs font-bold text-gray-900">{proc.name}</p>
-                              {proc.workArea && <p className="text-[10px] text-gray-400">Área: {proc.workArea}</p>}
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveProcess(proc.id)}
-                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
-                            title="Eliminar proceso"
-                          >
-                            <LuTrash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-
-                        {/* Chips de Subprocesos */}
-                        <div className="pt-2 border-t border-gray-100 flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[11px] text-gray-400 font-medium mr-1">Subprocesos:</span>
-                          {proc.subprocesses.length === 0 ? (
-                            <span className="text-[11px] text-gray-400 italic">Sin subprocesos (asignación directa al proceso)</span>
-                          ) : (
-                            proc.subprocesses.map((sub, sIdx) => (
-                              <span
-                                key={sIdx}
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-md text-[11px] font-medium"
-                              >
-                                {sub}
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveSubprocessFromProc(proc.id, sIdx)}
-                                  className="text-teal-600 hover:text-red-600 cursor-pointer ml-0.5"
-                                >
-                                  &times;
-                                </button>
-                              </span>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* =========================================================================
-              ETAPA 2: TAREAS (TIPO AL LADO DEL NOMBRE Y PUESTOS CON CARGO > DOTACIÓN)
-              ========================================================================= */}
-          {currentStep === 2 && (
             <div className="flex flex-col gap-5 animate-in fade-in duration-200">
               <div>
                 <div className="flex items-center gap-2">
@@ -1092,14 +862,14 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                   <div>
                     <h3 className="text-base font-bold text-gray-900">Tareas y Puestos de Trabajo</h3>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      Registra las tareas con su tipo (*Rutinaria* / *No rutinaria*) e incorpora los cargos o puestos de a uno con su dotación.
+                      Selecciona el área, proceso y subproceso de la empresa, registra la tarea (*Rutinaria* / *No rutinaria*) e incorpora los cargos con su dotación.
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Sugerencias de Tareas para el Rubro */}
-              {processes.length > 0 && sectorProfile.recommendedTasks.length > 0 && (
+              {sectorProfile.recommendedTasks.length > 0 && (
                 <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-3.5 flex flex-col gap-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-teal-950">
                     <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
@@ -1135,78 +905,124 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                 </div>
               )}
 
-              {processes.length === 0 ? (
+              {areas.length === 0 ? (
                 <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center flex flex-col items-center gap-2">
                   <LuTriangleAlert className="w-6 h-6 text-amber-600" />
-                  <p className="text-xs font-bold text-amber-900">Primero debes agregar al menos un proceso en la Etapa 1</p>
-                  <p className="text-[11px] text-amber-700">Regresa a la etapa anterior para registrar los procesos del centro de trabajo.</p>
+                  <p className="text-xs font-bold text-amber-900">No hay áreas u organigrama registrado</p>
+                  <p className="text-[11px] text-amber-700">
+                    Para asignar tareas debes contar con al menos un área y proceso en la estructura organizacional.
+                  </p>
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(1)}
-                    className="mt-2 px-4 py-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition"
+                    onClick={() => setIsOrgModalOpen(true)}
+                    className="mt-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
                   >
-                    Ir a Etapa 1 (Área y Procesos)
+                    <LuFolderTree className="w-4 h-4" />
+                    Configurar Estructura Organizacional
                   </button>
                 </div>
               ) : (
                 <>
                   {/* Formulario de Nueva Tarea */}
                   <div className="bg-gray-50/70 border border-gray-200/80 rounded-2xl p-4 flex flex-col gap-4">
-                    <h4 className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-                      <LuPlus className="w-3.5 h-3.5 text-teal-600" />
-                      Registrar Nueva Tarea
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                        <LuPlus className="w-3.5 h-3.5 text-teal-600" />
+                        Registrar Nueva Tarea
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => setIsOrgModalOpen(true)}
+                        className="text-[11px] font-semibold text-teal-700 hover:text-teal-900 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <LuFolderTree className="w-3.5 h-3.5" />
+                        <span>Gestión de Áreas</span>
+                      </button>
+                    </div>
 
-                    {/* 1. Proceso Perteneciente y Subproceso */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* 1. Selección Jerárquica: Área > Proceso > Subproceso */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <label className="text-[11px] font-semibold text-gray-600 block mb-1">
-                          Proceso Perteneciente
+                        <label className="text-[11px] font-semibold text-gray-700 block mb-1">
+                          1. Área de Trabajo *
                         </label>
                         <select
-                          value={taskFormProcessId || processes[0]?.id}
+                          value={taskFormAreaId || currentArea?.id || ""}
                           onChange={(e) => {
-                            setTaskFormProcessId(e.target.value);
-                            const selectedP = processes.find((p) => p.id === e.target.value);
-                            if (selectedP && selectedP.subprocesses.length > 0) {
-                              setTaskFormSubprocess(selectedP.subprocesses[0]);
+                            const newAreaId = e.target.value;
+                            setTaskFormAreaId(newAreaId);
+                            const foundA = areas.find((a) => a.id === newAreaId);
+                            if (foundA && foundA.processes.length > 0) {
+                              setTaskFormProcessId(foundA.processes[0].id);
+                              if (foundA.processes[0].subprocesses.length > 0) {
+                                setTaskFormSubprocess(foundA.processes[0].subprocesses[0].name);
+                              } else {
+                                setTaskFormSubprocess("");
+                              }
                             } else {
+                              setTaskFormProcessId("");
                               setTaskFormSubprocess("");
                             }
                           }}
                           className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
                         >
-                          {processes.map((proc) => (
-                            <option key={proc.id} value={proc.id}>
-                              {proc.name}
+                          {areas.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name} {a.code ? `(${a.code})` : ""}
                             </option>
                           ))}
                         </select>
                       </div>
 
-                      {(() => {
-                        const selP = processes.find((p) => p.id === (taskFormProcessId || processes[0]?.id)) || processes[0];
-                        if (!selP || selP.subprocesses.length === 0) return null;
-                        return (
-                          <div>
-                            <label className="text-[11px] font-semibold text-gray-600 block mb-1">
-                              Subproceso (Opcional)
-                            </label>
-                            <select
-                              value={taskFormSubprocess}
-                              onChange={(e) => setTaskFormSubprocess(e.target.value)}
-                              className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                            >
-                              <option value="">(Sin subproceso específico)</option>
-                              {selP.subprocesses.map((sub, idx) => (
-                                <option key={idx} value={sub}>
-                                  {sub}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        );
-                      })()}
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-700 block mb-1">
+                          2. Proceso Perteneciente *
+                        </label>
+                        <select
+                          value={taskFormProcessId || currentProcess?.id || ""}
+                          onChange={(e) => {
+                            const newProcId = e.target.value;
+                            setTaskFormProcessId(newProcId);
+                            const foundP = currentAreaProcesses.find((p) => p.id === newProcId);
+                            if (foundP && foundP.subprocesses.length > 0) {
+                              setTaskFormSubprocess(foundP.subprocesses[0].name);
+                            } else {
+                              setTaskFormSubprocess("");
+                            }
+                          }}
+                          disabled={currentAreaProcesses.length === 0}
+                          className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium disabled:bg-gray-100 disabled:opacity-60"
+                        >
+                          {currentAreaProcesses.length === 0 ? (
+                            <option value="">(Sin procesos en esta área)</option>
+                          ) : (
+                            currentAreaProcesses.map((proc) => (
+                              <option key={proc.id} value={proc.id}>
+                                {proc.name}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-700 block mb-1">
+                          3. Subproceso (Opcional)
+                        </label>
+                        <select
+                          value={taskFormSubprocess}
+                          onChange={(e) => setTaskFormSubprocess(e.target.value)}
+                          disabled={currentSubprocesses.length === 0}
+                          className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium disabled:bg-gray-100 disabled:opacity-60"
+                        >
+                          <option value="">(Sin subproceso específico)</option>
+                          {currentSubprocesses.map((sub) => (
+                            <option key={sub.id} value={sub.name}>
+                              {sub.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     {/* 2. Nombre de la Tarea y Tipo de Tarea (UNO AL LADO DEL OTRO) */}
@@ -1473,6 +1289,11 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
 
                                     <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-1 flex-wrap">
                                       <span>
+                                        {task.areaName && (
+                                          <span className="text-gray-400 font-normal">
+                                            Área: <strong className="text-gray-700">{task.areaName}</strong> &bull;{" "}
+                                          </span>
+                                        )}
                                         Proceso: <strong className="text-gray-700">{task.processName}</strong>
                                         {task.subprocessName ? ` ➔ ${task.subprocessName}` : ""}
                                       </span>
@@ -1554,9 +1375,9 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
           )}
 
           {/* =========================================================================
-              ETAPA 3: PELIGROS (SELECTOR DESPLEGABLE, MÚLTIPLES PELIGROS Y ORDEN DE CAMPOS)
+              ETAPA 2: PELIGROS (SELECTOR DESPLEGABLE, MÚLTIPLES PELIGROS Y ORDEN DE CAMPOS)
               ========================================================================= */}
-          {currentStep === 3 && (
+          {currentStep === 2 && (
             <div className="flex flex-col gap-5 animate-in fade-in duration-200">
               <div>
                 <div className="flex items-center gap-2">
@@ -1576,13 +1397,13 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                 <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center flex flex-col items-center gap-2">
                   <LuTriangleAlert className="w-6 h-6 text-amber-600" />
                   <p className="text-xs font-bold text-amber-900">No hay tareas registradas aún</p>
-                  <p className="text-[11px] text-amber-700">Agrega al menos una tarea en la Etapa 2 para identificar sus peligros y riesgos asociados.</p>
+                  <p className="text-[11px] text-amber-700">Agrega al menos una tarea en la Etapa 1 para identificar sus peligros y riesgos asociados.</p>
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(2)}
+                    onClick={() => setCurrentStep(1)}
                     className="mt-2 px-4 py-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition"
                   >
-                    Ir a Etapa 2 (Tareas)
+                    Ir a Etapa 1 (Tareas)
                   </button>
                 </div>
               ) : (
@@ -1976,9 +1797,9 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
           )}
 
           {/* =========================================================================
-              ETAPA 4: EVALUACIÓN DEL RIESGO (VISIBILIDAD CLARA DE TAREA Y RIESGO)
+              ETAPA 3: EVALUACIÓN DEL RIESGO (VISIBILIDAD CLARA DE TAREA Y RIESGO)
               ========================================================================= */}
-          {currentStep === 4 && (
+          {currentStep === 3 && (
             <div className="flex flex-col gap-5 animate-in fade-in duration-200">
               <div>
                 <div className="flex items-center gap-2">
@@ -2000,13 +1821,13 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                 <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center flex flex-col items-center gap-2">
                   <LuTriangleAlert className="w-6 h-6 text-amber-600" />
                   <p className="text-xs font-bold text-amber-900">No hay peligros registrados para evaluar</p>
-                  <p className="text-[11px] text-amber-700">Agrega al menos un peligro en la Etapa 3 para realizar la evaluación de riesgos.</p>
+                  <p className="text-[11px] text-amber-700">Agrega al menos un peligro en la Etapa 2 para realizar la evaluación de riesgos.</p>
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(3)}
+                    onClick={() => setCurrentStep(2)}
                     className="mt-2 px-4 py-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition"
                   >
-                    Ir a Etapa 3 (Peligros)
+                    Ir a Etapa 2 (Peligros)
                   </button>
                 </div>
               ) : (
@@ -2250,9 +2071,9 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
           )}
 
           {/* =========================================================================
-              ETAPA 5: MEDIDAS DE CONTROL (VISIBILIDAD CLARA DE TAREA Y RIESGO)
+              ETAPA 4: MEDIDAS DE CONTROL (VISIBILIDAD CLARA DE TAREA Y RIESGO)
               ========================================================================= */}
-          {currentStep === 5 && (
+          {currentStep === 4 && (
             <div className="flex flex-col gap-5 animate-in fade-in duration-200">
               <div>
                 <div className="flex items-center gap-2">
@@ -2285,13 +2106,13 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                 <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center flex flex-col items-center gap-2">
                   <LuTriangleAlert className="w-6 h-6 text-amber-600" />
                   <p className="text-xs font-bold text-amber-900">No hay peligros registrados para incorporar controles</p>
-                  <p className="text-[11px] text-amber-700">Agrega al menos un peligro en la Etapa 3 para configurar sus medidas de control.</p>
+                  <p className="text-[11px] text-amber-700">Agrega al menos un peligro en la Etapa 2 para configurar sus medidas de control.</p>
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(3)}
+                    onClick={() => setCurrentStep(2)}
                     className="mt-2 px-4 py-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition"
                   >
-                    Ir a Etapa 3 (Peligros)
+                    Ir a Etapa 2 (Peligros)
                   </button>
                 </div>
               ) : (
@@ -2516,9 +2337,9 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
           )}
 
           {/* =========================================================================
-              ETAPA 6: REEVALUACIÓN DEL RIESGO RESIDUAL
+              ETAPA 5: REEVALUACIÓN DEL RIESGO RESIDUAL
               ========================================================================= */}
-          {currentStep === 6 && (
+          {currentStep === 5 && (
             <div className="flex flex-col gap-5 animate-in fade-in duration-200">
               <div>
                 <div className="flex items-center gap-2">
@@ -2541,10 +2362,10 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                   <p className="text-[11px] text-amber-700">Primero debes agregar y evaluar peligros en las etapas anteriores.</p>
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(3)}
+                    onClick={() => setCurrentStep(2)}
                     className="mt-2 px-4 py-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition"
                   >
-                    Ir a Etapa 3 (Peligros)
+                    Ir a Etapa 2 (Peligros)
                   </button>
                 </div>
               ) : (
@@ -2799,7 +2620,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
               {currentStep === 1 ? "Cancelar" : "Anterior"}
             </button>
 
-            {currentStep < 6 ? (
+            {currentStep < 5 ? (
               <button
                 type="button"
                 onClick={() => {
@@ -2844,19 +2665,18 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
               <span className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200">
                 {matrix.code}
               </span>
-              <span className="text-[10px] text-gray-400 font-mono">Etapa {currentStep} de 6</span>
+              <span className="text-[10px] text-gray-400 font-mono">Etapa {currentStep} de 5</span>
             </div>
             <h4 className="text-sm font-bold text-gray-900 mt-2 line-clamp-1">{matrix.name}</h4>
             <p className="text-[11px] text-gray-500 mt-0.5">
               {matrix.workCenter ? `Centro: ${matrix.workCenter}` : ""}
-              {workArea ? (matrix.workCenter ? ` • Área: ${workArea}` : `Área: ${workArea}`) : ""}
             </p>
           </div>
 
           <div className="border-t border-gray-100 pt-3 flex flex-col gap-3 text-xs">
             <div>
-              <span className="text-gray-400 text-[11px] font-medium block">Procesos Definidos:</span>
-              <p className="font-bold text-gray-800">{processes.length} proceso(s)</p>
+              <span className="text-gray-400 text-[11px] font-medium block">Estructura Organizacional:</span>
+              <p className="font-bold text-gray-800">{areas.length} área(s) disponible(s)</p>
             </div>
 
             <div>
@@ -2918,6 +2738,12 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
           </div>
         </div>
       </main>
+
+      {/* Modal de Gestión de Estructura Organizacional */}
+      <OrgStructureModal
+        isOpen={isOrgModalOpen}
+        onClose={() => setIsOrgModalOpen(false)}
+      />
     </div>
   );
 }

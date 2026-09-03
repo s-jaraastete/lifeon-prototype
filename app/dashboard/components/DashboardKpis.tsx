@@ -54,9 +54,9 @@ export default function DashboardKpis({ onSelectMetric }: DashboardKpisProps) {
     },
     {
       id: "programa",
-      label: "Prog. Preventivo DS 44",
+      label: "Planificación Preventiva",
       value: "94,2%",
-      subtitle: "48/51 tareas al día",
+      subtitle: "Doc. y auditoría al día",
       change: "+7,7% vs mes ant.",
       isPositive: true,
       color: "text-[#10B981]",
