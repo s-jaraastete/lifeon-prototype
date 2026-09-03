@@ -9,9 +9,10 @@ import SidebarMenu from "./SidebarMenu";
 
 type AdminShellProps = {
   children: ReactNode;
+  ufValue: number | null;
 };
 
-export default function AdminShell({ children }: AdminShellProps) {
+export default function AdminShell({ children, ufValue }: AdminShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
@@ -31,9 +32,10 @@ export default function AdminShell({ children }: AdminShellProps) {
           <Header
             collapsed={collapsed}
             onToggle={() => setCollapsed((value) => !value)}
+            ufValue={ufValue}
           />
           <div className="flex justify-center">
-            <main className="flex min-w-0 max-w-354 flex-col gap-4">{children}</main>
+            <main className="flex min-w-0 max-w-354 flex-col gap-4 w-full">{children}</main>
           </div>
         </div>
       </div>

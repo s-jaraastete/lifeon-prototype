@@ -39,7 +39,7 @@ const statusLabels: Record<SubscriptionStatus, string> = {
   pending_initial_payment: "Pendiente de pago inicial",
   trialing: "En prueba",
   active: "Activa",
-  past_due: "Pendiente",
+  past_due: "Vencida",
   suspended: "Suspendida",
   cancelled: "Cancelada",
   expired: "Expirada",
@@ -89,6 +89,7 @@ const SubscriptionsTable = ({ params }: SubscriptionsTableProps) => {
       endpoint="/admin-overview/subscriptions"
       params={params}
       pageSize={PAGE_SIZE}
+      serverTag={["admin-subscriptions"]}
       noDataMessage="No se encontraron suscripciones"
     />
   );

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
 import nextAuthOptions from "@/lib/nextAuth/nextAuthOptions";
+import getUF from "@/utils/getUF";
 import AdminShell from "./admin/components/layout/AdminShell";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -30,5 +31,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect("/");
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  let ufValue: number | null = null;
+
+  try {
+    const ufInfo = await getUF();
+    ufValue = ufInfo.value;
+  } catch {
+    ufValue = null;
+  }
+
+  return (
+    <AdminShell ufValue={ufValue}>
+      {children}
+    </AdminShell>
+  );
 }
