@@ -2,7 +2,7 @@
 
 import SearchInput from "./filters/SearchInput";
 import StatusTabs from "./filters/StatusTabs";
-import FilterDropdown from "./filters/FilterDropdown";
+import MoreFilters from "./filters/MoreFilters";
 
 const TableFilters = () => {
   return (
@@ -10,7 +10,7 @@ const TableFilters = () => {
       <SearchInput />
       <div className="flex items-center gap-3 flex-wrap">
         <StatusTabs />
-        <FilterDropdown />
+        <MoreFilters />
       </div>
     </div>
   );

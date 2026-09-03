@@ -10,10 +10,10 @@ export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
   pending_initial_payment: "Pendiente de pago inicial",
   trialing: "En prueba",
   active: "Activa",
-  past_due: "Pendiente",
+  past_due: "Vencida",
   suspended: "Suspendida",
   cancelled: "Cancelada",
-  expired: "Vencida",
+  expired: "Expirada",
   // plan_free: "Plan free",
 };
 
@@ -22,7 +22,7 @@ export const SUBSCRIPTION_STATUS_STYLES: Record<SubscriptionStatus, string> = {
   pending_initial_payment: "bg-yellow-100 text-yellow-600",
   trialing: "bg-lavender-100 text-lavender-700",
   active: "bg-green-100 text-green-700",
-  past_due: "bg-yellow-100 text-yellow-600",
+  past_due: "bg-red-error-100 text-red-error-700",
   suspended: "bg-orange-100 text-orange-600",
   cancelled: "bg-red-error-100 text-red-error-700",
   expired: "bg-red-error-100 text-red-error-700",
