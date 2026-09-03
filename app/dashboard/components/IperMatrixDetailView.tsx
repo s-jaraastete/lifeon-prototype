@@ -131,6 +131,7 @@ interface IperMatrixDetailViewProps {
   onBack: () => void;
   onUpdateMatrix: (updated: IperMatrixItem) => void;
   onOpenAprVirtual?: () => void;
+  initialOpenWizard?: boolean;
 }
 
 export default function IperMatrixDetailView({
@@ -138,6 +139,7 @@ export default function IperMatrixDetailView({
   onBack,
   onUpdateMatrix,
   onOpenAprVirtual,
+  initialOpenWizard,
 }: IperMatrixDetailViewProps) {
   const [evaluations, setEvaluations] = useState<IperEvaluationRow[]>(
     matrix.status === "No iniciado" ? [] : DEFAULT_EVALUATIONS[matrix.code] || []
@@ -146,7 +148,7 @@ export default function IperMatrixDetailView({
   const [levelFilter, setLevelFilter] = useState("Todos");
 
   // Modals State
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(initialOpenWizard || false);
   const [isIrlModalOpen, setIsIrlModalOpen] = useState(false);
   const [isAddEvaluationOpen, setIsAddEvaluationOpen] = useState(false);
   const [isEditGeneralOpen, setIsEditGeneralOpen] = useState(false);

@@ -7,6 +7,7 @@ import SiteLayout from "./components/layout/SiteLayout";
 import NextAuthSessionProvider from "@/providers/NextAuthSessionProvider";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import CartProvider from "@/providers/CartProvider";
+import LifeOnPreferencesProvider from "@/providers/LifeOnPreferencesProvider";
 import nextAuthOptions from "@/lib/nextAuth/nextAuthOptions";
 
 import { Poppins } from "next/font/google";
@@ -34,7 +35,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <NextAuthSessionProvider session={session}>
           <ReactQueryProvider>
             <CartProvider>
-              <SiteLayout>{children}</SiteLayout>
+              <LifeOnPreferencesProvider>
+                <SiteLayout>{children}</SiteLayout>
+              </LifeOnPreferencesProvider>
             </CartProvider>
           </ReactQueryProvider>
         </NextAuthSessionProvider>

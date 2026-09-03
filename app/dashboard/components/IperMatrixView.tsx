@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import clsx from "clsx";
 import {
   LuLayoutGrid,
@@ -40,6 +40,8 @@ import {
   LuCalendar,
   LuShieldAlert,
 } from "react-icons/lu";
+import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
+import { getSectorRiskProfile } from "@/data/sectorRiskTemplates";
 import IperMatrixDetailView from "./IperMatrixDetailView";
 
 export type MatrixStatus =
@@ -323,10 +325,16 @@ interface MatrixActionItem {
 }
 
 export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?: () => void }) {
+  const { preferences } = useLifeOnPreferences();
+  const sectorProfile = useMemo(() => {
+    return getSectorRiskProfile(preferences.organizationSector);
+  }, [preferences.organizationSector]);
+
   const [viewMode, setViewMode] = useState<"grid" | "list" | "significance">("grid");
   const [matrices, setMatrices] = useState<IperMatrixItem[]>(INITIAL_MATRICES);
   const [impacts, setImpacts] = useState<SignificanceImpactItem[]>(INITIAL_IMPACTS);
   const [selectedMatrix, setSelectedMatrix] = useState<IperMatrixItem | null>(null);
+  const [openWizardOnSelect, setOpenWizardOnSelect] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
@@ -535,7 +543,14 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
   const getMatrixActions = (mat: IperMatrixItem): MatrixActionItem[] => {
     const status = mat.status;
 
-    const openMatrix = () => setSelectedMatrix(mat);
+    const openMatrix = () => {
+      setSelectedMatrix(mat);
+      setOpenWizardOnSelect(false);
+    };
+    const openWizardForMatrix = () => {
+      setSelectedMatrix(mat);
+      setOpenWizardOnSelect(true);
+    };
     const editData = () => handleOpenEditModal(mat);
     const copyLink = () => handleCopyLink(mat);
     const deleteMatrix = () => {
@@ -605,10 +620,10 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
           { label: "Eliminar", icon: LuTrash2, action: deleteMatrix, isDanger: true },
         ];
 
-      // 3. Borrador / No iniciado
+      // 3. Borrador
       case "Borrador":
-      case "No iniciado":
         return [
+          { label: "Confeccionar con Asistente", icon: LuSparkles, action: openWizardForMatrix },
           { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
           { label: "Editar datos matriz", icon: LuPencil, action: editData },
           { label: "Enviar a revisión", icon: LuSend, action: sendToReview },
@@ -690,16 +705,16 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
     }
   };
 
-  const handleCreateMatrix = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateMatrix = (e?: React.FormEvent, compileImmediately = false) => {
+    if (e) e.preventDefault();
     if (!newName.trim()) return;
 
     const newItem: IperMatrixItem = {
       id: `m-${Date.now()}`,
       code: newCode || `MA-00${matrices.length + 1}`,
       name: newName,
-      workCenter: newWorkCenter,
-      responsible: newResponsible,
+      workCenter: newWorkCenter || preferences.organizationName || "Centro Operativo",
+      responsible: newResponsible || "Prevencionista de Riesgos",
       totalRecords: 0,
       intolerableRisks: 0,
       expiryText: "Vencimiento: -",
@@ -710,6 +725,11 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
     setIsNewMatrixOpen(false);
     setNewName("");
     showToast(`Matriz ${newItem.code} creada como Borrador.`);
+
+    if (compileImmediately) {
+      setSelectedMatrix(newItem);
+      setOpenWizardOnSelect(true);
+    }
   };
 
   const filteredMatrices = matrices.filter((m) => {
@@ -739,7 +759,11 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
     return (
       <IperMatrixDetailView
         matrix={selectedMatrix}
-        onBack={() => setSelectedMatrix(null)}
+        initialOpenWizard={openWizardOnSelect}
+        onBack={() => {
+          setSelectedMatrix(null);
+          setOpenWizardOnSelect(false);
+        }}
         onUpdateMatrix={(updated) => {
           setMatrices(matrices.map((m) => (m.id === updated.id ? updated : m)));
           setSelectedMatrix(updated);
@@ -849,7 +873,26 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
             <LuLayoutGrid className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">Matriz IPER</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold text-gray-900 tracking-tight">Matriz IPER</h2>
+              <span className="bg-teal-50 border border-teal-200 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {preferences.riskEvaluationMethod === "ds44"
+                  ? "DS 44 / ISL"
+                  : preferences.riskEvaluationMethod === "matrix5x5"
+                  ? "Matriz 5 × 5"
+                  : "Estándar"}
+              </span>
+              <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {preferences.riskManagementApproach === "simplified"
+                  ? "Matriz Simplificada"
+                  : "Controles Críticos"}
+              </span>
+              {preferences.experienceLevel === "guided" && (
+                <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  Modo Guiado
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-500 mt-0.5">
               Administra los inventarios de riesgos y evaluaciones por centro de trabajo o proyecto.
             </p>
@@ -1387,7 +1430,32 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
               Crea un nuevo inventario de peligros y evaluación de riesgos para un centro de trabajo.
             </p>
 
-            <form onSubmit={handleCreateMatrix} className="flex flex-col gap-3.5">
+            <form onSubmit={(e) => handleCreateMatrix(e, false)} className="flex flex-col gap-3.5">
+              {/* Sugerencias de Nombre de Matriz según el Rubro (ej: Minería) */}
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <span className="flex items-center gap-1.5 text-[11px] font-bold text-amber-950">
+                    <LuSparkles className="w-3.5 h-3.5 text-amber-600" />
+                    Matrices habituales para tu rubro:
+                  </span>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                    {sectorProfile.sector}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  {sectorProfile.suggestedMatrixTitles.map((title: string, sIdx: number) => (
+                    <button
+                      key={sIdx}
+                      type="button"
+                      onClick={() => setNewName(title)}
+                      className="text-[10px] font-semibold bg-white hover:bg-amber-100/80 text-amber-950 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs transition cursor-pointer text-left"
+                    >
+                      + {title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="text-xs font-semibold text-gray-700 block mb-1">Código</label>
                 <input
@@ -1409,7 +1477,7 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
                   placeholder="Ej: Montaje Estructural y Trabajos en Altura"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800"
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-medium"
                 />
               </div>
 
@@ -1438,20 +1506,31 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <div className="flex justify-between items-center gap-2 pt-2 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setIsNewMatrixOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                  className="px-3.5 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
                 >
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-[#F04438] hover:bg-[#D92D20] rounded-xl transition cursor-pointer shadow-xs"
-                >
-                  Crear Matriz
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => handleCreateMatrix(e, false)}
+                    className="px-3.5 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition cursor-pointer"
+                  >
+                    Guardar Borrador
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleCreateMatrix(e, true)}
+                    className="px-4 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition cursor-pointer shadow-xs flex items-center gap-1.5"
+                  >
+                    <LuSparkles className="w-3.5 h-3.5" />
+                    Crear y Confeccionar
+                  </button>
+                </div>
               </div>
             </form>
           </div>

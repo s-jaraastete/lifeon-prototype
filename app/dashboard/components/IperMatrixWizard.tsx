@@ -31,6 +31,11 @@ import {
 } from "react-icons/lu";
 import { IperMatrixItem } from "./IperMatrixView";
 import { IperEvaluationRow } from "./IperMatrixDetailView";
+import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
+import {
+  getSectorRiskProfile,
+  SectorHazardSuggestion,
+} from "@/data/sectorRiskTemplates";
 
 export interface ProcessItem {
   id: string;
@@ -196,6 +201,11 @@ const PROTOCOL_SUGGESTIONS: Record<string, string[]> = {
 };
 
 export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatrixWizardProps) {
+  const { preferences, terminology } = useLifeOnPreferences();
+  const sectorProfile = useMemo(() => {
+    return getSectorRiskProfile(preferences.organizationSector);
+  }, [preferences.organizationSector]);
+
   const [currentStep, setCurrentStep] = useState<number>(1);
 
   // 1. Estado de Área y Procesos (Campo libre sin precargar Centro de Trabajo)
@@ -269,6 +279,92 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
     setHazards((prev) =>
       prev.map((h) => (h.id === hazardId ? { ...h, ...updates } : h))
     );
+  };
+
+  // Handler para incorporar un peligro propuesto del rubro directamente a la tarea activa
+  const handleAddSectorHazardToTask = (sug: SectorHazardSuggestion) => {
+    if (!activeTask) return;
+
+    const newHazard: HazardItem = {
+      id: `haz-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      taskId: activeTask.id,
+      hazardDescription: sug.hazardDescription,
+      specificRiskCode: sug.specificRiskCode,
+      specificRiskName: sug.specificRiskName,
+      riskFamily: sug.riskFamily,
+      riskClassification: sug.riskClassification,
+      genderDifferences: "No",
+      genderObservation: "",
+      probValue: preferences.riskEvaluationMethod === "matrix5x5" ? sug.prob5x5 : sug.defaultProb,
+      sevValue: preferences.riskEvaluationMethod === "matrix5x5" ? sug.sev5x5 : sug.defaultSev,
+      protocolApplied:
+        sug.riskClassification === "Seguridad" || sug.riskClassification === "Emergencias"
+          ? "DS 44"
+          : PROTOCOL_SUGGESTIONS[sug.riskClassification]?.[0] || "Norma Técnica",
+      exposureMagnitude: "Jornada laboral estándar",
+      riskLevelType: sug.defaultSev === 4 ? "Alto" : "Medio",
+      controlsList: sug.recommendedControls.map((c, idx) => ({
+        id: `c-rec-${Date.now()}-${idx}`,
+        type: c.type,
+        description: c.description,
+        responsible: matrix.responsible || "Prevencionista de Riesgos",
+      })),
+      residualProb: 1,
+      residualSev: sug.defaultSev === 4 ? 2 : 1,
+      residualRiskLevel: "Bajo",
+    };
+
+    setHazards((prev) => [...prev, newHazard]);
+    setSelectedHazardId(newHazard.id);
+  };
+
+  // Cargar en masa los riesgos recomendados del rubro a la tarea activa
+  const handleLoadAllSectorHazards = () => {
+    if (!activeTask) return;
+
+    const newHazardsToAdd: HazardItem[] = [];
+    sectorProfile.suggestedHazards.forEach((sug, idx) => {
+      const alreadyExists = hazards.some(
+        (h) =>
+          h.taskId === activeTask.id &&
+          (h.specificRiskCode === sug.specificRiskCode || h.hazardDescription === sug.hazardDescription)
+      );
+      if (!alreadyExists) {
+        newHazardsToAdd.push({
+          id: `haz-bulk-${Date.now()}-${idx}`,
+          taskId: activeTask.id,
+          hazardDescription: sug.hazardDescription,
+          specificRiskCode: sug.specificRiskCode,
+          specificRiskName: sug.specificRiskName,
+          riskFamily: sug.riskFamily,
+          riskClassification: sug.riskClassification,
+          genderDifferences: "No",
+          genderObservation: "",
+          probValue: preferences.riskEvaluationMethod === "matrix5x5" ? sug.prob5x5 : sug.defaultProb,
+          sevValue: preferences.riskEvaluationMethod === "matrix5x5" ? sug.sev5x5 : sug.defaultSev,
+          protocolApplied:
+            sug.riskClassification === "Seguridad" || sug.riskClassification === "Emergencias"
+              ? "DS 44"
+              : PROTOCOL_SUGGESTIONS[sug.riskClassification]?.[0] || "Norma Técnica",
+          exposureMagnitude: "Jornada laboral estándar",
+          riskLevelType: sug.defaultSev === 4 ? "Alto" : "Medio",
+          controlsList: sug.recommendedControls.map((c, cIdx) => ({
+            id: `c-rec-${Date.now()}-${idx}-${cIdx}`,
+            type: c.type,
+            description: c.description,
+            responsible: matrix.responsible || "Prevencionista de Riesgos",
+          })),
+          residualProb: 1,
+          residualSev: sug.defaultSev === 4 ? 2 : 1,
+          residualRiskLevel: "Bajo",
+        });
+      }
+    });
+
+    if (newHazardsToAdd.length > 0) {
+      setHazards((prev) => [...prev, ...newHazardsToAdd]);
+      setSelectedHazardId(newHazardsToAdd[0].id);
+    }
   };
 
   // Validación estricta por etapa para impedir avanzar si falta información
@@ -675,9 +771,28 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
               <span className="text-lg font-black text-[#0D9488] tracking-tight">On</span>
             </div>
             <div className="h-4 w-px bg-gray-300 mx-1 hidden sm:block" />
-            <span className="text-xs font-semibold text-gray-700 hidden sm:inline">
-              Confección de Matriz IPER &bull; <span className="text-teal-700 font-bold">{matrix.code}</span>
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-gray-700 hidden sm:inline">
+                Confección de Matriz IPER &bull; <span className="text-teal-700 font-bold">{matrix.code}</span>
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+                {preferences.riskEvaluationMethod === "ds44"
+                  ? "DS 44 / ISL"
+                  : preferences.riskEvaluationMethod === "matrix5x5"
+                  ? "Matriz 5×5"
+                  : "Estándar"}
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                Rubro: {sectorProfile.sector}
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                {preferences.experienceLevel === "expert"
+                  ? "Especialista"
+                  : preferences.experienceLevel === "intermediate"
+                  ? "Técnico"
+                  : "Guiado"}
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -770,6 +885,67 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       Define el área de trabajo y los procesos de la faena. Cada proceso puede tener uno o más subprocesos (opcionales).
                     </p>
                   </div>
+                </div>
+              </div>
+
+              {/* Sugerencias de Procesos habituales según el Rubro (ej: Minería) */}
+              <div className="bg-gradient-to-r from-teal-50/80 via-emerald-50/50 to-blue-50/40 border border-teal-200/80 rounded-2xl p-4 flex flex-col gap-2.5 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center text-xs">
+                    <LuSparkles className="w-3.5 h-3.5" />
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-bold text-teal-950">
+                      Procesos habituales en tu rubro: <span className="text-teal-700 font-extrabold">{sectorProfile.sector}</span>
+                    </h4>
+                    <p className="text-[11px] text-teal-800">
+                      Carga procesos estándar de la industria y sus subprocesos con un solo clic:
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap pt-1">
+                  {sectorProfile.recommendedProcesses.map((recProc, rIdx) => {
+                    const isAlreadyAdded = processes.some(
+                      (p) => p.name.toLowerCase() === recProc.name.toLowerCase()
+                    );
+                    return (
+                      <button
+                        key={rIdx}
+                        type="button"
+                        onClick={() => {
+                          if (!workArea) setWorkArea(recProc.workArea);
+                          if (!isAlreadyAdded) {
+                            const newP: ProcessItem = {
+                              id: `proc-rec-${Date.now()}-${rIdx}`,
+                              name: recProc.name,
+                              subprocesses: [...recProc.subprocesses],
+                              workArea: workArea || recProc.workArea,
+                            };
+                            setProcesses((prev) => [...prev, newP]);
+                            if (!taskFormProcessId) setTaskFormProcessId(newP.id);
+                          }
+                        }}
+                        disabled={isAlreadyAdded}
+                        className={clsx(
+                          "px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer",
+                          isAlreadyAdded
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300 opacity-80 cursor-default"
+                            : "bg-white hover:bg-teal-50 text-teal-900 border border-teal-200 shadow-2xs"
+                        )}
+                      >
+                        {isAlreadyAdded ? (
+                          <LuCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <LuPlus className="w-3.5 h-3.5 text-teal-600" />
+                        )}
+                        <span>{recProc.name}</span>
+                        <span className="text-[10px] text-gray-400 font-normal">
+                          ({recProc.subprocesses.length} subs)
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -921,6 +1097,43 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                   </div>
                 </div>
               </div>
+
+              {/* Sugerencias de Tareas para el Rubro */}
+              {processes.length > 0 && sectorProfile.recommendedTasks.length > 0 && (
+                <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-3.5 flex flex-col gap-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-teal-950">
+                    <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Tareas habituales en {sectorProfile.sector}:</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {sectorProfile.recommendedTasks.map((recTask, tIdx) => (
+                      <button
+                        key={tIdx}
+                        type="button"
+                        onClick={() => {
+                          setTaskFormName(recTask.taskName);
+                          setTaskFormType(recTask.taskType);
+                          setTaskFormLocation(recTask.location);
+                          if (recTask.defaultPositions) {
+                            setTaskFormPositionsList(
+                              recTask.defaultPositions.map((pos, pIdx) => ({
+                                id: `pos-rec-${Date.now()}-${pIdx}`,
+                                name: pos.name,
+                                headcountMen: pos.headcountMen,
+                                headcountWomen: pos.headcountWomen,
+                                headcountDiversity: 0,
+                              }))
+                            );
+                          }
+                        }}
+                        className="px-2.5 py-1 bg-white hover:bg-teal-100/70 text-teal-900 text-[11px] font-medium rounded-lg border border-teal-200 shadow-2xs transition cursor-pointer text-left"
+                      >
+                        + {recTask.taskName}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {processes.length === 0 ? (
                 <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center flex flex-col items-center gap-2">
@@ -1428,6 +1641,124 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     )}
                   </div>
 
+                  {/* Propuesta de Riesgos del Rubro Seleccionado en Onboarding (ej: Minería) */}
+                  {activeTask && (
+                    <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-teal-50/50 border-2 border-amber-300/80 rounded-2xl p-4 flex flex-col gap-3 shadow-2xs">
+                      <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-amber-200/70">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black shadow-xs">
+                            <LuShieldAlert className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-xs font-bold text-gray-900">
+                                Riesgos Críticos Propuestos para:
+                              </h4>
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                {sectorProfile.sector}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-gray-600 mt-0.5">
+                              Sugerencias automáticas para la tarea <b>"{activeTask.name}"</b>. Haz clic para incorporar con medidas de control:
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleLoadAllSectorHazards}
+                          className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <LuSparkles className="w-3.5 h-3.5" />
+                          Cargar todos los riesgos de {sectorProfile.sector}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-0.5">
+                        {sectorProfile.suggestedHazards.map((sug) => {
+                          const isAlreadyInTask = taskHazards.some(
+                            (h) =>
+                              h.specificRiskCode === sug.specificRiskCode ||
+                              h.hazardDescription === sug.hazardDescription
+                          );
+                          return (
+                            <div
+                              key={sug.id}
+                              className={clsx(
+                                "p-3 rounded-xl border transition flex flex-col justify-between gap-2",
+                                isAlreadyInTask
+                                  ? "bg-emerald-50/70 border-emerald-200"
+                                  : "bg-white border-amber-200/80 hover:border-amber-400 hover:shadow-2xs"
+                              )}
+                            >
+                              <div>
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-200">
+                                    {sug.specificRiskCode} • {sug.riskClassification}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    {sug.tags.map((t, tidx) => (
+                                      <span
+                                        key={tidx}
+                                        className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
+                                      >
+                                        {t}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                                <p className="text-xs font-bold text-gray-900 leading-snug">
+                                  {sug.hazardDescription}
+                                </p>
+                                <p className="text-[11px] text-gray-500 mt-1">
+                                  <span className="font-semibold text-gray-700">Riesgo:</span> {sug.specificRiskName} ({sug.riskFamily})
+                                </p>
+                                <p
+                                  className="text-[10px] text-teal-700 mt-0.5 font-medium line-clamp-1"
+                                  title={sug.recommendedControls[0]?.description}
+                                >
+                                  🛡️ {sug.recommendedControls[0]?.description}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                                <span className="text-[10px] text-gray-500">
+                                  Severidad:{" "}
+                                  <b className={sug.defaultSev === 4 ? "text-red-700" : "text-amber-700"}>
+                                    {sug.defaultSev === 4 ? "Fatal / Grave" : "Moderada"}
+                                  </b>
+                                </span>
+                                <button
+                                  type="button"
+                                  disabled={isAlreadyInTask || !activeTask}
+                                  onClick={() => handleAddSectorHazardToTask(sug)}
+                                  className={clsx(
+                                    "px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer",
+                                    isAlreadyInTask
+                                      ? "bg-emerald-100 text-emerald-800 cursor-default"
+                                      : "bg-teal-600 hover:bg-teal-700 text-white shadow-2xs"
+                                  )}
+                                >
+                                  {isAlreadyInTask ? (
+                                    <>
+                                      <LuCheck className="w-3 h-3 text-emerald-600" />
+                                      Asignado
+                                    </>
+                                  ) : (
+                                    <>
+                                      <LuPlus className="w-3 h-3" />
+                                      Agregar a Tarea
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* 2. Lista de Peligros ya registrados para esta tarea */}
                   <div>
                     <h4 className="text-xs font-bold text-gray-800 mb-2 flex items-center justify-between">
@@ -1746,11 +2077,22 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                   {/* Si es SEGURIDAD O EMERGENCIAS: Escala VEP con 1 Bajo, 2 Medio, 4 Alto */}
                   {isSafetyOrEmergency ? (
                     <div className="flex flex-col gap-4">
-                      {/* Probabilidad (P): 1, 2, 4 */}
+                      {/* Probabilidad (P): adaptada según nivel y metodología */}
                       <div>
-                        <label className="text-xs font-bold text-gray-800 block mb-1.5">
-                          Probabilidad (P) de Ocurrencia:
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-bold text-gray-800">
+                            {preferences.experienceLevel === "guided"
+                              ? terminology.probabilityQuestion
+                              : "Probabilidad (P) de Ocurrencia:"}
+                          </label>
+                          <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                            {preferences.riskEvaluationMethod === "ds44"
+                              ? "Norma DS 44 (ISL)"
+                              : preferences.riskEvaluationMethod === "matrix5x5"
+                              ? "Matriz 5×5"
+                              : "Estándar"}
+                          </span>
+                        </div>
                         <div className="grid grid-cols-3 gap-3">
                           {[
                             { val: 1, label: "1 - Bajo", desc: "Situación controlada / Poco frecuente" },
@@ -1775,10 +2117,12 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                         </div>
                       </div>
 
-                      {/* Severidad (C): 1, 2, 4 */}
+                      {/* Severidad (C): adaptada según terminología */}
                       <div>
                         <label className="text-xs font-bold text-gray-800 block mb-1.5">
-                          Severidad / Consecuencia (C):
+                          {preferences.experienceLevel === "guided"
+                            ? terminology.consequenceQuestion
+                            : "Severidad / Consecuencia (C):"}
                         </label>
                         <div className="grid grid-cols-3 gap-3">
                           {[
@@ -1924,6 +2268,19 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                 </div>
               </div>
 
+              {/* Banner Enfoque Controles Críticos (si está activo en Onboarding) */}
+              {preferences.riskManagementApproach === "critical_controls" && (
+                <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-950 shadow-2xs">
+                  <LuShieldAlert className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-amber-900">Enfoque de Controles Críticos (CC) Activo:</span>
+                    <p className="text-[11px] text-amber-800 mt-0.5">
+                      Para riesgos críticos o de alta energía en <b>{sectorProfile.sector}</b>, prioriza Controles de Ingeniería o Eliminación como Controles Críticos indispensables.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {!activeHazard ? (
                 <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center flex flex-col items-center gap-2">
                   <LuTriangleAlert className="w-6 h-6 text-amber-600" />
@@ -1994,6 +2351,72 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       </span>
                     </div>
                   </div>
+
+                  {/* Controles Sugeridos para el Riesgo en este Rubro */}
+                  {(() => {
+                    const matchedSug = sectorProfile.suggestedHazards.find(
+                      (s) =>
+                        s.specificRiskCode === activeHazard.specificRiskCode ||
+                        s.hazardDescription === activeHazard.hazardDescription
+                    );
+                    if (!matchedSug || matchedSug.recommendedControls.length === 0) return null;
+                    return (
+                      <div className="bg-teal-50/70 border border-teal-200 rounded-xl p-3 flex flex-col gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-teal-950">
+                          <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                          <span>Controles sugeridos por buenas prácticas en {sectorProfile.sector}:</span>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {matchedSug.recommendedControls.map((recCtrl, cIdx) => {
+                            const isCtrlAlreadyAdded = activeHazard.controlsList.some(
+                              (c) => c.description === recCtrl.description
+                            );
+                            return (
+                              <div
+                                key={cIdx}
+                                className="flex items-center justify-between p-2 rounded-lg bg-white border border-teal-100 text-xs"
+                              >
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-teal-800 text-[10px] bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
+                                    {recCtrl.type}
+                                  </span>
+                                  {recCtrl.isCritical && (
+                                    <span className="font-black text-amber-900 text-[9px] bg-amber-100 px-1.5 py-0.5 rounded">
+                                      Control Crítico
+                                    </span>
+                                  )}
+                                  <span className="text-gray-800">{recCtrl.description}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  disabled={isCtrlAlreadyAdded}
+                                  onClick={() => {
+                                    const newC: ControlItem = {
+                                      id: `ctrl-rec-${Date.now()}-${cIdx}`,
+                                      type: recCtrl.type,
+                                      description: recCtrl.description,
+                                      responsible: matrix.responsible || "Prevencionista de Riesgos",
+                                    };
+                                    updateHazardItem(activeHazard.id, {
+                                      controlsList: [...activeHazard.controlsList, newC],
+                                    });
+                                  }}
+                                  className={clsx(
+                                    "px-2 py-0.5 rounded text-[11px] font-bold transition flex items-center gap-1 cursor-pointer flex-shrink-0 ml-2",
+                                    isCtrlAlreadyAdded
+                                      ? "bg-emerald-100 text-emerald-800 cursor-default"
+                                      : "bg-teal-600 hover:bg-teal-700 text-white"
+                                  )}
+                                >
+                                  {isCtrlAlreadyAdded ? "Agregado" : "+ Agregar"}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Lista de Medidas de Control Registradas para este peligro */}
                   <div className="flex flex-col gap-2.5">
@@ -2266,7 +2689,11 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       {/* Comparativa Inicial vs Residual */}
                       <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-4.5 grid grid-cols-2 gap-4 text-center">
                         <div className="border-r border-emerald-200/60 pr-2">
-                          <p className="text-[11px] text-gray-500 font-medium">Riesgo Inicial (VEP)</p>
+                          <p className="text-[11px] text-gray-500 font-medium">
+                            {preferences.experienceLevel === "guided"
+                              ? "Riesgo Inicial sin Medidas"
+                              : "Riesgo Inicial (VEP)"}
+                          </p>
                           <p className="text-xl font-black text-gray-900 mt-0.5">{vepScore} pts</p>
                           <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full inline-block mt-1">
                             {getVepLevel(vepScore).label}
@@ -2274,7 +2701,11 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                         </div>
 
                         <div className="pl-2">
-                          <p className="text-[11px] text-gray-500 font-medium">Riesgo Residual Final</p>
+                          <p className="text-[11px] text-gray-500 font-medium">
+                            {preferences.experienceLevel === "guided"
+                              ? terminology.residualRisk
+                              : "Riesgo Residual Final"}
+                          </p>
                           <p className="text-xl font-black text-emerald-700 mt-0.5">{residualScoreCalc} pts</p>
                           <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full inline-block mt-1">
                             {residualScoreCalc <= 2 ? "Tolerable / Bajo" : "Moderado / Controlado"}

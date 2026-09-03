@@ -31,6 +31,9 @@ import DashboardKpis from "./components/DashboardKpis";
 import IperMatrixView from "./components/IperMatrixView";
 import PreventiveDocsView from "./components/PreventiveDocsView";
 import AprVirtualView from "./components/AprVirtualView";
+import InitialOnboardingWizard from "./components/onboarding/InitialOnboardingWizard";
+import InteractivePlatformTour from "./components/onboarding/InteractivePlatformTour";
+import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import {
   NotificationsDropdown,
   AlertsDropdown,
@@ -47,6 +50,30 @@ import {
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const { preferences, isLoaded, resetOnboarding, updatePreferences } = useLifeOnPreferences();
+
+  // Estado para el tutorial interactivo
+  const [isTourOpen, setIsTourOpen] = useState(false);
+
+  // Iniciar automáticamente el tutorial cuando el onboarding acaba de ser completado
+  useEffect(() => {
+    if (isLoaded && preferences.onboardingCompleted && !preferences.tourCompleted) {
+      const timer = setTimeout(() => {
+        setIsTourOpen(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoaded, preferences.onboardingCompleted, preferences.tourCompleted]);
+
+  const handleFinishTour = () => {
+    setIsTourOpen(false);
+    updatePreferences({ tourCompleted: true });
+  };
+
+  const handleCloseTour = () => {
+    setIsTourOpen(false);
+    updatePreferences({ tourCompleted: true });
+  };
 
   // Dynamic user data with priority on logged in session, falling back to Sergio A. Jara Astete
   const userDisplayName = session?.user?.name || "Sergio A. Jara Astete";
@@ -131,10 +158,35 @@ export default function DashboardPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Pantalla de carga mientras se recuperan preferencias de localStorage
+  if (!isLoaded) {
+    return (
+      <div className="w-full h-screen min-h-screen bg-[#EDF7F5] flex items-center justify-center font-[family-name:var(--font-poppins)]">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-full border-2 border-teal-600 border-t-transparent animate-spin" />
+          <span className="text-xs font-semibold text-teal-800">Cargando LifeOn...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Si es la primera vez y el onboarding no ha sido completado, desplegar el asistente
+  if (isLoaded && !preferences.onboardingCompleted) {
+    return (
+      <InitialOnboardingWizard
+        userDefaultOrgName={activeWorkplace}
+        onCompleted={() => {
+          setIsTourOpen(true);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="w-full h-screen min-h-screen bg-[#EDF7F5] flex p-3 gap-3 overflow-hidden font-[family-name:var(--font-poppins)] select-none">
       {/* Sidebar Izquierdo */}
       <aside
+        id="tour-sidebar"
         className={clsx(
           "bg-white rounded-2xl flex flex-col justify-between p-4 shadow-xs transition-all duration-300 flex-shrink-0 z-30",
           sidebarOpen ? "w-60" : "hidden lg:flex lg:w-20 items-center"
@@ -300,7 +352,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Buscador Central */}
-          <div className="relative flex-1 max-w-xl mx-2">
+          <div id="tour-topbar-search" className="relative flex-1 max-w-xl mx-2">
             <LuSearch className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -399,7 +451,7 @@ export default function DashboardPage() {
             </button>
 
             {/* Avatar Usuario / Perfil de Sergio */}
-            <div className="relative">
+            <div id="tour-user-profile" className="relative">
               <button
                 type="button"
                 onClick={() => {
@@ -427,6 +479,7 @@ export default function DashboardPage() {
                   onOpenAccountModal={() => setIsAccountModalOpen(true)}
                   onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
                   onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
+                  onOpenTour={() => setIsTourOpen(true)}
                   onLogout={handleLogout}
                   onClose={() => setIsProfileOpen(false)}
                 />
@@ -454,18 +507,40 @@ export default function DashboardPage() {
                   </div>
 
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
-                      Hola de nuevo, {userFirstName}
-                    </h2>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+                        Hola de nuevo, {userFirstName}
+                      </h2>
+                      {preferences.onboardingCompleted && (
+                        <span className="inline-flex items-center gap-1 bg-teal-50 border border-teal-200 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          <LuSparkles className="w-3 h-3 text-teal-600" />
+                          {preferences.experienceLevel === "expert"
+                            ? "Modo Especialista"
+                            : preferences.experienceLevel === "intermediate"
+                            ? "Modo Equilibrado"
+                            : "Modo Guiado"}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        {preferences.riskEvaluationMethod === "ds44"
+                          ? "DS 44 / ISL"
+                          : preferences.riskEvaluationMethod === "matrix5x5"
+                          ? "Matriz 5×5"
+                          : "IPER Pendiente"}
+                      </span>
+                    </div>
                     <p className="text-xs sm:text-sm text-gray-500 mt-1">
                       Aquí tienes el resumen general de gestión de riesgos y estado de cumplimiento en{" "}
-                      <span className="font-semibold text-teal-700">{activeWorkplace}</span>.
+                      <span className="font-semibold text-teal-700">
+                        {preferences.organizationName || activeWorkplace}
+                      </span>.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
+                    id="tour-apr-quick"
                     type="button"
                     onClick={() => setActiveMenu("apr")}
                     className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 transition cursor-pointer border border-teal-200"
@@ -485,13 +560,15 @@ export default function DashboardPage() {
               </div>
 
               {/* Fila de 5 Tarjetas de Métricas KPI */}
-              <DashboardKpis onSelectMetric={(tab) => setActiveMenu(tab as any)} />
+              <div id="tour-kpis" className="w-full">
+                <DashboardKpis onSelectMetric={(tab) => setActiveMenu(tab as any)} />
+              </div>
             </section>
 
             {/* Dos Paneles Principales Inferiores */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-[300px]">
               {/* Panel Izquierdo: Mapa de Calor y Estado de Riesgos IPER */}
-              <div className="bg-white rounded-2xl p-6 shadow-xs flex flex-col justify-between border border-gray-50">
+              <div id="tour-risk-map" className="bg-white rounded-2xl p-6 shadow-xs flex flex-col justify-between border border-gray-50">
                 <div>
                   <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                     <div className="flex items-center gap-2">
@@ -705,7 +782,11 @@ export default function DashboardPage() {
       </main>
 
       {/* Modales Globales */}
-      <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
+      <HelpModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+        onOpenTour={() => setIsTourOpen(true)}
+      />
       <FilterWorkplaceModal
         isOpen={isFilterModalOpen}
         activeWorkplace={activeWorkplace}
@@ -721,10 +802,21 @@ export default function DashboardPage() {
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+        onOpenOnboarding={() => {
+          setIsSettingsModalOpen(false);
+          resetOnboarding();
+        }}
       />
       <SubscriptionUpgradeModal
         isOpen={isSubscriptionModalOpen}
         onClose={() => setIsSubscriptionModalOpen(false)}
+      />
+
+      {/* Tutorial Interactivo con Efecto Spotlight */}
+      <InteractivePlatformTour
+        isOpen={isTourOpen}
+        onClose={handleCloseTour}
+        onFinish={handleFinishTour}
       />
     </div>
   );

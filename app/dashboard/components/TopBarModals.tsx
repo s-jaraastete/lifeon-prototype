@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import {
@@ -33,7 +33,17 @@ import {
   LuShield,
   LuArrowUpRight,
   LuZap,
+  LuSlidersHorizontal,
+  LuRotateCcw,
+  LuLightbulb,
 } from "react-icons/lu";
+import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
+import {
+  ExperienceLevel,
+  GuidanceLevel,
+  RiskEvaluationMethod,
+  RiskManagementApproach,
+} from "@/types/preferences";
 
 export interface NotificationItem {
   id: string;
@@ -199,6 +209,7 @@ export function UserProfileDropdown({
   onOpenAccountModal,
   onOpenSettingsModal,
   onOpenSubscriptionModal,
+  onOpenTour,
   onLogout,
   onClose,
 }: {
@@ -208,6 +219,7 @@ export function UserProfileDropdown({
   onOpenAccountModal: () => void;
   onOpenSettingsModal: () => void;
   onOpenSubscriptionModal: () => void;
+  onOpenTour?: () => void;
   onLogout: () => void;
   onClose: () => void;
 }) {
@@ -297,6 +309,20 @@ export function UserProfileDropdown({
           <LuZap className="w-4 h-4 text-teal-600" />
           Mejorar Suscripción / Add-ons
         </button>
+
+        {onOpenTour && (
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onOpenTour();
+            }}
+            className="w-full text-left px-3 py-2 text-xs font-medium text-teal-700 hover:bg-teal-50 rounded-xl transition flex items-center gap-2 cursor-pointer"
+          >
+            <LuSparkles className="w-4 h-4 text-teal-600" />
+            Ver Tutorial Interactivo
+          </button>
+        )}
       </div>
 
       {/* Botón Cerrar Sesión */}
@@ -527,7 +553,28 @@ export function AccountModal({
 /* =========================================================================
    MODAL 2: CONFIGURACIÓN DEL ESPACIO DE TRABAJO
    ========================================================================= */
-export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function SettingsModal({
+  isOpen,
+  onClose,
+  onOpenOnboarding,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onOpenOnboarding?: () => void;
+}) {
+  const { preferences, updatePreferences } = useLifeOnPreferences();
+
+  // Tab activo dentro del modal de configuración
+  const [activeTab, setActiveTab] = useState<"methodology" | "notifications" | "security">("methodology");
+
+  // Estado sincronizado con las preferencias centrales
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(preferences.experienceLevel);
+  const [guidanceLevel, setGuidanceLevel] = useState<GuidanceLevel>(preferences.guidanceLevel);
+  const [riskEvaluationMethod, setRiskEvaluationMethod] = useState<RiskEvaluationMethod>(preferences.riskEvaluationMethod);
+  const [riskManagementApproach, setRiskManagementApproach] = useState<RiskManagementApproach>(preferences.riskManagementApproach);
+  const [modules, setModules] = useState(preferences.modules);
+
+  // Estados secundarios normativos y notificaciones
   const [riskModel, setRiskModel] = useState("ds44");
   const [reviewPeriod, setReviewPeriod] = useState("semestral");
   const [emailAlerts, setEmailAlerts] = useState(true);
@@ -536,10 +583,28 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
   const [twoFactor, setTwoFactor] = useState(true);
   const [saved, setSaved] = useState(false);
 
+  // Actualizar estado local cuando se abra el modal o cambien las preferencias
+  useEffect(() => {
+    if (isOpen) {
+      setExperienceLevel(preferences.experienceLevel);
+      setGuidanceLevel(preferences.guidanceLevel);
+      setRiskEvaluationMethod(preferences.riskEvaluationMethod);
+      setRiskManagementApproach(preferences.riskManagementApproach);
+      setModules(preferences.modules);
+    }
+  }, [isOpen, preferences]);
+
   if (!isOpen) return null;
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    updatePreferences({
+      experienceLevel,
+      guidanceLevel,
+      riskEvaluationMethod,
+      riskManagementApproach,
+      modules,
+    });
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
@@ -549,7 +614,7 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -564,102 +629,371 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
           <div>
             <h3 className="text-lg font-bold text-gray-900">Configuración del Espacio</h3>
             <p className="text-xs text-gray-500">
-              Ajustes de cálculo de riesgos, notificaciones normativas y seguridad del sistema.
+              Personaliza el nivel de experiencia, metodología preventiva y alertas operativas.
             </p>
           </div>
         </div>
 
+        {/* Pestañas de Configuración */}
+        <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab("methodology")}
+            className={clsx(
+              "px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5",
+              activeTab === "methodology"
+                ? "bg-teal-600 text-white shadow-2xs"
+                : "text-gray-600 hover:bg-gray-100"
+            )}
+          >
+            <LuSlidersHorizontal className="w-3.5 h-3.5" />
+            Experiencia y metodologías
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("notifications")}
+            className={clsx(
+              "px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5",
+              activeTab === "notifications"
+                ? "bg-teal-600 text-white shadow-2xs"
+                : "text-gray-600 hover:bg-gray-100"
+            )}
+          >
+            <LuBell className="w-3.5 h-3.5" />
+            Notificaciones
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("security")}
+            className={clsx(
+              "px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5",
+              activeTab === "security"
+                ? "bg-teal-600 text-white shadow-2xs"
+                : "text-gray-600 hover:bg-gray-100"
+            )}
+          >
+            <LuShield className="w-3.5 h-3.5" />
+            Seguridad & Normativa
+          </button>
+        </div>
+
         <form onSubmit={handleSave} className="flex flex-col gap-4">
-          {/* Bloque 1: Criterios Normativos DS 44 */}
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-3">
-            <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-              <LuShield className="w-4 h-4 text-teal-600" /> Modelo de Cálculo y Normativa
-            </span>
+          {/* =========================================================================
+              TAB 1: EXPERIENCIA Y METODOLOGÍAS
+              ========================================================================= */}
+          {activeTab === "methodology" && (
+            <div className="flex flex-col gap-4 animate-in fade-in duration-150">
+              {/* Advertencia preventiva no destructiva */}
+              <div className="p-3.5 bg-amber-50/90 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
+                <LuTriangleAlert className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Advertencia sobre cambio de metodología:</span>
+                  <p className="text-[11px] text-amber-800 mt-0.5 leading-snug">
+                    Cambiar la metodología puede afectar la forma en que se evalúan o visualizan tus matrices actuales. Las matrices existentes mantendrán su integridad técnica sin conversiones destructivas automáticas.
+                  </p>
+                </div>
+              </div>
 
-            <div>
-              <label className="text-xs font-semibold text-gray-700 block mb-1">
-                Fórmula de Evaluación de Riesgos
-              </label>
-              <select
-                value={riskModel}
-                onChange={(e) => setRiskModel(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 bg-white"
-              >
-                <option value="ds44">DS 44: Magnitud de Riesgo (Probabilidad × Severidad)</option>
-                <option value="custom">Matriz William Fine (Consecuencia × Exposición × Probabilidad)</option>
-                <option value="iso45001">Matriz ISO 45001 / Jerarquía de Controles Integral</option>
-              </select>
+              {/* 1. Nivel de Experiencia */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
+                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <LuSparkles className="w-3.5 h-3.5 text-teal-600" /> Nivel de Experiencia en Prevención
+                </span>
+                <p className="text-[11px] text-gray-500 mb-1">
+                  Ajusta la complejidad del lenguaje y los términos técnicos en todos los módulos.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExperienceLevel("expert")}
+                    className={clsx(
+                      "p-2.5 rounded-xl border text-xs font-medium text-left transition cursor-pointer flex flex-col justify-between",
+                      experienceLevel === "expert"
+                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
+                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
+                    )}
+                  >
+                    <span className="font-bold block mb-0.5">Especialista</span>
+                    <span className="text-[10px] text-gray-500">Términos técnicos directos</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setExperienceLevel("intermediate")}
+                    className={clsx(
+                      "p-2.5 rounded-xl border text-xs font-medium text-left transition cursor-pointer flex flex-col justify-between",
+                      experienceLevel === "intermediate"
+                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
+                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
+                    )}
+                  >
+                    <span className="font-bold block mb-0.5">Básico / Medio</span>
+                    <span className="text-[10px] text-gray-500">Equilibrio con ejemplos</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setExperienceLevel("guided")}
+                    className={clsx(
+                      "p-2.5 rounded-xl border text-xs font-medium text-left transition cursor-pointer flex flex-col justify-between",
+                      experienceLevel === "guided"
+                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
+                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
+                    )}
+                  >
+                    <span className="font-bold block mb-0.5">Guiado</span>
+                    <span className="text-[10px] text-gray-500">Preguntas sencillas y apoyo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Metodología de Evaluación Matriz IPER */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
+                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <LuTable className="w-3.5 h-3.5 text-teal-600" /> Metodología de Evaluación IPER
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setRiskEvaluationMethod("ds44")}
+                    className={clsx(
+                      "p-2.5 rounded-xl border text-xs text-left transition cursor-pointer flex flex-col justify-between",
+                      riskEvaluationMethod === "ds44"
+                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
+                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
+                    )}
+                  >
+                    <span className="font-bold">DS 44 / ISL</span>
+                    <span className="text-[10px] text-emerald-700 font-medium">Recomendada Chile</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRiskEvaluationMethod("matrix5x5")}
+                    className={clsx(
+                      "p-2.5 rounded-xl border text-xs text-left transition cursor-pointer flex flex-col justify-between",
+                      riskEvaluationMethod === "matrix5x5"
+                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
+                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
+                    )}
+                  >
+                    <span className="font-bold">Matriz 5 × 5</span>
+                    <span className="text-[10px] text-gray-500">5 Prob. × 5 Consec.</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRiskEvaluationMethod("pending")}
+                    className={clsx(
+                      "p-2.5 rounded-xl border text-xs text-left transition cursor-pointer flex flex-col justify-between",
+                      riskEvaluationMethod === "pending"
+                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
+                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
+                    )}
+                  >
+                    <span className="font-bold">Por definir</span>
+                    <span className="text-[10px] text-gray-500">En primera matriz</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Enfoque de Profundidad de Riesgos */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
+                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <LuShieldAlert className="w-3.5 h-3.5 text-teal-600" /> Enfoque de Gestión de Riesgos
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setRiskManagementApproach("simplified")}
+                    className={clsx(
+                      "p-3 rounded-xl border text-xs text-left transition cursor-pointer flex flex-col justify-between",
+                      riskManagementApproach === "simplified"
+                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
+                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
+                    )}
+                  >
+                    <span className="font-bold">Matriz IPER Simplificada</span>
+                    <span className="text-[10px] text-gray-500 mt-0.5">
+                      Flujo ágil: Proceso &rarr; Tarea &rarr; Peligro &rarr; Control &rarr; Residual
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRiskManagementApproach("critical_controls")}
+                    className={clsx(
+                      "p-3 rounded-xl border text-xs text-left transition cursor-pointer flex flex-col justify-between",
+                      riskManagementApproach === "critical_controls"
+                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
+                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
+                    )}
+                  >
+                    <span className="font-bold">Controles Críticos (Avanzada)</span>
+                    <span className="text-[10px] text-gray-500 mt-0.5">
+                      Enfoque Bowtie, controles críticos preventivos/mitigadores y verificación
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Nivel de Acompañamiento */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
+                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <LuCircleHelp className="w-3.5 h-3.5 text-teal-600" /> Nivel de Acompañamiento
+                </span>
+                <select
+                  value={guidanceLevel}
+                  onChange={(e) => setGuidanceLevel(e.target.value as GuidanceLevel)}
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 bg-white"
+                >
+                  <option value="high">Guíame paso a paso (Explicaciones detalladas y ejemplos continuos)</option>
+                  <option value="contextual">Ayuda cuando la necesite (Información contextual en puntos clave)</option>
+                  <option value="minimal">Prefiero una experiencia directa (Interfaz compacta sin ayudas extras)</option>
+                </select>
+              </div>
+
+              {/* 5. Módulos Preferentes */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
+                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <LuTable className="w-3.5 h-3.5 text-teal-600" /> Módulos en Uso
+                </span>
+                <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                  <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={modules.miper}
+                      onChange={(e) => setModules((prev) => ({ ...prev, miper: e.target.checked }))}
+                      className="w-4 h-4 accent-teal-600 rounded"
+                    />
+                    <span>Matriz IPER</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={modules.documentManagement}
+                      onChange={(e) => setModules((prev) => ({ ...prev, documentManagement: e.target.checked }))}
+                      className="w-4 h-4 accent-teal-600 rounded"
+                    />
+                    <span>Gestión Documental</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={modules.aprVirtual}
+                      onChange={(e) => setModules((prev) => ({ ...prev, aprVirtual: e.target.checked }))}
+                      className="w-4 h-4 accent-teal-600 rounded"
+                    />
+                    <span>APR Virtual IA</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Re-ejecutar Onboarding */}
+              {onOpenOnboarding && (
+                <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                  <div className="text-[11px] text-gray-500">
+                    ¿Quieres reiniciar el proceso completo guiado?
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onOpenOnboarding}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-teal-700 hover:text-teal-800 font-semibold bg-teal-50 hover:bg-teal-100 rounded-lg transition cursor-pointer"
+                  >
+                    <LuRotateCcw className="w-3.5 h-3.5" />
+                    Reiniciar Asistente
+                  </button>
+                </div>
+              )}
             </div>
+          )}
 
-            <div>
-              <label className="text-xs font-semibold text-gray-700 block mb-1">
-                Periodo de Revisión Obligatoria de Matrices
+          {/* =========================================================================
+              TAB 2: NOTIFICACIONES
+              ========================================================================= */}
+          {activeTab === "notifications" && (
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2.5 animate-in fade-in duration-150">
+              <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                <LuBell className="w-4 h-4 text-teal-600" /> Notificaciones Automáticas
+              </span>
+
+              <label className="flex items-center justify-between text-xs text-gray-700 cursor-pointer pt-1">
+                <span>Alertas de vencimiento de matrices y protocolos Minsal por email</span>
+                <input
+                  type="checkbox"
+                  checked={emailAlerts}
+                  onChange={(e) => setEmailAlerts(e.target.checked)}
+                  className="w-4 h-4 accent-teal-600 rounded"
+                />
               </label>
-              <select
-                value={reviewPeriod}
-                onChange={(e) => setReviewPeriod(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 bg-white"
-              >
-                <option value="semestral">Semestral (Cada 6 meses - Recomendado DS 44)</option>
-                <option value="anual">Anual (Cada 12 meses)</option>
-                <option value="trimestral">Trimestral (Faenas de Alto Riesgo)</option>
-              </select>
+
+              <label className="flex items-center justify-between text-xs text-gray-700 cursor-pointer">
+                <span>Avisar cuando una cuadrilla genere un nuevo APR en terreno</span>
+                <input
+                  type="checkbox"
+                  checked={aprAlerts}
+                  onChange={(e) => setAprAlerts(e.target.checked)}
+                  className="w-4 h-4 accent-teal-600 rounded"
+                />
+              </label>
+
+              <label className="flex items-center justify-between text-xs text-gray-700 cursor-pointer">
+                <span>Informe semanal de cumplimiento del Programa Anual SST</span>
+                <input
+                  type="checkbox"
+                  checked={weeklyReport}
+                  onChange={(e) => setWeeklyReport(e.target.checked)}
+                  className="w-4 h-4 accent-teal-600 rounded"
+                />
+              </label>
             </div>
-          </div>
+          )}
 
-          {/* Bloque 2: Notificaciones y Alertas */}
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2.5">
-            <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-              <LuBell className="w-4 h-4 text-teal-600" /> Notificaciones Automáticas
-            </span>
+          {/* =========================================================================
+              TAB 3: SEGURIDAD & NORMATIVA
+              ========================================================================= */}
+          {activeTab === "security" && (
+            <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-3">
+                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <LuShield className="w-4 h-4 text-teal-600" /> Criterios Normativos DS 44
+                </span>
 
-            <label className="flex items-center justify-between text-xs text-gray-700 cursor-pointer pt-1">
-              <span>Alertas de vencimiento de matrices y protocolos Minsal por email</span>
-              <input
-                type="checkbox"
-                checked={emailAlerts}
-                onChange={(e) => setEmailAlerts(e.target.checked)}
-                className="w-4 h-4 accent-teal-600 rounded"
-              />
-            </label>
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
+                    Periodo de Revisión Obligatoria de Matrices
+                  </label>
+                  <select
+                    value={reviewPeriod}
+                    onChange={(e) => setReviewPeriod(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 bg-white"
+                  >
+                    <option value="semestral">Semestral (Cada 6 meses - Recomendado DS 44)</option>
+                    <option value="anual">Anual (Cada 12 meses)</option>
+                    <option value="trimestral">Trimestral (Faenas de Alto Riesgo)</option>
+                  </select>
+                </div>
+              </div>
 
-            <label className="flex items-center justify-between text-xs text-gray-700 cursor-pointer">
-              <span>Avisar cuando una cuadrilla genere un nuevo APR en terreno</span>
-              <input
-                type="checkbox"
-                checked={aprAlerts}
-                onChange={(e) => setAprAlerts(e.target.checked)}
-                className="w-4 h-4 accent-teal-600 rounded"
-              />
-            </label>
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2.5">
+                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <LuShieldAlert className="w-4 h-4 text-teal-600" /> Seguridad de Acceso
+                </span>
 
-            <label className="flex items-center justify-between text-xs text-gray-700 cursor-pointer">
-              <span>Informe semanal de cumplimiento del Programa Anual SST</span>
-              <input
-                type="checkbox"
-                checked={weeklyReport}
-                onChange={(e) => setWeeklyReport(e.target.checked)}
-                className="w-4 h-4 accent-teal-600 rounded"
-              />
-            </label>
-          </div>
-
-          {/* Bloque 3: Seguridad y Trazabilidad */}
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2.5">
-            <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-              <LuShieldAlert className="w-4 h-4 text-teal-600" /> Seguridad & Trazabilidad
-            </span>
-
-            <label className="flex items-center justify-between text-xs text-gray-700 cursor-pointer pt-1">
-              <span>Doble Factor de Autenticación (2FA) para Administradores</span>
-              <input
-                type="checkbox"
-                checked={twoFactor}
-                onChange={(e) => setTwoFactor(e.target.checked)}
-                className="w-4 h-4 accent-teal-600 rounded"
-              />
-            </label>
-          </div>
+                <label className="flex items-center justify-between text-xs text-gray-700 cursor-pointer pt-1">
+                  <span>Doble Factor de Autenticación (2FA) para Administradores</span>
+                  <input
+                    type="checkbox"
+                    checked={twoFactor}
+                    onChange={(e) => setTwoFactor(e.target.checked)}
+                    className="w-4 h-4 accent-teal-600 rounded"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
 
           {saved && (
             <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2 animate-in fade-in">
@@ -668,21 +1002,26 @@ export function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition cursor-pointer shadow-xs"
-            >
-              <LuSave className="w-4 h-4" />
-              Guardar Preferencias
-            </button>
+          <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+            <span className="text-[11px] text-gray-400">
+              Preferencias activas de organización
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                type="submit"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition cursor-pointer shadow-xs"
+              >
+                <LuSave className="w-4 h-4" />
+                Guardar Preferencias
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -876,7 +1215,15 @@ export function SubscriptionUpgradeModal({
   );
 }
 
-export function HelpModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function HelpModal({
+  isOpen,
+  onClose,
+  onOpenTour,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onOpenTour?: () => void;
+}) {
   if (!isOpen) return null;
 
   return (
@@ -922,7 +1269,23 @@ export function HelpModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-between items-center gap-2 pt-2 border-t border-gray-100">
+          {onOpenTour ? (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenTour();
+              }}
+              className="px-3.5 py-2 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+            >
+              <LuSparkles className="w-3.5 h-3.5" />
+              Iniciar Tutorial Guiado
+            </button>
+          ) : (
+            <div />
+          )}
+
           <button
             onClick={onClose}
             className="px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition cursor-pointer"
