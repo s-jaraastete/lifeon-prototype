@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
 export default function SidebarMenu({ collapsed, pathname }: SidebarProps) {
   return (
     <aside
-      className="flex h-189.5 flex-col p-3.5 rounded-2xl bg-surface-primary top-3 sticky"
+      className="flex h-189.5 flex-col p-3.5 rounded-2xl bg-surface-primary top-1 sticky"
     >
       <div
         className={clsx("flex items-center gap-3 py-1.5 h-10", {
