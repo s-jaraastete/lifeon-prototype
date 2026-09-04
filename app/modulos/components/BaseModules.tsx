@@ -1,14 +1,12 @@
 'use client'
 
-import Image from 'next/image';
-import { LuFileSearch2, LuTable } from 'react-icons/lu';
 import CardSlider from '@/app/components/shared/CardSlider';
+import { AprIcon, DocumentacionIcon, MiperIcon } from '@/app/components/shared/baseModules';
 import ModuleCard from './ModuleCard';
 
 export const CardData = [
   {
-    icon: <LuTable size={24} className="text-black" />,
-    bgIcon: "bg-purple-300",
+    icon: <MiperIcon box="w-12 h-12" iconSize={24} />,
     title: "Matriz MIPER",
     description: "Identifica, evalúa y controla los riesgos mediante matrices digitales, trazables y alineadas al DS 44.",
     details: [
@@ -21,8 +19,7 @@ export const CardData = [
     buttonLink: "/modulos/miper",
   },
   {
-    icon: <LuFileSearch2 size={24} className="text-black" />,
-    bgIcon: "bg-[#7dd3fc]",
+    icon: <DocumentacionIcon box="w-12 h-12" iconSize={24} />,
     title: "Programa y Documentación Preventiva",
     description: "Planifica las actividades de seguridad y mantén tu documentación preventiva organizada, vigente y disponible.",
     details: [
@@ -35,17 +32,7 @@ export const CardData = [
     buttonLink: "/contacto",
   },
   {
-    icon: (
-      <div className="flex items-center justify-center overflow-hidden h-6 w-6">
-        <Image 
-          src="/svg/apr-icon.svg" 
-          width={24}
-          height={24} 
-          alt="APR Virtual"
-        />
-      </div>
-    ),
-    bgIcon: "bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
+    icon: <AprIcon box="w-12 h-12" iconSize={24} />,
     title: "APR Virtual",
     titleChip: "IA",
     description: "Entrega orientación preventiva inmediata mediante un asistente inteligente que agiliza las tareas diarias.",

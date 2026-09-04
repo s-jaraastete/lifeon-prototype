@@ -2,26 +2,36 @@
 
 import { LuCircleCheck, LuRefreshCcw, LuSearch } from 'react-icons/lu';
 import CardSlider from '@/app/components/shared/CardSlider';
+import { ModuleBox } from '@/app/components/shared/baseModules';
 import ModuleCard from './ModuleCard';
 
 export const CardData = [
   {
-    icon: <LuRefreshCcw size={24} className="text-secondary-text" />,
-    bgIcon: "bg-gray-300",
+    icon: (
+      <ModuleBox bg="bg-gray-300" box="w-12 h-12">
+        <LuRefreshCcw size={24} className="text-secondary-text" />
+      </ModuleBox>
+    ),
     title: "Gestión del cambio",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
     chip: "Próximamente disponible",
   },
   {
-    icon: <LuCircleCheck size={24} className="text-secondary-text" />,
-    bgIcon: "bg-gray-300",
+    icon: (
+      <ModuleBox bg="bg-gray-300" box="w-12 h-12">
+        <LuCircleCheck size={24} className="text-secondary-text" />
+      </ModuleBox>
+    ),
     title: "Módulo 4",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
     chip: "Próximamente disponible",
   },
   {
-    icon: <LuSearch size={24} className="text-secondary-text" />,
-    bgIcon: "bg-gray-300",
+    icon: (
+      <ModuleBox bg="bg-gray-300" box="w-12 h-12">
+        <LuSearch size={24} className="text-secondary-text" />
+      </ModuleBox>
+    ),
     title: "Módulo 5",
     description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
     chip: "Próximamente disponible",

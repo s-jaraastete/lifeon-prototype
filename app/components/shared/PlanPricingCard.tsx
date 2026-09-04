@@ -1,8 +1,7 @@
 import React from 'react'
 
 export type PlanFeature = {
-  icon?: React.ReactNode
-  bgIcon?: string
+  icon: React.ReactNode
   text: string
   boldText?: string
   suffix?: string
@@ -87,16 +86,7 @@ const PlanPricingCard = ({
         <ul className="space-y-3.5 flex-1">
           {features.map((feature, index) => (
             <li key={index} className="flex items-center gap-3 text-sm">
-              {/* Module / Check Icon Container */}
-              {feature.bgIcon ? (
-                <div className={`w-4.5 h-4.5 rounded-md ${feature.bgIcon} flex items-center justify-center shrink-0`}>
-                  {feature.icon}
-                </div>
-              ) : (
-                <div className="w-4.5 h-4.5 flex items-center justify-center shrink-0">
-                  {feature.icon}
-                </div>
-              )}
+              {feature.icon}
 
               {/* Feature Text */}
               <span className="text-sm text-primary-text leading-snug">

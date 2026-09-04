@@ -4,7 +4,6 @@ import { LuCheck } from 'react-icons/lu';
 
 type ModuleCardProps = {
   icon: React.ReactNode;
-  bgIcon: string;
   title: string;
   description: string;
   details?: string[];
@@ -16,7 +15,6 @@ type ModuleCardProps = {
 const ModuleCard = ({
   chip,
   icon,
-  bgIcon,
   title,
   description,
   details,
@@ -26,15 +24,11 @@ const ModuleCard = ({
   return (
     <div className="border border-gray-300 rounded-3xl p-6 lg:p-7.5 w-full h-full flex flex-col transition duration-200">
       <div className="flex gap-2 items-center">
-        <div
-          className={`w-12 h-12 flex items-center justify-center ${bgIcon} rounded-2xl`}
-        >
-          {icon}
-        </div>
+        {icon}
         <h3 className="text-lg font-semibold leading-tight text-base-black w-[80%]">
           {title}
           {titleChip && (
-            <span className="ml-2 text-[10px] font-medium bg-[#DBEAFE] text-[#155DFC] px-1.5 py-0.5 rounded-lg align-middle">
+            <span className="ml-2 text-[10px] font-medium bg-[#DBEAFE] text-blue-600 px-1.5 py-0.5 rounded-lg align-middle">
               {titleChip}
             </span>
           )}
