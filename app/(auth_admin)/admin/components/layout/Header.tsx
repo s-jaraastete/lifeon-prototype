@@ -23,7 +23,7 @@ export default function Header({ collapsed, onToggle, ufValue }: HeaderProps) {
   );
 
   return (
-    <header className="rounded-2xl bg-surface-primary px-5 py-2.5 shadow-soft backdrop-blur top-1 sticky z-50">
+    <header className="rounded-2xl bg-surface-primary px-5 py-2.5 shadow-soft backdrop-blur z-30">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <button

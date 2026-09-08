@@ -45,7 +45,7 @@ const ServerPagination = async (props: ServerPaginationProps) => {
   
   return (
     <div className='flex items-center justify-between'>
-      <p className='text-body-sm leading-[22px] text-gray-800'>
+      <p className='text-body-sm leading-5.5 text-gray-800'>
         Mostrando{' '}
         <span className='font-semibold text-gray-950'>
           {data && data.count > 0

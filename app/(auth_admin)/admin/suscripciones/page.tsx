@@ -2,7 +2,7 @@ import SubscriptionDashboard from "./components/SubscriptionDashboard";
 import SubscriptionsTable from "./components/SubscriptionsTable";
 import SubscriptionDetailProvider from "./components/detail/SubscriptionDetailProvider";
 import TableFilters from "./components/TableFilters";
-import RefreshSubscriptionsTableButton from "./components/table/RefreshSubscriptionsTableButton";
+
 
 type PageProps = {
   searchParams: Promise<{
@@ -34,7 +34,6 @@ const SuscripcionesPage = async ({ searchParams }: PageProps) => {
               <h2 className="text-2xl font-semibold text-neutral-primary">
                 Todas las suscripciones
               </h2>
-              <RefreshSubscriptionsTableButton />
             </div>
             <TableFilters />
             <SubscriptionsTable params={params} />
