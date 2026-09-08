@@ -28,6 +28,18 @@ export type PlanItem = {
   display_name: string;
 };
 
+export type SubscriptionMetric = {
+  value: number;
+  change_percentage?: number;
+};
+
+export type SubscriptionDashboardOverview = {
+  active_subscriptions: SubscriptionMetric;
+  monthly_mrr: SubscriptionMetric;
+  overdue_subscriptions: { value: number };
+  churn_rate: SubscriptionMetric;
+};
+
 export type Subscription = {
   public_id: string;
   subscription_id: string;
