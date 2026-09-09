@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import ServerTableWrapper from "./table/ServerTableWrapper";
+import ServerTableWrapper from "../../components/shared/table/ServerTableWrapper";
 import { Subscription } from "@/types/admin";
 import SubscriptionRowAction from "./detail/SubscriptionRowAction";
 import {
@@ -86,7 +86,7 @@ const SubscriptionsTable = ({ params }: SubscriptionsTableProps) => {
       pageSize={PAGE_SIZE}
       serverTag={["admin-subscriptions"]}
       noDataMessage="No se encontraron suscripciones"
-      stickyLastColumn
+      stickyRightColumns={2}
     />
   );
 };

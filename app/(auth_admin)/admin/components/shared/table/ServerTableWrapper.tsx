@@ -76,7 +76,7 @@ type ServerTableDataProps<T> = {
   },
   serverTag?: string[],
   noDataMessage?: ReactNode,
-  stickyLastColumn?: boolean
+  stickyRightColumns?: number
 }
 
 const ServerTableData = async <T, >(props: ServerTableDataProps<T>) => {
@@ -97,7 +97,7 @@ const ServerTableData = async <T, >(props: ServerTableDataProps<T>) => {
         data={data.results}
         isLoading={false}
         noDataMessage={props.noDataMessage}
-        stickyLastColumn={props.stickyLastColumn}
+        stickyRightColumns={props.stickyRightColumns}
       />
     </>
   )
@@ -117,7 +117,7 @@ type ServerTableWrapperProps<T> = {
   },
   serverTag?: string[],
   noDataMessage?: ReactNode,
-  stickyLastColumn?: boolean
+  stickyRightColumns?: number
 }
 
 const ServerTableWrapper = <T, >(props: ServerTableWrapperProps<T>) => {
