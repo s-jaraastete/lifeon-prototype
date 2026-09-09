@@ -11,6 +11,7 @@ type PageProps = {
     status?: string;
     pack_name_snapshot?: string;
     billing_period?: string;
+    ai__pack_name_snapshot?: string;
     ordering?: string;
     created__gte?: string;
     created__lte?: string;
