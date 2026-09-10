@@ -85,9 +85,9 @@ const Select = <T extends IDRequiredObjectInterface>(
         className={clsx(
           "group relative flex w-full cursor-pointer items-center gap-2 rounded-lg bg-white text-left text-sm leading-4 ring-1 ring-stroke-primary transition-colors",
           "focus:outline-none focus:ring-2 focus:ring-secondary",
+          "px-3 py-2.5 max-h-9",
           "data-open:ring-2 data-open:ring-secondary",
           "data-disabled:cursor-not-allowed data-disabled:bg-gray-100 data-disabled:text-neutral-disabled data-disabled:ring-stroke-primary",
-          props.multiple ? "min-h-9 py-1.5 ps-2 pe-8" : "py-2.5 ps-3 pe-8"
         )}
       >
         {props.multiple ? (
@@ -168,18 +168,13 @@ const Select = <T extends IDRequiredObjectInterface>(
               "data-focus:bg-gray-100 data-selected:bg-secondary-50 data-selected:text-secondary-600"
             )}
           >
-            {props.multiple ? (
+            {props.multiple && (
               <span
                 className="flex size-4 shrink-0 items-center justify-center rounded border border-gray-400 bg-white transition-colors group-data-selected:border-secondary group-data-selected:bg-secondary"
                 aria-hidden="true"
               >
                 <LuCheck className="invisible size-3 text-white group-data-selected:visible" />
               </span>
-            ) : (
-              <LuCheck
-                className="invisible size-4 shrink-0 group-data-selected:visible"
-                aria-hidden="true"
-              />
             )}
             <div className="min-w-0 flex-1 wrap-break-words">
               {props.item ? props.item(item) : getItemLabel(item)}
