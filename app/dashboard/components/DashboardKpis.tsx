@@ -7,9 +7,13 @@ import {
   LuFileCheck,
   LuAward,
   LuListTodo,
+  LuFolderTree,
   LuTrendingUp,
   LuTrendingDown,
 } from "react-icons/lu";
+import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
+import { useOrgStructure } from "@/hooks/useOrgStructure";
+import { usePreventiveProgram } from "@/hooks/usePreventiveProgram";
 
 export interface KpiMetric {
   id: string;
@@ -29,63 +33,128 @@ interface DashboardKpisProps {
 }
 
 export default function DashboardKpis({ onSelectMetric }: DashboardKpisProps) {
-  const kpis: KpiMetric[] = [
-    {
-      id: "iper",
-      label: "Matrices IPER Activas",
-      value: "12",
-      subtitle: "100% actualizadas",
-      change: "+2 nuevas faenas",
-      isPositive: true,
-      color: "text-gray-900",
-      icon: LuTable,
-      targetTab: "iper",
-    },
-    {
-      id: "criticos",
-      label: "Riesgos Críticos",
-      value: "24",
-      subtitle: "96% bajo control",
-      change: "-18% residual",
-      isPositive: true,
-      color: "text-[#EAB308]",
-      icon: LuShieldAlert,
-      targetTab: "iper",
-    },
-    {
-      id: "programa",
-      label: "Planificación Preventiva",
-      value: "94,2%",
-      subtitle: "Doc. y auditoría al día",
-      change: "+7,7% vs mes ant.",
-      isPositive: true,
-      color: "text-[#10B981]",
-      icon: LuFileCheck,
-      targetTab: "docs",
-    },
-    {
-      id: "incidentes",
-      label: "Accidentabilidad (Mes)",
-      value: "0",
-      subtitle: "Meta Cero Daño",
-      change: "0 con tiempo perdido",
-      isPositive: true,
-      color: "text-emerald-600",
-      icon: LuAward,
-      targetTab: "docs",
-    },
-    {
-      id: "acciones",
-      label: "Acciones Correctivas",
-      value: "3",
-      subtitle: "En proceso activo",
-      change: "1 por vencer pronto",
-      isPositive: false,
-      color: "text-[#EF4444]",
-      icon: LuListTodo,
-      targetTab: "docs",
-    },
-  ];
+  const { currentUser, preferences } = useLifeOnPreferences();
+  const { areas, totalProcessesCount, totalPositionsCount, totalUsersCount } = useOrgStructure();
+  const { metrics, activities } = usePreventiveProgram();
+  const isProgramConfigured = preferences.moduleConfigurations?.preventivePlanning?.configured && activities.length > 0;
+
+  const isCleanAccount = currentUser?.orgId === "org_luis";
+
+  const kpis: KpiMetric[] = isCleanAccount
+    ? [
+        {
+          id: "iper",
+          label: "Matrices IPER Activas",
+          value: "0",
+          subtitle: "0 vigentes registradas",
+          change: "Comienza en Matriz IPER",
+          isPositive: true,
+          color: "text-gray-900",
+          icon: LuTable,
+          targetTab: "iper",
+        },
+        {
+          id: "criticos",
+          label: "Riesgos Críticos",
+          value: "0",
+          subtitle: "Sin evaluaciones aún",
+          change: "0 intolerables",
+          isPositive: true,
+          color: "text-[#EAB308]",
+          icon: LuShieldAlert,
+          targetTab: "iper",
+        },
+        {
+          id: "programa",
+          label: "Programa Preventivo",
+          value: isProgramConfigured ? `${metrics.compliancePercentage}%` : "Sin programa",
+          subtitle: isProgramConfigured ? `${metrics.completedActivities}/${metrics.totalActivities} cumplidas` : "Requiere configuración",
+          change: isProgramConfigured ? `${metrics.pendingActivities} pendientes` : "Configurar programa",
+          isPositive: isProgramConfigured,
+          color: "text-[#10B981]",
+          icon: LuFileCheck,
+          targetTab: "docs",
+        },
+        {
+          id: "incidentes",
+          label: "Accidentabilidad (Mes)",
+          value: "0",
+          subtitle: "Meta Cero Daño",
+          change: "0 con tiempo perdido",
+          isPositive: true,
+          color: "text-emerald-600",
+          icon: LuAward,
+          targetTab: "docs",
+        },
+        {
+          id: "org",
+          label: "Estructura Organizacional",
+          value: `${areas.length}`,
+          subtitle: `${totalProcessesCount} procesos • ${totalPositionsCount} cargos`,
+          change: `${totalUsersCount} usuario(s)`,
+          isPositive: true,
+          color: "text-teal-700",
+          icon: LuFolderTree,
+          targetTab: "org",
+        },
+      ]
+    : [
+        {
+          id: "iper",
+          label: "Matrices IPER Activas",
+          value: "12",
+          subtitle: "100% actualizadas",
+          change: "+2 nuevas faenas",
+          isPositive: true,
+          color: "text-gray-900",
+          icon: LuTable,
+          targetTab: "iper",
+        },
+        {
+          id: "criticos",
+          label: "Riesgos Críticos",
+          value: "24",
+          subtitle: "96% bajo control",
+          change: "-18% residual",
+          isPositive: true,
+          color: "text-[#EAB308]",
+          icon: LuShieldAlert,
+          targetTab: "iper",
+        },
+        {
+          id: "programa",
+          label: "Planificación Preventiva",
+          value: "94,2%",
+          subtitle: "Doc. y auditoría al día",
+          change: "+7,7% vs mes ant.",
+          isPositive: true,
+          color: "text-[#10B981]",
+          icon: LuFileCheck,
+          targetTab: "docs",
+        },
+        {
+          id: "incidentes",
+          label: "Accidentabilidad (Mes)",
+          value: "0",
+          subtitle: "Meta Cero Daño",
+          change: "0 con tiempo perdido",
+          isPositive: true,
+          color: "text-emerald-600",
+          icon: LuAward,
+          targetTab: "docs",
+        },
+        {
+          id: "acciones",
+          label: "Acciones Correctivas",
+          value: "3",
+          subtitle: "En proceso activo",
+          change: "1 por vencer pronto",
+          isPositive: false,
+          color: "text-[#EF4444]",
+          icon: LuListTodo,
+          targetTab: "docs",
+        },
+      ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">

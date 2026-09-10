@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { LuArrowLeft, LuEye, LuEyeOff } from "react-icons/lu";
+import { authenticateUser, setActiveUser, DEMO_USER } from "@/lib/auth/authService";
 
 const PROFESSION_IMAGES = [
   "/images/login/prof-1.jpg",
@@ -42,15 +43,16 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMessage("");
 
-    // Validación de credenciales demo
-    if (password === "serg") {
+    const result = authenticateUser(email, password);
+    if (result.success) {
       router.push("/dashboard");
     } else {
-      setErrorMessage("Contraseña incorrecta. (Demo: serg)");
+      setErrorMessage(result.message || "Credenciales incorrectas.");
     }
   };
 
   const handleSocialLogin = () => {
+    setActiveUser(DEMO_USER);
     router.push("/dashboard");
   };
 

@@ -34,11 +34,42 @@ import { IperMatrixItem } from "./IperMatrixView";
 import { IperEvaluationRow } from "./IperMatrixDetailView";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import { useOrgStructure } from "@/hooks/useOrgStructure";
-import OrgStructureModal from "./OrgStructureModal";
 import {
   getSectorRiskProfile,
   SectorHazardSuggestion,
+  getContextualTasksForProcess,
+  getContextualHazardsForTask,
 } from "@/data/sectorRiskTemplates";
+import { calculate5x5Level } from "@/lib/riskEngine/riskEquivalence";
+import { IperMethodology } from "@/types/preferences";
+
+export const PROB_5X5 = [
+  { val: 1, label: "1 - Muy baja", desc: "Altamente improbable / Rara ocurrencia" },
+  { val: 2, label: "2 - Baja", desc: "Poco frecuente / Escenario controlado" },
+  { val: 3, label: "3 - Media", desc: "Ocurrencia ocasional / Posible en el ciclo" },
+  { val: 4, label: "4 - Alta", desc: "Frecuente / Condición subestándar recurrente" },
+  { val: 5, label: "5 - Muy alta", desc: "Inminente / Exposición continua sin barreras" },
+];
+
+export const SEV_5X5 = [
+  { val: 1, label: "1 - Menor", desc: "Primeros auxilios / Molestias sin baja médica" },
+  { val: 2, label: "2 - Moderada", desc: "Lesión con tiempo perdido leve o reversible" },
+  { val: 3, label: "3 - Seria", desc: "Lesión grave con incapacidad temporal prolongada" },
+  { val: 4, label: "4 - Mayor", desc: "Incapacidad permanente parcial o daño crítico" },
+  { val: 5, label: "5 - Catastrófica", desc: "Fatalidad múltiple o invalidez total permanente" },
+];
+
+export const PROB_VEP3X3 = [
+  { val: 1, label: "1 - Bajo", desc: "Situación controlada / Poco frecuente" },
+  { val: 2, label: "2 - Medio", desc: "Materialización posible / Ocurrencia media" },
+  { val: 4, label: "4 - Alto", desc: "Situación deficiente / Exposición continua" },
+];
+
+export const SEV_VEP3X3 = [
+  { val: 1, label: "1 - Bajo / Leve", desc: "Lesión menor / Primeros auxilios sin CTP" },
+  { val: 2, label: "2 - Medio / Moderado", desc: "Lesión con incapacidad temporal (CTP)" },
+  { val: 4, label: "4 - Alto / Grave", desc: "Incapacidad permanente o fatalidad" },
+];
 
 export interface ProcessItem {
   id: string;
@@ -211,9 +242,14 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
     return getSectorRiskProfile(preferences.organizationSector);
   }, [preferences.organizationSector]);
 
+  const effectiveMethodology: IperMethodology =
+    preferences.moduleConfigurations?.miper?.methodology ||
+    (preferences.riskEvaluationMethod === "matrix5x5" ? "matrix5x5" : "dynamic5x5_vep");
+
+  const is5x5 = effectiveMethodology === "matrix5x5" || effectiveMethodology === "dynamic5x5_vep";
+
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const { areas } = useOrgStructure();
-  const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
+  const { areas, positions, users } = useOrgStructure();
 
   // 1. Estado de Tareas (Sin precargar datos ficticios)
   const [tasks, setTasks] = useState<TaskItem[]>([]);
@@ -253,6 +289,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   // Estado para agregar control en Etapa 5
   const [newControlType, setNewControlType] = useState<ControlItem["type"]>("Controles de Ingeniería");
   const [newControlDesc, setNewControlDesc] = useState("");
+  const [newControlResponsible, setNewControlResponsible] = useState(matrix.responsible || "");
   const [isAddingControl, setIsAddingControl] = useState(false);
 
   // Tarea activa seleccionada
@@ -276,28 +313,61 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
     return hazards[0] || null;
   }, [hazards, selectedHazardId, activeTask, taskHazards]);
 
-  // Área y procesos actuales calculados para el formulario de tareas
+  // Área y procesos actuales calculados para el formulario de tareas respetando el alcance (Req 14-15)
+  const activeAreas = useMemo(() => {
+    return areas.filter((a) => a.status !== "Inactivo");
+  }, [areas]);
+
   const currentArea = useMemo(() => {
-    if (areas.length === 0) return null;
-    return areas.find((a) => a.id === taskFormAreaId) || areas[0];
-  }, [areas, taskFormAreaId]);
+    if (matrix.areaId) {
+      const byId = activeAreas.find((a) => a.id === matrix.areaId);
+      if (byId) return byId;
+    }
+    if (matrix.areaName) {
+      const byName = activeAreas.find((a) => a.name === matrix.areaName);
+      if (byName) return byName;
+    }
+    if (activeAreas.length === 0) return null;
+    return activeAreas.find((a) => a.id === taskFormAreaId) || activeAreas[0];
+  }, [activeAreas, matrix.areaId, matrix.areaName, taskFormAreaId]);
 
   const currentAreaProcesses = useMemo(() => {
     if (!currentArea) return [];
-    return currentArea.processes || [];
+    return (currentArea.processes || []).filter((p) => p.status !== "Inactivo");
   }, [currentArea]);
 
   const currentProcess = useMemo(() => {
+    if (matrix.processId) {
+      const byId = currentAreaProcesses.find((p) => p.id === matrix.processId);
+      if (byId) return byId;
+    }
+    if (matrix.processName) {
+      const byName = currentAreaProcesses.find((p) => p.name === matrix.processName);
+      if (byName) return byName;
+    }
     if (currentAreaProcesses.length === 0) return null;
     return (
       currentAreaProcesses.find((p) => p.id === taskFormProcessId) || currentAreaProcesses[0]
     );
-  }, [currentAreaProcesses, taskFormProcessId]);
+  }, [currentAreaProcesses, matrix.processId, matrix.processName, taskFormProcessId]);
 
   const currentSubprocesses = useMemo(() => {
     if (!currentProcess) return [];
-    return currentProcess.subprocesses || [];
+    return (currentProcess.subprocesses || []).filter((s) => s.status !== "Inactivo");
   }, [currentProcess]);
+
+  // Tareas contextuales sugeridas según Proceso y Subproceso (Req 16)
+  const contextualTaskSuggestions = useMemo(() => {
+    const pName = currentProcess?.name || matrix.processName || "";
+    const sName = taskFormSubprocess || "";
+    return getContextualTasksForProcess(pName, sName, preferences.organizationSector);
+  }, [currentProcess, matrix.processName, taskFormSubprocess, preferences.organizationSector]);
+
+  // Peligros / Riesgos contextuales según la Tarea seleccionada (Req 21)
+  const contextualHazardSuggestions = useMemo(() => {
+    if (!activeTask) return [];
+    return getContextualHazardsForTask(activeTask.name, sectorProfile.suggestedHazards);
+  }, [activeTask, sectorProfile.suggestedHazards]);
 
   // Actualizar un peligro existente
   const updateHazardItem = (hazardId: string, updates: Partial<HazardItem>) => {
@@ -320,8 +390,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
       riskClassification: sug.riskClassification,
       genderDifferences: "No",
       genderObservation: "",
-      probValue: preferences.riskEvaluationMethod === "matrix5x5" ? sug.prob5x5 : sug.defaultProb,
-      sevValue: preferences.riskEvaluationMethod === "matrix5x5" ? sug.sev5x5 : sug.defaultSev,
+      probValue: is5x5 ? (sug.prob5x5 || 3) : sug.defaultProb,
+      sevValue: is5x5 ? (sug.sev5x5 || 3) : sug.defaultSev,
       protocolApplied:
         sug.riskClassification === "Seguridad" || sug.riskClassification === "Emergencias"
           ? "DS 44"
@@ -335,7 +405,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
         responsible: matrix.responsible || "Prevencionista de Riesgos",
       })),
       residualProb: 1,
-      residualSev: sug.defaultSev === 4 ? 2 : 1,
+      residualSev: is5x5 ? Math.min(sug.sev5x5 || 3, 2) : (sug.defaultSev === 4 ? 2 : 1),
       residualRiskLevel: "Bajo",
     };
 
@@ -343,12 +413,17 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
     setSelectedHazardId(newHazard.id);
   };
 
-  // Cargar en masa los riesgos recomendados del rubro a la tarea activa
+  // Cargar en masa los riesgos recomendados contextuales a la tarea activa
   const handleLoadAllSectorHazards = () => {
     if (!activeTask) return;
 
+    const hazardsToLoad =
+      contextualHazardSuggestions.length > 0
+        ? contextualHazardSuggestions
+        : sectorProfile.suggestedHazards;
+
     const newHazardsToAdd: HazardItem[] = [];
-    sectorProfile.suggestedHazards.forEach((sug, idx) => {
+    hazardsToLoad.forEach((sug, idx) => {
       const alreadyExists = hazards.some(
         (h) =>
           h.taskId === activeTask.id &&
@@ -365,8 +440,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
           riskClassification: sug.riskClassification,
           genderDifferences: "No",
           genderObservation: "",
-          probValue: preferences.riskEvaluationMethod === "matrix5x5" ? sug.prob5x5 : sug.defaultProb,
-          sevValue: preferences.riskEvaluationMethod === "matrix5x5" ? sug.sev5x5 : sug.defaultSev,
+          probValue: is5x5 ? (sug.prob5x5 || 3) : sug.defaultProb,
+          sevValue: is5x5 ? (sug.sev5x5 || 3) : sug.defaultSev,
           protocolApplied:
             sug.riskClassification === "Seguridad" || sug.riskClassification === "Emergencias"
               ? "DS 44"
@@ -380,7 +455,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
             responsible: matrix.responsible || "Prevencionista de Riesgos",
           })),
           residualProb: 1,
-          residualSev: sug.defaultSev === 4 ? 2 : 1,
+          residualSev: is5x5 ? Math.min(sug.sev5x5 || 3, 2) : (sug.defaultSev === 4 ? 2 : 1),
           residualRiskLevel: "Bajo",
         });
       }
@@ -501,8 +576,18 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
 
   const residualScoreCalc = activeHazard ? activeHazard.residualProb * activeHazard.residualSev : 0;
 
+  const score5x5 = useMemo(() => {
+    if (!activeHazard) return { prob5x5: 1, impact5x5: 1, val5x5: 1, level5x5: "Bajo" as const, badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200" };
+    return calculate5x5Level(activeHazard.probValue, activeHazard.sevValue);
+  }, [activeHazard]);
+
+  const scoreRes5x5 = useMemo(() => {
+    if (!activeHazard) return { prob5x5: 1, impact5x5: 1, val5x5: 1, level5x5: "Bajo" as const, badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200" };
+    return calculate5x5Level(activeHazard.residualProb, activeHazard.residualSev);
+  }, [activeHazard]);
+
   // =========================================================================
-  // HANDLERS: ETAPA 1 (TAREAS Y PUESTOS INDIVIDUALES)
+  // HANDLERS: ETAPA 1 (TAREAS Y CARGOS INDIVIDUALES)
   // =========================================================================
   const handleAddPositionToTaskForm = (e: React.FormEvent) => {
     e.preventDefault();
@@ -534,20 +619,12 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!taskFormName.trim()) return;
+    if (taskFormPositionsList.length === 0) return;
 
-    const selectedArea = currentArea || areas[0];
-    const selectedProc = currentProcess || selectedArea?.processes[0];
+    const selectedArea = currentArea || activeAreas[0];
+    const selectedProc = currentProcess || (selectedArea?.processes || []).filter((p) => p.status !== "Inactivo")[0];
 
-    const finalPositions = taskFormPositionsList.length > 0 ? taskFormPositionsList : [
-      {
-        id: `pos-${Date.now()}`,
-        name: "Operador de faena",
-        headcountMen: 1,
-        headcountWomen: 0,
-        headcountDiversity: 0,
-      },
-    ];
-
+    const finalPositions = taskFormPositionsList;
     const totalMen = finalPositions.reduce((acc, p) => acc + p.headcountMen, 0);
     const totalWomen = finalPositions.reduce((acc, p) => acc + p.headcountWomen, 0);
     const totalDiv = finalPositions.reduce((acc, p) => acc + p.headcountDiversity, 0);
@@ -644,7 +721,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
       id: `c-${Date.now()}`,
       type: newControlType,
       description: newControlDesc.trim(),
-      responsible: matrix.responsible || "Prevencionista de Riesgos",
+      responsible: newControlResponsible || matrix.responsible || "Prevencionista de Riesgos",
     };
     updateHazardItem(activeHazard.id, {
       controlsList: [...activeHazard.controlsList, newControlItem],
@@ -671,28 +748,43 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
 
       taskHazardsList.forEach((hItem, idx) => {
         const isSafety = hItem.riskClassification === "Seguridad" || hItem.riskClassification === "Emergencias";
-        const initialScore = isSafety ? hItem.probValue * hItem.sevValue : hItem.riskLevelType === "Alto" ? 8 : hItem.riskLevelType === "Medio" ? 4 : 2;
-        const residualScore = isSafety ? hItem.residualProb * hItem.residualSev : hItem.residualRiskLevel === "Alto" ? 4 : 1;
+        let initialScore = 0;
+        let residualScore = 0;
+        let initialLvl: "Crítico" | "Alto" | "Medio" | "Bajo" = "Bajo";
+        let residualLvl: "Crítico" | "Alto" | "Medio" | "Bajo" = "Bajo";
 
-        const initialLvl: "Crítico" | "Alto" | "Medio" | "Bajo" = isSafety
-          ? initialScore >= 16
-            ? "Crítico"
-            : initialScore >= 8
-              ? "Alto"
-              : initialScore >= 4
-                ? "Medio"
-                : "Bajo"
-          : hItem.riskLevelType === "Alto"
-            ? "Alto"
-            : hItem.riskLevelType === "Medio"
-              ? "Medio"
-              : "Bajo";
-
-        const residualLvl: "Crítico" | "Alto" | "Medio" | "Bajo" = isSafety
-          ? residualScore >= 8
-            ? "Medio"
-            : "Bajo"
-          : (hItem.residualRiskLevel as any) || "Bajo";
+        if (is5x5) {
+          const init5x5 = calculate5x5Level(hItem.probValue, hItem.sevValue);
+          const res5x5 = calculate5x5Level(hItem.residualProb, hItem.residualSev);
+          initialScore = init5x5.val5x5;
+          initialLvl = init5x5.level5x5;
+          residualScore = res5x5.val5x5;
+          residualLvl = res5x5.level5x5;
+        } else if (isSafety) {
+          initialScore = hItem.probValue * hItem.sevValue;
+          residualScore = hItem.residualProb * hItem.residualSev;
+          initialLvl =
+            initialScore >= 16
+              ? "Crítico"
+              : initialScore >= 8
+                ? "Alto"
+                : initialScore >= 4
+                  ? "Medio"
+                  : "Bajo";
+          residualLvl =
+            residualScore >= 16
+              ? "Crítico"
+              : residualScore >= 8
+                ? "Alto"
+                : residualScore >= 4
+                  ? "Medio"
+                  : "Bajo";
+        } else {
+          initialScore = hItem.riskLevelType === "Alto" ? 8 : hItem.riskLevelType === "Medio" ? 4 : 2;
+          residualScore = hItem.residualRiskLevel === "Alto" ? 4 : 1;
+          initialLvl = hItem.riskLevelType === "Alto" ? "Alto" : hItem.riskLevelType === "Medio" ? "Medio" : "Bajo";
+          residualLvl = (hItem.residualRiskLevel as any) || "Bajo";
+        }
 
         const row: IperEvaluationRow = {
           id: `EV-${Date.now().toString().slice(-4)}-${task.id.slice(-3)}-${idx + 1}`,
@@ -733,7 +825,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   };
 
   const stepsHeader = [
-    { num: 1, label: "Tareas y puestos", shortLabel: "Tareas" },
+    { num: 1, label: "Tareas y cargos", shortLabel: "Tareas" },
     { num: 2, label: "Peligros y riesgos", shortLabel: "Peligros" },
     { num: 3, label: "Evaluación del riesgo", shortLabel: "Evaluación" },
     { num: 4, label: "Medidas de control", shortLabel: "Controles" },
@@ -850,7 +942,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
         <div className="lg:col-span-8 bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[540px]">
 
           {/* =========================================================================
-              ETAPA 1: TAREAS Y PUESTOS (SELECCIÓN DESDE ESTRUCTURA ORGANIZACIONAL)
+              ETAPA 1: TAREAS Y CARGOS (SELECCIÓN DESDE ESTRUCTURA ORGANIZACIONAL)
               ========================================================================= */}
           {currentStep === 1 && (
             <div className="flex flex-col gap-5 animate-in fade-in duration-200">
@@ -860,9 +952,9 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     <LuLayers className="w-4 h-4" />
                   </span>
                   <div>
-                    <h3 className="text-base font-bold text-gray-900">Tareas y Puestos de Trabajo</h3>
+                    <h3 className="text-base font-bold text-gray-900">Tareas y Cargos de la Organización</h3>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      Selecciona el área, proceso y subproceso de la empresa, registra la tarea (*Rutinaria* / *No rutinaria*) e incorpora los cargos con su dotación.
+                      Selecciona el área, proceso y subproceso, registra la tarea (*Rutinaria* / *No rutinaria*) y asigna los cargos con su dotación expuesta.
                     </p>
                   </div>
                 </div>
@@ -914,7 +1006,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                   </p>
                   <button
                     type="button"
-                    onClick={() => setIsOrgModalOpen(true)}
+                    onClick={onClose}
                     className="mt-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
                   >
                     <LuFolderTree className="w-4 h-4" />
@@ -925,19 +1017,15 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                 <>
                   {/* Formulario de Nueva Tarea */}
                   <div className="bg-gray-50/70 border border-gray-200/80 rounded-2xl p-4 flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                      <h4 className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
                         <LuPlus className="w-3.5 h-3.5 text-teal-600" />
                         Registrar Nueva Tarea
                       </h4>
-                      <button
-                        type="button"
-                        onClick={() => setIsOrgModalOpen(true)}
-                        className="text-[11px] font-semibold text-teal-700 hover:text-teal-900 hover:underline flex items-center gap-1 cursor-pointer"
-                      >
+                      <span className="text-[11px] font-medium text-teal-700 flex items-center gap-1">
                         <LuFolderTree className="w-3.5 h-3.5" />
-                        <span>Gestión de Áreas</span>
-                      </button>
+                        <span>Estructura Organizacional vinculada</span>
+                      </span>
                     </div>
 
                     {/* 1. Selección Jerárquica: Área > Proceso > Subproceso */}
@@ -951,11 +1039,13 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           onChange={(e) => {
                             const newAreaId = e.target.value;
                             setTaskFormAreaId(newAreaId);
-                            const foundA = areas.find((a) => a.id === newAreaId);
-                            if (foundA && foundA.processes.length > 0) {
-                              setTaskFormProcessId(foundA.processes[0].id);
-                              if (foundA.processes[0].subprocesses.length > 0) {
-                                setTaskFormSubprocess(foundA.processes[0].subprocesses[0].name);
+                            const foundA = activeAreas.find((a) => a.id === newAreaId);
+                            const validProcesses = (foundA?.processes || []).filter((p) => p.status !== "Inactivo");
+                            if (foundA && validProcesses.length > 0) {
+                              setTaskFormProcessId(validProcesses[0].id);
+                              const validSubs = (validProcesses[0].subprocesses || []).filter((s) => s.status !== "Inactivo");
+                              if (validSubs.length > 0) {
+                                setTaskFormSubprocess(validSubs[0].name);
                               } else {
                                 setTaskFormSubprocess("");
                               }
@@ -966,7 +1056,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           }}
                           className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
                         >
-                          {areas.map((a) => (
+                          {activeAreas.map((a) => (
                             <option key={a.id} value={a.id}>
                               {a.name} {a.code ? `(${a.code})` : ""}
                             </option>
@@ -1073,6 +1163,25 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       </div>
                     </div>
 
+                    {/* Sugerencias contextuales de tareas según Proceso / Subproceso (Req 16) */}
+                    {contextualTaskSuggestions.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                          Sugerencias contextuales:
+                        </span>
+                        {contextualTaskSuggestions.slice(0, 6).map((sug, sIdx) => (
+                          <button
+                            key={sIdx}
+                            type="button"
+                            onClick={() => setTaskFormName(sug)}
+                            className="text-[11px] px-2.5 py-1 rounded-lg bg-teal-50/80 hover:bg-teal-100 text-teal-800 border border-teal-200 transition cursor-pointer font-medium"
+                          >
+                            + {sug}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Lugar específico donde se realiza la tarea */}
                     <div>
                       <label className="text-[11px] font-semibold text-gray-700 block mb-1">
@@ -1087,109 +1196,155 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       />
                     </div>
 
-                    {/* 3. Sub-formulario: Ingreso de Puestos de a uno (Cargo o Puesto > Dotación) */}
+                    {/* 3. Sub-formulario: Asignación de Cargos exclusivamente desde Estructura Organizacional (Req 17-20) */}
                     <div className="bg-white border border-teal-100 rounded-2xl p-3.5 flex flex-col gap-3 shadow-2xs">
                       <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                         <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
                           <LuBriefcase className="w-3.5 h-3.5 text-teal-600" />
-                          + Ingresar Puesto o Cargo (de a uno)
+                          + Asignar Cargo a la Tarea
                         </span>
                         <span className="text-[10px] text-gray-400 font-medium">
-                          Cargo o Puesto &gt; Dotación
+                          Catálogo de Cargos &gt; Dotación
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                        <div className="sm:col-span-6">
-                          <label className="text-[11px] font-semibold text-gray-600 block mb-1">
-                            Cargo o Puesto
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Ej: Operador de Grúa, Rigger, Soldador"
-                            value={posFormName}
-                            onChange={(e) => setPosFormName(e.target.value)}
-                            className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                          />
+                      {positions.filter((p) => p.status !== "Inactivo").length === 0 ? (
+                        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-bold text-amber-900">No existen cargos configurados.</p>
+                            <p className="text-[11px] text-amber-700">
+                              Debes registrar los cargos de la organización en Estructura Organizacional antes de asignarlos a las tareas.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onClose();
+                              if (typeof window !== "undefined") {
+                                const url = new URL(window.location.href);
+                                url.searchParams.set("tab", "org-structure");
+                                window.history.pushState({}, "", url.toString());
+                                window.dispatchEvent(new PopStateEvent("popstate"));
+                              }
+                            }}
+                            className="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs whitespace-nowrap"
+                          >
+                            Configurar cargos
+                          </button>
                         </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                            <div className="sm:col-span-6">
+                              <label className="text-[11px] font-semibold text-gray-600 block mb-1">
+                                Cargo de la Organización
+                              </label>
+                              <select
+                                value={posFormName}
+                                onChange={(e) => {
+                                  const cName = e.target.value;
+                                  setPosFormName(cName);
+                                  const found = positions.find((p) => p.name === cName);
+                                  if (found) {
+                                    setPosFormMen(found.menCount ?? 1);
+                                    setPosFormWomen(found.womenCount ?? 0);
+                                    setPosFormDiv(found.otherCount ?? 0);
+                                    setPosFormSensitive((found.sensitiveCount ?? 0) > 0);
+                                    setPosFormDisabled((found.disabledCount ?? 0) > 0);
+                                  }
+                                }}
+                                className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
+                              >
+                                <option value="">Seleccionar cargo de la organización...</option>
+                                {positions
+                                  .filter((p) => p.status !== "Inactivo")
+                                  .map((pos) => (
+                                    <option key={pos.id} value={pos.name}>
+                                      {pos.name} {pos.areaName ? `(${pos.areaName})` : ""} - Dotación: {pos.totalStaff ?? (pos.menCount || 0) + (pos.womenCount || 0)}
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
 
-                        <div className="sm:col-span-6">
-                          <label className="text-[11px] font-semibold text-gray-600 block mb-1">
-                            Dotación
-                          </label>
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="flex items-center bg-[#F8FAFC] border border-gray-200 rounded-xl px-2 py-1">
-                              <input
-                                type="number"
-                                min="0"
-                                value={posFormMen}
-                                onChange={(e) => setPosFormMen(Number(e.target.value))}
-                                className="w-8 bg-transparent text-xs font-bold text-gray-900 focus:outline-none"
-                              />
-                              <span className="text-[10px] text-gray-500 ml-auto font-medium">♂ Hombres</span>
-                            </div>
-                            <div className="flex items-center bg-[#F8FAFC] border border-gray-200 rounded-xl px-2 py-1">
-                              <input
-                                type="number"
-                                min="0"
-                                value={posFormWomen}
-                                onChange={(e) => setPosFormWomen(Number(e.target.value))}
-                                className="w-8 bg-transparent text-xs font-bold text-gray-900 focus:outline-none"
-                              />
-                              <span className="text-[10px] text-gray-500 ml-auto font-medium">♀ Mujeres</span>
-                            </div>
-                            <div className="flex items-center bg-[#F8FAFC] border border-gray-200 rounded-xl px-2 py-1">
-                              <input
-                                type="number"
-                                min="0"
-                                value={posFormDiv}
-                                onChange={(e) => setPosFormDiv(Number(e.target.value))}
-                                className="w-8 bg-transparent text-xs font-bold text-gray-900 focus:outline-none"
-                              />
-                              <span className="text-[10px] text-gray-500 ml-auto font-medium">⚥ Div</span>
+                            <div className="sm:col-span-6">
+                              <label className="text-[11px] font-semibold text-gray-600 block mb-1">
+                                Dotación Expuesta en esta Tarea
+                              </label>
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="flex items-center bg-[#F8FAFC] border border-gray-200 rounded-xl px-2 py-1">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={posFormMen}
+                                    onChange={(e) => setPosFormMen(Number(e.target.value))}
+                                    className="w-8 bg-transparent text-xs font-bold text-gray-900 focus:outline-none"
+                                  />
+                                  <span className="text-[10px] text-gray-500 ml-auto font-medium">♂ Hombres</span>
+                                </div>
+                                <div className="flex items-center bg-[#F8FAFC] border border-gray-200 rounded-xl px-2 py-1">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={posFormWomen}
+                                    onChange={(e) => setPosFormWomen(Number(e.target.value))}
+                                    className="w-8 bg-transparent text-xs font-bold text-gray-900 focus:outline-none"
+                                  />
+                                  <span className="text-[10px] text-gray-500 ml-auto font-medium">♀ Mujeres</span>
+                                </div>
+                                <div className="flex items-center bg-[#F8FAFC] border border-gray-200 rounded-xl px-2 py-1">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={posFormDiv}
+                                    onChange={(e) => setPosFormDiv(Number(e.target.value))}
+                                    className="w-8 bg-transparent text-xs font-bold text-gray-900 focus:outline-none"
+                                  />
+                                  <span className="text-[10px] text-gray-500 ml-auto font-medium">⚥ Div</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
 
-                      {/* Opciones marcables: Sensibilidad y Discapacidad */}
-                      <div className="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-gray-100">
-                        <div className="flex items-center gap-4 text-xs text-gray-700">
-                          <label className="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={posFormSensitive}
-                              onChange={(e) => setPosFormSensitive(e.target.checked)}
-                              className="accent-teal-600 w-3.5 h-3.5"
-                            />
-                            <span className="text-[11px] font-medium">Personas especialmente sensibles</span>
-                          </label>
-                          <label className="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={posFormDisabled}
-                              onChange={(e) => setPosFormDisabled(e.target.checked)}
-                              className="accent-teal-600 w-3.5 h-3.5"
-                            />
-                            <span className="text-[11px] font-medium">Personas con discapacidad</span>
-                          </label>
-                        </div>
+                          {/* Opciones marcables: Sensibilidad y Discapacidad */}
+                          <div className="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-gray-100">
+                            <div className="flex items-center gap-4 text-xs text-gray-700">
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={posFormSensitive}
+                                  onChange={(e) => setPosFormSensitive(e.target.checked)}
+                                  className="accent-teal-600 w-3.5 h-3.5"
+                                />
+                                <span className="text-[11px] font-medium">Personas especialmente sensibles</span>
+                              </label>
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={posFormDisabled}
+                                  onChange={(e) => setPosFormDisabled(e.target.checked)}
+                                  className="accent-teal-600 w-3.5 h-3.5"
+                                />
+                                <span className="text-[11px] font-medium">Personas con discapacidad</span>
+                              </label>
+                            </div>
 
-                        <button
-                          type="button"
-                          onClick={handleAddPositionToTaskForm}
-                          disabled={!posFormName.trim()}
-                          className="px-3.5 py-1.5 text-xs font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition cursor-pointer disabled:opacity-40"
-                        >
-                          + Agregar este Puesto
-                        </button>
-                      </div>
+                            <button
+                              type="button"
+                              onClick={handleAddPositionToTaskForm}
+                              disabled={!posFormName.trim()}
+                              className="px-3.5 py-1.5 text-xs font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition cursor-pointer disabled:opacity-40"
+                            >
+                              + Asignar este Cargo
+                            </button>
+                          </div>
+                        </>
+                      )}
 
-                      {/* Lista de Puestos agregados para esta tarea */}
+                      {/* Lista de Cargos agregados para esta tarea */}
                       {taskFormPositionsList.length > 0 && (
                         <div className="pt-2 border-t border-gray-100 flex flex-col gap-1.5">
                           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                            Puestos agregados para esta tarea ({taskFormPositionsList.length}):
+                            Cargos asignados a esta tarea ({taskFormPositionsList.length}):
                           </span>
                           <div className="flex flex-col gap-1.5">
                             {taskFormPositionsList.map((pos) => (
@@ -1227,12 +1382,17 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       )}
                     </div>
 
-                    <div className="flex justify-end pt-1">
+                    <div className="flex items-center justify-between pt-1">
+                      {taskFormPositionsList.length === 0 && (
+                        <p className="text-[11px] text-amber-700 font-medium">
+                          * Asigna al menos un cargo con su dotación para poder incorporar la tarea.
+                        </p>
+                      )}
                       <button
                         type="button"
                         onClick={handleAddTask}
-                        disabled={!taskFormName.trim()}
-                        className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:pointer-events-none rounded-xl transition cursor-pointer shadow-xs"
+                        disabled={!taskFormName.trim() || taskFormPositionsList.length === 0}
+                        className="ml-auto flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:pointer-events-none rounded-xl transition cursor-pointer shadow-xs"
                       >
                         <LuPlus className="w-3.5 h-3.5" />
                         Agregar Tarea a la Matriz
@@ -1462,7 +1622,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     )}
                   </div>
 
-                  {/* Propuesta de Riesgos del Rubro Seleccionado en Onboarding (ej: Minería) */}
+                  {/* Propuesta de Riesgos Contextualizada a la Tarea Activa (Req 21) */}
                   {activeTask && (
                     <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-teal-50/50 border-2 border-amber-300/80 rounded-2xl p-4 flex flex-col gap-3 shadow-2xs">
                       <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-amber-200/70">
@@ -1473,14 +1633,14 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <h4 className="text-xs font-bold text-gray-900">
-                                Riesgos Críticos Propuestos para:
+                                Peligros y Riesgos Propuestos para la Tarea:
                               </h4>
-                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
-                                {sectorProfile.sector}
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-teal-900 border border-teal-300 line-clamp-1">
+                                {activeTask.name}
                               </span>
                             </div>
                             <p className="text-[11px] text-gray-600 mt-0.5">
-                              Sugerencias automáticas para la tarea <b>"{activeTask.name}"</b>. Haz clic para incorporar con medidas de control:
+                              Sugerencias específicas derivadas de la naturaleza de la tarea. Haz clic para incorporar con sus medidas de control:
                             </p>
                           </div>
                         </div>
@@ -1491,12 +1651,15 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
                         >
                           <LuSparkles className="w-3.5 h-3.5" />
-                          Cargar todos los riesgos de {sectorProfile.sector}
+                          Cargar riesgos sugeridos
                         </button>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-0.5">
-                        {sectorProfile.suggestedHazards.map((sug) => {
+                        {(contextualHazardSuggestions.length > 0
+                          ? contextualHazardSuggestions
+                          : sectorProfile.suggestedHazards
+                        ).map((sug) => {
                           const isAlreadyInTask = taskHazards.some(
                             (h) =>
                               h.specificRiskCode === sug.specificRiskCode ||
@@ -1895,10 +2058,10 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     </div>
                   </div>
 
-                  {/* Si es SEGURIDAD O EMERGENCIAS: Escala VEP con 1 Bajo, 2 Medio, 4 Alto */}
+                  {/* Si es SEGURIDAD O EMERGENCIAS: Escala 5x5 o VEP 3x3 según Metodología (Req 23-25) */}
                   {isSafetyOrEmergency ? (
                     <div className="flex flex-col gap-4">
-                      {/* Probabilidad (P): adaptada según nivel y metodología */}
+                      {/* Probabilidad (P): adaptada según metodología (5 niveles o 3 niveles) */}
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <label className="text-xs font-bold text-gray-800">
@@ -1907,85 +2070,79 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                               : "Probabilidad (P) de Ocurrencia:"}
                           </label>
                           <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
-                            {preferences.riskEvaluationMethod === "ds44"
-                              ? "Norma DS 44 (ISL)"
-                              : preferences.riskEvaluationMethod === "matrix5x5"
-                              ? "Matriz 5×5"
-                              : "Estándar"}
+                            {is5x5
+                              ? effectiveMethodology === "dynamic5x5_vep"
+                                ? "Dinámica 5×5 + VEP"
+                                : "Matriz 5×5"
+                              : "VEP 3×3 (ISL / DS 44)"}
                           </span>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          {[
-                            { val: 1, label: "1 - Bajo", desc: "Situación controlada / Poco frecuente" },
-                            { val: 2, label: "2 - Medio", desc: "Materialización posible / Ocurrencia media" },
-                            { val: 4, label: "4 - Alto", desc: "Situación deficiente / Exposición continua" },
-                          ].map((item) => (
+                        <div className={clsx("grid gap-2 sm:gap-3", is5x5 ? "grid-cols-1 sm:grid-cols-5" : "grid-cols-3")}>
+                          {(is5x5 ? PROB_5X5 : PROB_VEP3X3).map((item) => (
                             <button
                               key={item.val}
                               type="button"
                               onClick={() => updateHazardItem(activeHazard.id, { probValue: item.val })}
                               className={clsx(
-                                "p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between",
+                                "p-2.5 sm:p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between",
                                 activeHazard.probValue === item.val
                                   ? "bg-teal-50 border-teal-600 text-teal-900 ring-2 ring-teal-500/20 font-bold shadow-2xs"
                                   : "bg-white border-gray-200 hover:bg-gray-50"
                               )}
                             >
                               <span className="text-xs font-bold">{item.label}</span>
-                              <span className="text-[10px] text-gray-500 font-normal mt-1">{item.desc}</span>
+                              <span className="text-[10px] text-gray-500 font-normal mt-1 line-clamp-2">{item.desc}</span>
                             </button>
                           ))}
                         </div>
                       </div>
 
-                      {/* Severidad (C): adaptada según terminología */}
+                      {/* Severidad / Consecuencia (C): adaptada según metodología (5 niveles o 3 niveles) */}
                       <div>
                         <label className="text-xs font-bold text-gray-800 block mb-1.5">
                           {preferences.experienceLevel === "guided"
                             ? terminology.consequenceQuestion
                             : "Severidad / Consecuencia (C):"}
                         </label>
-                        <div className="grid grid-cols-3 gap-3">
-                          {[
-                            { val: 1, label: "1 - Bajo / Leve", desc: "Lesión menor / Primeros auxilios" },
-                            { val: 2, label: "2 - Medio / Moderado", desc: "Lesión con incapacidad temporal / CTP" },
-                            { val: 4, label: "4 - Alto / Grave", desc: "Incapacidad permanente o fatalidad" },
-                          ].map((item) => (
+                        <div className={clsx("grid gap-2 sm:gap-3", is5x5 ? "grid-cols-1 sm:grid-cols-5" : "grid-cols-3")}>
+                          {(is5x5 ? SEV_5X5 : SEV_VEP3X3).map((item) => (
                             <button
                               key={item.val}
                               type="button"
                               onClick={() => updateHazardItem(activeHazard.id, { sevValue: item.val })}
                               className={clsx(
-                                "p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between",
+                                "p-2.5 sm:p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between",
                                 activeHazard.sevValue === item.val
                                   ? "bg-teal-50 border-teal-600 text-teal-900 ring-2 ring-teal-500/20 font-bold shadow-2xs"
                                   : "bg-white border-gray-200 hover:bg-gray-50"
                               )}
                             >
                               <span className="text-xs font-bold">{item.label}</span>
-                              <span className="text-[10px] text-gray-500 font-normal mt-1">{item.desc}</span>
+                              <span className="text-[10px] text-gray-500 font-normal mt-1 line-clamp-2">{item.desc}</span>
                             </button>
                           ))}
                         </div>
                       </div>
 
-                      {/* Resultado VEP Calculado */}
+                      {/* Resultado Calculado */}
                       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
                         <div>
                           <p className="text-xs font-bold text-gray-900">
-                            Valor Esperado de Pérdida (VEP) = {activeHazard.probValue} × {activeHazard.sevValue} = {vepScore}
+                            {is5x5
+                              ? `Evaluación 5×5 = P(${activeHazard.probValue}) × C(${activeHazard.sevValue}) = ${score5x5.val5x5} pts`
+                              : `Valor Esperado de Pérdida (VEP) = ${activeHazard.probValue} × ${activeHazard.sevValue} = ${vepScore} pts`}
                           </p>
                           <p className="text-[11px] text-gray-500 mt-0.5">
-                            Evaluación inicial antes de aplicar medidas de control jerárquicas
+                            Evaluación inicial de riesgo puro antes de aplicar medidas de control
                           </p>
                         </div>
                         <span
                           className={clsx(
                             "px-3 py-1 rounded-xl text-xs font-black border uppercase shadow-2xs",
-                            getVepLevel(vepScore).color
+                            is5x5 ? score5x5.badgeColor : getVepLevel(vepScore).color
                           )}
                         >
-                          {getVepLevel(vepScore).label}
+                          {is5x5 ? score5x5.level5x5 : getVepLevel(vepScore).label}
                         </span>
                       </div>
                     </div>
@@ -2303,6 +2460,36 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                         />
                       </div>
 
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-700 block mb-1">
+                          Responsable de la Medida
+                        </label>
+                        {users.filter((u) => u.status !== "Inactivo").length > 0 ? (
+                          <select
+                            value={newControlResponsible}
+                            onChange={(e) => setNewControlResponsible(e.target.value)}
+                            className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2 text-xs text-gray-800 font-medium"
+                          >
+                            <option value="">Seleccionar responsable...</option>
+                            {users
+                              .filter((u) => u.status !== "Inactivo")
+                              .map((u) => (
+                                <option key={u.id} value={u.name}>
+                                  {u.name} {u.cargoName ? `(${u.cargoName})` : ""}
+                                </option>
+                              ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="Ej: Supervisor de Terreno"
+                            value={newControlResponsible}
+                            onChange={(e) => setNewControlResponsible(e.target.value)}
+                            className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                          />
+                        )}
+                      </div>
+
                       <div className="flex justify-end gap-2 pt-1">
                         <button
                           type="button"
@@ -2426,7 +2613,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     </div>
                   </div>
 
-                  {/* Si es Seguridad / Emergencia: Probabilidad y Severidad Residual con 1, 2, 4 con bloqueo estricto */}
+                  {/* Si es Seguridad / Emergencia: Probabilidad y Severidad Residual 5x5 o VEP 3x3 con bloqueo estricto */}
                   {isSafetyOrEmergency ? (
                     <div className="flex flex-col gap-4">
                       {/* Selector de Probabilidad Residual */}
@@ -2437,12 +2624,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           </label>
                           <span className="text-[10px] text-gray-400 font-medium">Opciones superiores bloqueadas</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          {[
-                            { val: 1, label: "1 - Baja", desc: "Control eficaz y verificado" },
-                            { val: 2, label: "2 - Media", desc: "Control parcial / En implementación" },
-                            { val: 4, label: "4 - Alta", desc: "Requiere revisión urgente" },
-                          ].map((p) => {
+                        <div className={clsx("grid gap-2 sm:gap-3", is5x5 ? "grid-cols-1 sm:grid-cols-5" : "grid-cols-3")}>
+                          {(is5x5 ? PROB_5X5 : PROB_VEP3X3).map((p) => {
                             const isBlocked = p.val > activeHazard.probValue;
                             return (
                               <button
@@ -2451,7 +2634,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                 disabled={isBlocked}
                                 onClick={() => updateHazardItem(activeHazard.id, { residualProb: p.val })}
                                 className={clsx(
-                                  "p-3 rounded-xl border text-left transition flex flex-col justify-between",
+                                  "p-2.5 sm:p-3 rounded-xl border text-left transition flex flex-col justify-between",
                                   isBlocked && "opacity-35 bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through",
                                   !isBlocked && activeHazard.residualProb === p.val && "bg-emerald-50 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 font-bold shadow-2xs cursor-pointer",
                                   !isBlocked && activeHazard.residualProb !== p.val && "bg-white border-gray-200 hover:bg-gray-50 cursor-pointer"
@@ -2461,7 +2644,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                   {p.label}
                                   {isBlocked && <LuLock className="w-3 h-3 text-gray-400" />}
                                 </span>
-                                <span className="text-[10px] text-gray-500 font-normal mt-1">{p.desc}</span>
+                                <span className="text-[10px] text-gray-500 font-normal mt-1 line-clamp-2">{p.desc}</span>
                               </button>
                             );
                           })}
@@ -2476,12 +2659,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           </label>
                           <span className="text-[10px] text-gray-400 font-medium">Opciones superiores bloqueadas</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          {[
-                            { val: 1, label: "1 - Leve", desc: "Sin tiempo perdido / Daño menor" },
-                            { val: 2, label: "2 - Moderada", desc: "Incapacidad temporal mitigada" },
-                            { val: 4, label: "4 - Grave", desc: "Daño mayor persistente" },
-                          ].map((s) => {
+                        <div className={clsx("grid gap-2 sm:gap-3", is5x5 ? "grid-cols-1 sm:grid-cols-5" : "grid-cols-3")}>
+                          {(is5x5 ? SEV_5X5 : SEV_VEP3X3).map((s) => {
                             const isBlocked = s.val > activeHazard.sevValue;
                             return (
                               <button
@@ -2490,7 +2669,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                 disabled={isBlocked}
                                 onClick={() => updateHazardItem(activeHazard.id, { residualSev: s.val })}
                                 className={clsx(
-                                  "p-3 rounded-xl border text-left transition flex flex-col justify-between",
+                                  "p-2.5 sm:p-3 rounded-xl border text-left transition flex flex-col justify-between",
                                   isBlocked && "opacity-35 bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through",
                                   !isBlocked && activeHazard.residualSev === s.val && "bg-emerald-50 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 font-bold shadow-2xs cursor-pointer",
                                   !isBlocked && activeHazard.residualSev !== s.val && "bg-white border-gray-200 hover:bg-gray-50 cursor-pointer"
@@ -2500,7 +2679,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                   {s.label}
                                   {isBlocked && <LuLock className="w-3 h-3 text-gray-400" />}
                                 </span>
-                                <span className="text-[10px] text-gray-500 font-normal mt-1">{s.desc}</span>
+                                <span className="text-[10px] text-gray-500 font-normal mt-1 line-clamp-2">{s.desc}</span>
                               </button>
                             );
                           })}
@@ -2511,25 +2690,39 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-4.5 grid grid-cols-2 gap-4 text-center">
                         <div className="border-r border-emerald-200/60 pr-2">
                           <p className="text-[11px] text-gray-500 font-medium">
-                            {preferences.experienceLevel === "guided"
-                              ? "Riesgo Inicial sin Medidas"
-                              : "Riesgo Inicial (VEP)"}
+                            {is5x5 ? "Riesgo Inicial 5×5" : "Riesgo Inicial (VEP)"}
                           </p>
-                          <p className="text-xl font-black text-gray-900 mt-0.5">{vepScore} pts</p>
-                          <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full inline-block mt-1">
-                            {getVepLevel(vepScore).label}
+                          <p className="text-xl font-black text-gray-900 mt-0.5">
+                            {is5x5 ? `${score5x5.val5x5} pts` : `${vepScore} pts`}
+                          </p>
+                          <span
+                            className={clsx(
+                              "text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 border",
+                              is5x5 ? score5x5.badgeColor : "text-orange-700 bg-orange-100 border-orange-200"
+                            )}
+                          >
+                            {is5x5 ? score5x5.level5x5 : getVepLevel(vepScore).label}
                           </span>
                         </div>
 
                         <div className="pl-2">
                           <p className="text-[11px] text-gray-500 font-medium">
-                            {preferences.experienceLevel === "guided"
-                              ? terminology.residualRisk
-                              : "Riesgo Residual Final"}
+                            {is5x5 ? "Riesgo Residual 5×5" : "Riesgo Residual Final"}
                           </p>
-                          <p className="text-xl font-black text-emerald-700 mt-0.5">{residualScoreCalc} pts</p>
-                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full inline-block mt-1">
-                            {residualScoreCalc <= 2 ? "Tolerable / Bajo" : "Moderado / Controlado"}
+                          <p className="text-xl font-black text-emerald-700 mt-0.5">
+                            {is5x5 ? `${scoreRes5x5.val5x5} pts` : `${residualScoreCalc} pts`}
+                          </p>
+                          <span
+                            className={clsx(
+                              "text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 border",
+                              is5x5 ? scoreRes5x5.badgeColor : "text-emerald-800 bg-emerald-100 border-emerald-200"
+                            )}
+                          >
+                            {is5x5
+                              ? scoreRes5x5.level5x5
+                              : residualScoreCalc <= 2
+                              ? "Tolerable / Bajo"
+                              : "Moderado / Controlado"}
                           </span>
                         </div>
                       </div>
@@ -2738,12 +2931,6 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
           </div>
         </div>
       </main>
-
-      {/* Modal de Gestión de Estructura Organizacional */}
-      <OrgStructureModal
-        isOpen={isOrgModalOpen}
-        onClose={() => setIsOrgModalOpen(false)}
-      />
     </div>
   );
 }

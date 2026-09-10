@@ -29,6 +29,8 @@ import {
 import { IperMatrixItem, MatrixStatus, getStatusBadgeStyle } from "./IperMatrixView";
 import IperMatrixWizard from "./IperMatrixWizard";
 import IrlDocumentModal from "./IrlDocumentModal";
+import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
+import { convert5x5ToVep3x3 } from "@/lib/riskEngine/riskEquivalence";
 
 export interface IperEvaluationRow {
   id: string;
@@ -146,6 +148,11 @@ export default function IperMatrixDetailView({
   );
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("Todos");
+
+  const { preferences } = useLifeOnPreferences();
+  const currentMethodology = preferences.moduleConfigurations?.miper?.methodology || "dynamic5x5_vep";
+  const isDynamicMethod = currentMethodology === "dynamic5x5_vep";
+  const [dynamicScale, setDynamicScale] = useState<"5x5" | "3x3">("5x5");
 
   // Modals State
   const [isWizardOpen, setIsWizardOpen] = useState(initialOpenWizard || false);
@@ -557,38 +564,71 @@ export default function IperMatrixDetailView({
         </div>
       </div>
 
-      {/* Barra de Filtros en la Tabla */}
-      <div className="bg-white rounded-2xl p-3 px-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="relative w-full sm:max-w-md">
+      {/* Barra de Filtros y Selector de Visualización Dinámica (Req 26) */}
+      <div className="bg-white rounded-2xl p-3 px-4 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="relative w-full md:max-w-xs">
           <LuSearch className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por tarea, peligro o medida de control..."
+            placeholder="Buscar por tarea, peligro o control..."
             className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-gray-800 placeholder-gray-400"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          <span className="text-xs text-gray-400 mr-1 flex items-center gap-1">
-            <LuFilter className="w-3.5 h-3.5" /> Nivel:
-          </span>
-          {["Todos", "Crítico", "Alto", "Medio", "Bajo"].map((lvl) => (
-            <button
-              key={lvl}
-              type="button"
-              onClick={() => setLevelFilter(lvl)}
-              className={clsx(
-                "px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex-shrink-0",
-                levelFilter === lvl
-                  ? "bg-teal-600 text-white shadow-xs font-semibold"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              )}
-            >
-              {lvl}
-            </button>
-          ))}
+        <div className="flex items-center gap-3 flex-wrap w-full md:w-auto justify-between md:justify-end">
+          {/* Selector de Visualización Dinámica (Req 26) */}
+          {isDynamicMethod && (
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <span className="text-[11px] font-bold text-slate-500 px-2">Visualización:</span>
+              <button
+                type="button"
+                onClick={() => setDynamicScale("5x5")}
+                className={clsx(
+                  "px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer",
+                  dynamicScale === "5x5"
+                    ? "bg-white text-teal-900 shadow-2xs border border-gray-200"
+                    : "text-gray-600 hover:text-gray-900"
+                )}
+              >
+                5×5
+              </button>
+              <button
+                type="button"
+                onClick={() => setDynamicScale("3x3")}
+                className={clsx(
+                  "px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer",
+                  dynamicScale === "3x3"
+                    ? "bg-teal-600 text-white shadow-2xs"
+                    : "text-gray-600 hover:text-gray-900"
+                )}
+              >
+                VEP 3×3
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            <span className="text-xs text-gray-400 mr-1 flex items-center gap-1">
+              <LuFilter className="w-3.5 h-3.5" /> Nivel:
+            </span>
+            {["Todos", "Crítico", "Alto", "Medio", "Bajo"].map((lvl) => (
+              <button
+                key={lvl}
+                type="button"
+                onClick={() => setLevelFilter(lvl)}
+                className={clsx(
+                  "px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex-shrink-0",
+                  levelFilter === lvl
+                    ? "bg-teal-600 text-white shadow-xs font-semibold"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                {lvl}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -601,9 +641,13 @@ export default function IperMatrixDetailView({
                 <th className="py-3.5 px-4 w-12 text-center">#</th>
                 <th className="py-3.5 px-4 min-w-[180px]">Proceso & Tarea</th>
                 <th className="py-3.5 px-4 min-w-[180px]">Peligro & Consecuencia</th>
-                <th className="py-3.5 px-4 text-center">Riesgo Inicial</th>
+                <th className="py-3.5 px-4 text-center">
+                  {isDynamicMethod && dynamicScale === "3x3" ? "Riesgo Inicial (VEP 3×3)" : "Riesgo Inicial"}
+                </th>
                 <th className="py-3.5 px-4 min-w-[240px]">Jerarquía de Controles (DS 44)</th>
-                <th className="py-3.5 px-4 text-center">Riesgo Residual</th>
+                <th className="py-3.5 px-4 text-center">
+                  {isDynamicMethod && dynamicScale === "3x3" ? "Riesgo Residual (VEP 3×3)" : "Riesgo Residual"}
+                </th>
                 <th className="py-3.5 px-4">Estado</th>
                 <th className="py-3.5 px-4 text-center">Acciones</th>
               </tr>
@@ -656,20 +700,49 @@ export default function IperMatrixDetailView({
                     </td>
 
                     <td className="py-3.5 px-4 align-top text-center">
-                      <span
-                        className={clsx(
-                          "px-2.5 py-1 rounded-lg font-bold text-[11px] inline-block shadow-2xs",
-                          row.initialLevel === "Crítico" && "bg-red-100 text-red-700 border border-red-200",
-                          row.initialLevel === "Alto" && "bg-amber-100 text-amber-800 border border-amber-200",
-                          row.initialLevel === "Medio" && "bg-yellow-100 text-yellow-800 border border-yellow-200",
-                          row.initialLevel === "Bajo" && "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                        )}
-                      >
-                        MR {row.riskInitial}
-                      </span>
-                      <p className="text-[10px] text-gray-400 mt-1">
-                        P:{row.probInitial} × S:{row.sevInitial}
-                      </p>
+                      {isDynamicMethod && dynamicScale === "3x3" ? (
+                        (() => {
+                          const equiv = convert5x5ToVep3x3(row.probInitial, row.sevInitial);
+                          return (
+                            <>
+                              <span
+                                className={clsx(
+                                  "px-2.5 py-1 rounded-lg font-bold text-[11px] inline-block shadow-2xs",
+                                  equiv.vepLevel === "Crítico" && "bg-red-100 text-red-700 border border-red-200",
+                                  equiv.vepLevel === "Alto" && "bg-amber-100 text-amber-800 border border-amber-200",
+                                  equiv.vepLevel === "Medio" && "bg-yellow-100 text-yellow-800 border border-yellow-200",
+                                  equiv.vepLevel === "Bajo" && "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                )}
+                              >
+                                VEP {equiv.vepScore}
+                              </span>
+                              <p className="text-[10px] text-teal-700 font-bold mt-1">
+                                {equiv.vepLevel}
+                              </p>
+                              <p className="text-[9px] text-gray-400 font-mono">
+                                P:{equiv.prob3x3} × S:{equiv.severidad3x3}
+                              </p>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <>
+                          <span
+                            className={clsx(
+                              "px-2.5 py-1 rounded-lg font-bold text-[11px] inline-block shadow-2xs",
+                              row.initialLevel === "Crítico" && "bg-red-100 text-red-700 border border-red-200",
+                              row.initialLevel === "Alto" && "bg-amber-100 text-amber-800 border border-amber-200",
+                              row.initialLevel === "Medio" && "bg-yellow-100 text-yellow-800 border border-yellow-200",
+                              row.initialLevel === "Bajo" && "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                            )}
+                          >
+                            MR {row.riskInitial}
+                          </span>
+                          <p className="text-[10px] text-gray-400 mt-1">
+                            P:{row.probInitial} × S:{row.sevInitial}
+                          </p>
+                        </>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 align-top">
@@ -677,20 +750,49 @@ export default function IperMatrixDetailView({
                     </td>
 
                     <td className="py-3.5 px-4 align-top text-center">
-                      <span
-                        className={clsx(
-                          "px-2.5 py-1 rounded-lg font-bold text-[11px] inline-block shadow-2xs",
-                          row.residualLevel === "Crítico" && "bg-red-100 text-red-700 border border-red-200",
-                          row.residualLevel === "Alto" && "bg-amber-100 text-amber-800 border border-amber-200",
-                          row.residualLevel === "Medio" && "bg-yellow-100 text-yellow-800 border border-yellow-200",
-                          row.residualLevel === "Bajo" && "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                        )}
-                      >
-                        ER {row.riskResidual}
-                      </span>
-                      <p className="text-[10px] text-gray-400 mt-1">
-                        P:{row.probResidual} × S:{row.sevResidual}
-                      </p>
+                      {isDynamicMethod && dynamicScale === "3x3" ? (
+                        (() => {
+                          const equiv = convert5x5ToVep3x3(row.probResidual, row.sevResidual);
+                          return (
+                            <>
+                              <span
+                                className={clsx(
+                                  "px-2.5 py-1 rounded-lg font-bold text-[11px] inline-block shadow-2xs",
+                                  equiv.vepLevel === "Crítico" && "bg-red-100 text-red-700 border border-red-200",
+                                  equiv.vepLevel === "Alto" && "bg-amber-100 text-amber-800 border border-amber-200",
+                                  equiv.vepLevel === "Medio" && "bg-yellow-100 text-yellow-800 border border-yellow-200",
+                                  equiv.vepLevel === "Bajo" && "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                )}
+                              >
+                                VEP {equiv.vepScore}
+                              </span>
+                              <p className="text-[10px] text-teal-700 font-bold mt-1">
+                                {equiv.vepLevel}
+                              </p>
+                              <p className="text-[9px] text-gray-400 font-mono">
+                                P:{equiv.prob3x3} × S:{equiv.severidad3x3}
+                              </p>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <>
+                          <span
+                            className={clsx(
+                              "px-2.5 py-1 rounded-lg font-bold text-[11px] inline-block shadow-2xs",
+                              row.residualLevel === "Crítico" && "bg-red-100 text-red-700 border border-red-200",
+                              row.residualLevel === "Alto" && "bg-amber-100 text-amber-800 border border-amber-200",
+                              row.residualLevel === "Medio" && "bg-yellow-100 text-yellow-800 border border-yellow-200",
+                              row.residualLevel === "Bajo" && "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                            )}
+                          >
+                            ER {row.riskResidual}
+                          </span>
+                          <p className="text-[10px] text-gray-400 mt-1">
+                            P:{row.probResidual} × S:{row.sevResidual}
+                          </p>
+                        </>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 align-top">

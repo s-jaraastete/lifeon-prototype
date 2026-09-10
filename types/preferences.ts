@@ -1,8 +1,29 @@
 export type ExperienceLevel = "guided" | "intermediate" | "expert";
 export type GuidanceLevel = "high" | "contextual" | "minimal";
 export type RiskEvaluationMethod = "ds44" | "matrix5x5" | "pending";
-export type RiskManagementApproach = "simplified" | "critical_controls";
+export type RiskManagementApproach = "iper" | "critical_controls" | "simplified";
 export type OrganizationSize = "1-20" | "21-50" | "51-200" | "201-500" | "500+";
+
+export type IperMethodology = "vep3x3" | "matrix5x5" | "dynamic5x5_vep" | "pending";
+
+export interface IperModuleConfig {
+  configured: boolean;
+  methodology: IperMethodology;
+  confirmed: boolean;
+  configuredAt?: string | null;
+}
+
+export interface PreventivePlanningModuleConfig {
+  configured: boolean;
+  hasExistingProgram: boolean | null;
+  setupMode: "upload_existing" | "create_base" | null;
+  configuredAt?: string | null;
+}
+
+export interface OrganizationModuleConfigurations {
+  miper: IperModuleConfig;
+  preventivePlanning: PreventivePlanningModuleConfig;
+}
 
 export interface ModulePreferences {
   miper: boolean;
@@ -19,11 +40,29 @@ export interface OrganizationPreferences {
   riskEvaluationMethod: RiskEvaluationMethod;
   riskManagementApproach: RiskManagementApproach;
   modules: ModulePreferences;
+  moduleConfigurations?: OrganizationModuleConfigurations;
   onboardingCompleted: boolean;
   onboardingCompletedAt?: string | null;
   onboardingStep: number;
   tourCompleted?: boolean;
+  organizationLogo?: string | null;
+  profilePhoto?: string | null;
 }
+
+export const DEFAULT_MODULE_CONFIGURATIONS: OrganizationModuleConfigurations = {
+  miper: {
+    configured: true,
+    methodology: "dynamic5x5_vep",
+    confirmed: true,
+    configuredAt: new Date().toISOString(),
+  },
+  preventivePlanning: {
+    configured: true,
+    hasExistingProgram: true,
+    setupMode: "upload_existing",
+    configuredAt: new Date().toISOString(),
+  },
+};
 
 export const DEFAULT_ORGANIZATION_PREFERENCES: OrganizationPreferences = {
   organizationName: "Constructora y Servicios Santiago SpA",
@@ -32,16 +71,54 @@ export const DEFAULT_ORGANIZATION_PREFERENCES: OrganizationPreferences = {
   experienceLevel: "guided",
   guidanceLevel: "high",
   riskEvaluationMethod: "ds44",
-  riskManagementApproach: "simplified",
+  riskManagementApproach: "iper",
   modules: {
     miper: true,
     documentManagement: true,
     aprVirtual: true,
   },
+  moduleConfigurations: DEFAULT_MODULE_CONFIGURATIONS,
   onboardingCompleted: false,
   onboardingCompletedAt: null,
   onboardingStep: 1,
   tourCompleted: false,
+  organizationLogo: null,
+  profilePhoto: null,
+};
+
+export const EMPTY_ORGANIZATION_PREFERENCES: OrganizationPreferences = {
+  organizationName: "",
+  organizationSize: "",
+  organizationSector: "",
+  experienceLevel: "guided",
+  guidanceLevel: "high",
+  riskEvaluationMethod: "pending",
+  riskManagementApproach: "iper",
+  modules: {
+    miper: true,
+    documentManagement: true,
+    aprVirtual: true,
+  },
+  moduleConfigurations: {
+    miper: {
+      configured: false,
+      methodology: "pending",
+      confirmed: false,
+      configuredAt: null,
+    },
+    preventivePlanning: {
+      configured: false,
+      hasExistingProgram: null,
+      setupMode: null,
+      configuredAt: null,
+    },
+  },
+  onboardingCompleted: false,
+  onboardingCompletedAt: null,
+  onboardingStep: 1,
+  tourCompleted: false,
+  organizationLogo: null,
+  profilePhoto: null,
 };
 
 export interface TerminologyDictionary {

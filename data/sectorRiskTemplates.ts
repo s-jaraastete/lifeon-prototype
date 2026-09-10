@@ -518,3 +518,176 @@ export function getSectorRiskProfile(sectorName?: string): SectorRiskProfile {
 
   return key ? SECTOR_RISK_PROFILES[key] : SECTOR_RISK_PROFILES["Minería"];
 }
+
+/**
+ * Propuestas contextuales de tareas basadas estrictamente en el Proceso y Subproceso seleccionado (Req 16).
+ */
+export function getContextualTasksForProcess(
+  processName: string,
+  subprocessName?: string,
+  sectorName?: string
+): string[] {
+  const pLower = (processName || "").toLowerCase();
+  const sLower = (subprocessName || "").toLowerCase();
+
+  // 1. Si hay subproceso específico
+  if (sLower.includes("viga") || sLower.includes("perno") || sLower.includes("anclaje")) {
+    return [
+      "Montaje, aplomado y conexión de vigas principales en altura física",
+      "Fijación y torque calibrado de pernos estructurales sobre canastillo",
+      "Recepción y desenganche controlado de perfiles con grúa",
+      "Inspección de soldaduras y uniones de nudo estructural",
+    ];
+  }
+  if (sLower.includes("loto") || sLower.includes("bloqueo") || sLower.includes("energía")) {
+    return [
+      "Aplicación de tarjeta y candado personal de bloqueo LOTO en sala eléctrica",
+      "Verificación de energía cero mediante multímetro certificado",
+      "Despresurización de líneas neumáticas e hidráulicas",
+      "Desbloqueo coordinado y prueba en vacío de equipo intervenido",
+    ];
+  }
+  if (sLower.includes("soldadura") || sLower.includes("corte") || sLower.includes("oxicorte")) {
+    return [
+      "Soldadura al arco manual con electrodo revestido en posición plana y sobrecabeza",
+      "Corte térmico con equipo oxicorte y verificación de válvulas antirretroceso",
+      "Desbaste y pulido de cordones de soldadura con esmeril angular de 7 pulgadas",
+      "Inspección de biombos ignífugos y extintor PQS de 10 kg en zona de trabajo en caliente",
+    ];
+  }
+  if (sLower.includes("bodega") || sLower.includes("acopio") || sLower.includes("sustancia") || sLower.includes("despacho")) {
+    return [
+      "Recepción, clasificación y almacenamiento de sustancias peligrosas según DS 43",
+      "Operación de grúa horquilla para carga y descarga en patio de materiales",
+      "Control de inventario de EPP y equipos de protección contra caídas",
+      "Manejo manual de cajas y bultos de insumos en estanterías metálicas",
+    ];
+  }
+  if (sLower.includes("excavación") || sLower.includes("zanja") || sLower.includes("tierra")) {
+    return [
+      "Excavación mecánica de zanja para fundaciones con retroexcavadora",
+      "Instalación de entibaciones de madera o cajones modulares de contención",
+      "Nivelación manual de fondo de excavación con pala y picos",
+      "Compactación de suelo con placa vibradora de 90 kg",
+    ];
+  }
+
+  // 2. Basado en Proceso general
+  if (pLower.includes("montaje") || pLower.includes("estructura") || pLower.includes("altura")) {
+    return [
+      "Montaje de vigas y columnas estructurales sobre andamio multidireccional",
+      "Instalación de pernos de anclaje de alta resistencia en altura",
+      "Montaje de arriostramientos y tensores perimetrales",
+      "Izaje y posicionamiento de paneles metálicos con grúa torre",
+      "Colocación de líneas de vida provisionales y mallas de seguridad",
+    ];
+  }
+  if (pLower.includes("excav") || pLower.includes("movimiento") || pLower.includes("tierra")) {
+    return [
+      "Excavación profunda de zanjas y pozos de fundación",
+      "Instalación y revisión diaria de entibaciones de contención de talud",
+      "Carguío de camiones tolva con material excedente mediante pala cargadora",
+      "Compactación de terreno de fundación y pruebas de densímetro",
+    ];
+  }
+  if (pLower.includes("mant") || pLower.includes("taller") || pLower.includes("repara")) {
+    return [
+      "Mantenimiento electromecánico preventivo con consignación LOTO",
+      "Cambio de rodamientos, poleas y correas de transmisión en motores",
+      "Corte y soldadura para refuerzo de estructuras metálicas en banco",
+      "Prueba de funcionamiento y calibración de guardas de seguridad",
+    ];
+  }
+  if (pLower.includes("almacen") || pLower.includes("bodega") || pLower.includes("faena")) {
+    return [
+      "Recepción y almacenamiento segregado de sustancias peligrosas",
+      "Despacho diario de herramientas eléctricas y equipos de faena",
+      "Inspección de estado de arneses y cabos de vida en pañol",
+      "Apilamiento seguro de pallets de sacos de cemento y morteros",
+    ];
+  }
+  if (pLower.includes("hormig") || pLower.includes("enfierr") || pLower.includes("moldaje")) {
+    return [
+      "Armado y colocación de enfierradura en losas y vigas de fundación",
+      "Montaje y desmolde de placas metálicas de moldaje",
+      "Vaciado y vibrado de hormigón fresco con sonda mecánica",
+      "Curado de losas de hormigón con agua y membrana química",
+    ];
+  }
+
+  // Fallback coherente con el perfil del sector
+  const profile = getSectorRiskProfile(sectorName);
+  const matchedFromProfile = profile.recommendedTasks
+    .filter((t) => t.processName.toLowerCase().includes(pLower) || pLower.includes(t.processName.toLowerCase()))
+    .map((t) => t.taskName);
+
+  if (matchedFromProfile.length > 0) return matchedFromProfile;
+
+  return [
+    `Ejecución operacional estándar de ${processName}`,
+    `Inspección previa de herramientas y área de trabajo para ${processName}`,
+    `Mantenimiento básico y limpieza al finalizar ${processName}`,
+  ];
+}
+
+/**
+ * Propuestas contextuales de peligros y riesgos asociadas estrictamente a la TAREA seleccionada (Req 21).
+ */
+export function getContextualHazardsForTask(
+  taskName: string,
+  hazardsPool?: SectorHazardSuggestion[]
+): SectorHazardSuggestion[] {
+  const tLower = (taskName || "").toLowerCase();
+  const pool = hazardsPool && hazardsPool.length > 0
+    ? hazardsPool
+    : Object.values(SECTOR_RISK_PROFILES).flatMap((p) => p.suggestedHazards);
+
+  // Palabras clave de la tarea
+  const keywords: string[] = [];
+  if (tLower.includes("altura") || tLower.includes("andamio") || tLower.includes("viga") || tLower.includes("techo") || tLower.includes("escala")) {
+    keywords.push("caída", "altura", "distinto nivel", "andamio", "caída de objetos");
+  }
+  if (tLower.includes("grúa") || tLower.includes("izaje") || tLower.includes("carga suspendida") || tLower.includes("eslinga")) {
+    keywords.push("izaje", "grúa", "atrapamiento", "caída de objetos", "maniobra");
+  }
+  if (tLower.includes("excav") || tLower.includes("zanja") || tLower.includes("talud") || tLower.includes("tierra")) {
+    keywords.push("derrumbe", "atrapamiento", "excavación", "sepultamiento", "volcamiento");
+  }
+  if (tLower.includes("eléctr") || tLower.includes("loto") || tLower.includes("tablero") || tLower.includes("cable") || tLower.includes("energía")) {
+    keywords.push("eléctrico", "contacto", "arco", "loto", "energía");
+  }
+  if (tLower.includes("soldadura") || tLower.includes("oxicorte") || tLower.includes("caliente") || tLower.includes("llama")) {
+    keywords.push("fuego", "quemadura", "caliente", "radiación uv", "humos");
+  }
+  if (tLower.includes("bodega") || tLower.includes("químic") || tLower.includes("suspel") || tLower.includes("inflamable") || tLower.includes("sustancia")) {
+    keywords.push("químico", "derrame", "intoxicación", "incendio", "suspel");
+  }
+  if (tLower.includes("ruido") || tLower.includes("esmeril") || tLower.includes("compresor") || tLower.includes("placa")) {
+    keywords.push("ruido", "prexor", "vibración", "proyección");
+  }
+  if (tLower.includes("manual") || tLower.includes("carga") || tLower.includes("levantamiento") || tLower.includes("postura")) {
+    keywords.push("trastornos músculo", "sobreesfuerzo", "lumbar", "manejo manual");
+  }
+
+  // Filtrar sugerencias que coincidan con las palabras clave del riesgo
+  const matched = pool.filter((h) => {
+    const text = `${h.hazardDescription} ${h.specificRiskName} ${h.riskFamily} ${h.tags.join(" ")}`.toLowerCase();
+    if (keywords.length > 0) {
+      return keywords.some((k) => text.includes(k));
+    }
+    const words = tLower.split(/\s+/).filter((w) => w.length > 4);
+    return words.some((w) => text.includes(w));
+  });
+
+  if (matched.length > 0) {
+    const uniqueIds = new Set<string>();
+    return matched.filter((h) => {
+      if (uniqueIds.has(h.id)) return false;
+      uniqueIds.add(h.id);
+      return true;
+    });
+  }
+
+  return pool.slice(0, 5);
+}
+

@@ -42,11 +42,20 @@ import {
   LuFolderTree,
   LuActivity,
   LuShieldCheck,
+  LuPrinter,
 } from "react-icons/lu";
+import * as XLSX from "xlsx";
+import {
+  createThemedDataSheet,
+  createThemedInstructionsSheet,
+  normalizeImportedRows,
+} from "@/lib/xlsx/lifeOnWorkbookTheme";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import { getSectorRiskProfile } from "@/data/sectorRiskTemplates";
 import IperMatrixDetailView from "./IperMatrixDetailView";
 import OrgStructureModal from "./OrgStructureModal";
+import IperModuleOnboardingModal from "./IperModuleOnboardingModal";
+import { convert5x5ToVep3x3 } from "@/lib/riskEngine/riskEquivalence";
 import { useOrgStructure } from "@/hooks/useOrgStructure";
 
 export type MatrixStatus =
@@ -72,8 +81,17 @@ export interface IperMatrixItem {
   totalRecords: number | string;
   intolerableRisks: number | string;
   expiryText: string;
+  lastReviewDate?: string;
   isExpired?: boolean;
   status: MatrixStatus;
+  scope?: "work_center" | "area" | "process";
+  workCenterId?: string;
+  workCenterName?: string;
+  areaId?: string;
+  areaName?: string;
+  processId?: string;
+  processName?: string;
+  description?: string;
 }
 
 export interface SafetyEmergencyRiskItem {
@@ -546,28 +564,60 @@ interface MatrixActionItem {
   isDanger?: boolean;
 }
 
-export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?: () => void }) {
-  const { preferences } = useLifeOnPreferences();
+export default function IperMatrixView({
+  onOpenAprVirtual,
+  onNavigateToOrg,
+}: {
+  onOpenAprVirtual?: () => void;
+  onNavigateToOrg?: () => void;
+}) {
+  const { preferences, configureMiperModule, currentUser } = useLifeOnPreferences();
   const sectorProfile = useMemo(() => {
     return getSectorRiskProfile(preferences.organizationSector);
   }, [preferences.organizationSector]);
 
+  const isMiperConfigured = preferences.moduleConfigurations?.miper?.configured ?? false;
+  const currentMethodology = preferences.moduleConfigurations?.miper?.methodology || "dynamic5x5_vep";
+
   const [viewMode, setViewMode] = useState<"grid" | "list" | "significance">("grid");
-  const [matrices, setMatrices] = useState<IperMatrixItem[]>(INITIAL_MATRICES);
+  const [matrices, setMatrices] = useState<IperMatrixItem[]>(() =>
+    currentUser?.orgId === "org_luis" ? [] : INITIAL_MATRICES
+  );
   const [selectedMatrix, setSelectedMatrix] = useState<IperMatrixItem | null>(null);
   const [openWizardOnSelect, setOpenWizardOnSelect] = useState(false);
 
-  // Mapa de Clasificación de Riesgos (3x3 VEP vs 5x5 según Onboarding)
+  // Mapa de Clasificación de Riesgos (3x3 VEP vs 5x5 según Metodología)
   const [activeGridScale, setActiveGridScale] = useState<"3x3" | "5x5">(() =>
-    preferences.riskEvaluationMethod === "matrix5x5" ? "5x5" : "3x3"
+    currentMethodology === "matrix5x5" ? "5x5" : "3x3"
   );
 
   useEffect(() => {
-    setActiveGridScale(preferences.riskEvaluationMethod === "matrix5x5" ? "5x5" : "3x3");
-  }, [preferences.riskEvaluationMethod]);
+    if (currentMethodology === "matrix5x5") {
+      setActiveGridScale("5x5");
+    } else if (currentMethodology === "vep3x3") {
+      setActiveGridScale("3x3");
+    }
+  }, [currentMethodology]);
 
-  const [safetyRisks, setSafetyRisks] = useState<SafetyEmergencyRiskItem[]>(INITIAL_SAFETY_EMERGENCY_RISKS);
-  const [protocolRisks, setProtocolRisks] = useState<ProtocolRiskItem[]>(INITIAL_PROTOCOL_RISKS);
+  const [safetyRisks, setSafetyRisks] = useState<SafetyEmergencyRiskItem[]>(() =>
+    currentUser?.orgId === "org_luis" ? [] : INITIAL_SAFETY_EMERGENCY_RISKS
+  );
+  const [protocolRisks, setProtocolRisks] = useState<ProtocolRiskItem[]>(() =>
+    currentUser?.orgId === "org_luis" ? [] : INITIAL_PROTOCOL_RISKS
+  );
+
+  // Sincronizar al cambiar de usuario
+  useEffect(() => {
+    if (currentUser?.orgId === "org_luis") {
+      setMatrices([]);
+      setSafetyRisks([]);
+      setProtocolRisks([]);
+    } else {
+      setMatrices(INITIAL_MATRICES);
+      setSafetyRisks(INITIAL_SAFETY_EMERGENCY_RISKS);
+      setProtocolRisks(INITIAL_PROTOCOL_RISKS);
+    }
+  }, [currentUser?.orgId]);
 
   const [selectedCell3x3, setSelectedCell3x3] = useState<{ prob: number; severidad: number; vep: number } | null>(null);
   const [selectedCell5x5, setSelectedCell5x5] = useState<{ prob: number; impact: number; val: number } | null>(null);
@@ -579,13 +629,128 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
   const [statusFilter, setStatusFilter] = useState("Todos");
 
   // Modals and Active Dropdown State
-  const { totalAreasCount } = useOrgStructure();
+  const { totalAreasCount, areas, positions, workCenters } = useOrgStructure();
   const [isOrgStructureOpen, setIsOrgStructureOpen] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
   const [isNewMatrixOpen, setIsNewMatrixOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Estados de Metodología y Bloqueo (Reqs 10-11)
+  const [isMethodologyModalDismissed, setIsMethodologyModalDismissed] = useState(false);
+  const [isMethodologyModalExplicitOpen, setIsMethodologyModalExplicitOpen] = useState(false);
+  const [methodologyPromptMessage, setMethodologyPromptMessage] = useState<string | undefined>(undefined);
+
+  // Estados de Información de Riesgos Laborales (IRL) (Reqs 13-16)
+  const [isIrlCargoListOpen, setIsIrlCargoListOpen] = useState(false);
+  const [selectedIrlCargoItem, setSelectedIrlCargoItem] = useState<{
+    cargo: string;
+    area: string;
+    matrices: IperMatrixItem[];
+    lastUpdate: string;
+    status: "Actualizado" | "Pendiente";
+    risks: { hazard: string; riskEvent: string; controls: string }[];
+  } | null>(null);
+
+  // Matrices en estado Vigente (Fuente exclusiva para IRL según Req 14)
+  const vigentesMatrices = useMemo(
+    () => matrices.filter((m) => m.status === "Vigente"),
+    [matrices]
+  );
+
+  // Consolidación de IRL por Cargo
+  const irlCargosData = useMemo(() => {
+    if (vigentesMatrices.length === 0) return [];
+
+    const cargoMap = new Map<
+      string,
+      {
+        cargo: string;
+        area: string;
+        matrices: IperMatrixItem[];
+        lastUpdate: string;
+        status: "Actualizado" | "Pendiente";
+        risks: { hazard: string; riskEvent: string; controls: string }[];
+      }
+    >();
+
+    const baseCargos = positions.length > 0
+      ? positions.map((p) => ({ name: p.name, area: p.areaName || "Operaciones" }))
+      : [
+          { name: "Jefe de Terreno / Administrador de Obra", area: "Operaciones y Montaje" },
+          { name: "Supervisor de Operaciones y Montaje", area: "Operaciones y Montaje" },
+          { name: "Maestro Mayor Albañil / Demoledor", area: "Operaciones y Montaje" },
+          { name: "Operador de Maquinaria y Equipos", area: "Operaciones y Montaje" },
+          { name: "Encargado de Bodega y Pañol", area: "Instalación de Faena y Bodegas" },
+        ];
+
+    baseCargos.forEach((c) => {
+      const sampleRisks = [
+        {
+          hazard: "Caída de distinto nivel en plataformas o andamios > 1.80m",
+          riskEvent: "Politraumatismo / Lesiones graves o fatales por caída",
+          controls: "Uso obligatorio de arnés de seguridad SPDC con doble cabo de vida certificado, líneas de vida inspeccionadas y tarjetas de andamio operativas.",
+        },
+        {
+          hazard: "Atropello o atrapamiento por maquinaria pesada en movimiento",
+          riskEvent: "Aplastamiento por vehículo o equipo móvil en retroceso",
+          controls: "Segregación física peatón-maquinaria, uso permanente de chaleco reflectante alta visibilidad, alarmas de retroceso y balizas operativas.",
+        },
+        {
+          hazard: "Exposición a polvo con contenido de sílice libre cristalizada",
+          riskEvent: "Silicosis pulmonar / Enfermedad profesional de origen respiratorio",
+          controls: "Humectación permanente en frentes de trabajo, uso de protección respiratoria con filtros P100 certificados, cabinas cerradas con aire presurizado.",
+        },
+        {
+          hazard: "Derrumbe de taludes y paredes de excavación",
+          riskEvent: "Sepultamiento / Asfixia por atrapamiento en zanja",
+          controls: "Entibación según NCh 349 en excavaciones > 1.50m, pretiles perimetrales a 1.5m del borde, prohibición de acopio de material en el coronamiento.",
+        },
+        {
+          hazard: "Contacto eléctrico directo / arco eléctrico en tableros y generadores",
+          riskEvent: "Electrocución / Quemaduras graves por descarga eléctrica",
+          controls: "Bloqueo y etiquetado LOTO con candado personal, verificación de energía cero, uso de guantes dieléctricos y herramientas aisladas 1000V.",
+        },
+      ];
+
+      cargoMap.set(c.name, {
+        cargo: c.name,
+        area: c.area,
+        matrices: vigentesMatrices,
+        lastUpdate: vigentesMatrices[0].lastReviewDate || "Hoy",
+        status: "Actualizado",
+        risks: sampleRisks,
+      });
+    });
+
+    return Array.from(cargoMap.values());
+  }, [vigentesMatrices, positions]);
+
+  const irlMetrics = useMemo(() => {
+    const total = irlCargosData.length;
+    const updated = irlCargosData.filter((i) => i.status === "Actualizado").length;
+    const pending = total - updated;
+    const latestDate = vigentesMatrices.length > 0 ? (vigentesMatrices[0].lastReviewDate || "Hoy") : "Sin matrices vigentes";
+
+    return { total, updated, pending, latestDate };
+  }, [irlCargosData, vigentesMatrices]);
+
+  // Apertura controlada de creación de matrices (Req 11)
+  const handleOpenNewMatrix = () => {
+    if (!isMiperConfigured) {
+      setMethodologyPromptMessage(
+        "Antes de crear tu primera Matriz IPER debes definir cómo evaluará los riesgos tu organización."
+      );
+      setIsMethodologyModalExplicitOpen(true);
+      return;
+    }
+    if (areas.length === 0) {
+      if (onNavigateToOrg) onNavigateToOrg();
+      return;
+    }
+    setIsNewMatrixOpen(true);
+  };
 
   // Edit Data Modal State
   const [isEditDataOpen, setIsEditDataOpen] = useState(false);
@@ -615,11 +780,86 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [matrixToDelete, setMatrixToDelete] = useState<IperMatrixItem | null>(null);
 
-  // New Matrix Form State
-  const [newCode, setNewCode] = useState(`MA-00${matrices.length + 1}`);
+  // New Matrix Form State (Jerárquica según Reqs 9-14)
+  const [matrixScope, setMatrixScope] = useState<"work_center" | "area" | "process">("work_center");
+  const [selectedWorkCenterId, setSelectedWorkCenterId] = useState("");
+  const [selectedAreaId, setSelectedAreaId] = useState("");
+  const [selectedProcessId, setSelectedProcessId] = useState("");
+  const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
-  const [newWorkCenter, setNewWorkCenter] = useState("Planta Quilicura");
-  const [newResponsible, setNewResponsible] = useState("Sergio A. Jara Astete");
+  const [newDescription, setNewDescription] = useState("");
+  const [newResponsible, setNewResponsible] = useState(currentUser?.name || "Prevencionista de Riesgos");
+  const [isCustomName, setIsCustomName] = useState(false);
+
+  // Import State (Req 8)
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isProcessingImport, setIsProcessingImport] = useState(false);
+
+  // Auto-selección y dependencias de selectores para nueva matriz
+  useEffect(() => {
+    if (workCenters.length > 0 && !selectedWorkCenterId) {
+      setSelectedWorkCenterId(workCenters[0].id);
+    }
+  }, [workCenters, selectedWorkCenterId]);
+
+  useEffect(() => {
+    const availableAreas = areas.filter(
+      (a) => !a.workCenterId || a.workCenterId === selectedWorkCenterId
+    );
+    if (availableAreas.length > 0) {
+      if (!availableAreas.some((a) => a.id === selectedAreaId)) {
+        setSelectedAreaId(availableAreas[0].id);
+      }
+    } else if (areas.length > 0) {
+      setSelectedAreaId(areas[0].id);
+    } else {
+      setSelectedAreaId("");
+    }
+  }, [selectedWorkCenterId, areas, selectedAreaId]);
+
+  useEffect(() => {
+    const currentArea = areas.find((a) => a.id === selectedAreaId);
+    const availableProcs = currentArea?.processes || [];
+    if (availableProcs.length > 0) {
+      if (!availableProcs.some((p) => p.id === selectedProcessId)) {
+        setSelectedProcessId(availableProcs[0].id);
+      }
+    } else {
+      setSelectedProcessId("");
+    }
+  }, [selectedAreaId, areas, selectedProcessId]);
+
+  const currentWcObj = workCenters.find((w) => w.id === selectedWorkCenterId) || (workCenters.length > 0 ? workCenters[0] : null);
+  const currentAreaObj = areas.find((a) => a.id === selectedAreaId) || (areas.length > 0 ? areas[0] : null);
+  const currentProcObj = currentAreaObj?.processes?.find((p) => p.id === selectedProcessId) || (currentAreaObj?.processes && currentAreaObj.processes.length > 0 ? currentAreaObj.processes[0] : null);
+
+  const currentWcName = currentWcObj?.name || preferences.organizationName || "Centro de Trabajo Principal";
+  const currentAreaName = currentAreaObj?.name || "Área Operativa";
+  const currentProcName = currentProcObj?.name || "Proceso Operativo";
+
+  // Nombres sugeridos que SIEMPRE comienzan con "Matriz de..."
+  const suggestedNames = useMemo(() => {
+    if (matrixScope === "work_center") {
+      return [
+        `Matriz de Riesgos ${currentWcName}`,
+        `Matriz de Gestión de Riesgos ${currentWcName}`,
+        `Matriz de ${currentWcName}`,
+      ];
+    }
+    if (matrixScope === "area") {
+      return [
+        `Matriz de Riesgos Área ${currentAreaName}`,
+        `Matriz de ${currentAreaName} - ${currentWcName}`,
+        `Matriz de Gestión de Riesgos Área ${currentAreaName}`,
+      ];
+    }
+    return [
+      `Matriz de Riesgos ${currentProcName}`,
+      `Matriz de ${currentProcName} - ${currentAreaName}`,
+      `Matriz de Gestión de Riesgos Proceso ${currentProcName}`,
+    ];
+  }, [matrixScope, currentWcName, currentAreaName, currentProcName]);
 
   // Close floating menu on scroll or resize
   useEffect(() => {
@@ -947,13 +1187,21 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
 
   const handleCreateMatrix = (e?: React.FormEvent, compileImmediately = false) => {
     if (e) e.preventDefault();
-    if (!newName.trim()) return;
+    const finalName = newName.trim() || suggestedNames[0] || "Matriz de Riesgos";
 
     const newItem: IperMatrixItem = {
       id: `m-${Date.now()}`,
-      code: newCode || `MA-00${matrices.length + 1}`,
-      name: newName,
-      workCenter: newWorkCenter || preferences.organizationName || "Centro Operativo",
+      code: newCode.trim() || `MA-00${matrices.length + 1}`,
+      name: finalName,
+      scope: matrixScope,
+      workCenterId: selectedWorkCenterId || undefined,
+      workCenter: currentWcName,
+      workCenterName: currentWcName,
+      areaId: matrixScope !== "work_center" ? (selectedAreaId || undefined) : undefined,
+      areaName: matrixScope !== "work_center" ? currentAreaName : undefined,
+      processId: matrixScope === "process" ? (selectedProcessId || undefined) : undefined,
+      processName: matrixScope === "process" ? currentProcName : undefined,
+      description: newDescription.trim() || undefined,
       responsible: newResponsible || "Prevencionista de Riesgos",
       totalRecords: 0,
       intolerableRisks: 0,
@@ -964,12 +1212,183 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
     setMatrices([newItem, ...matrices]);
     setIsNewMatrixOpen(false);
     setNewName("");
+    setNewCode("");
+    setNewDescription("");
+    setIsCustomName(false);
     showToast(`Matriz ${newItem.code} creada como Borrador.`);
 
     if (compileImmediately) {
       setSelectedMatrix(newItem);
       setOpenWizardOnSelect(true);
     }
+  };
+
+  // Descarga de Plantilla Oficial de Matriz IPER (2 hojas: INSTRUCCIONES y MATRIZ con branding LifeOn)
+  const downloadIperTemplateXlsx = () => {
+    const wb = XLSX.utils.book_new();
+
+    // HOJA 1: INSTRUCCIONES
+    const wsInstructions = createThemedInstructionsSheet({
+      title: "PLANTILLA OFICIAL DE MATRIZ IPER (DS 44 / GESTIÓN DE RIESGOS)",
+      subtitle: "Estructura formal para la identificación de peligros, evaluación de riesgos iniciales/residuales y medidas de control.",
+      legendNotes: [
+        "La hoja 'INSTRUCCIONES' es solo informativa y no es leída durante la importación.",
+        "La hoja 'MATRIZ' es la ÚNICA hoja procesada para cargar los riesgos.",
+        "Los valores de Probabilidad y Consecuencia deben ser números entre 1 y 5 (o 1 y 3 según metodología VEP).",
+      ],
+      sections: [
+        {
+          title: "1. RELACIÓN CON ESTRUCTURA ORGANIZACIONAL",
+          items: [
+            "Centro de Trabajo: Debe corresponder a una sede u obra registrada en tu organización.",
+            "Área: Área operativa donde se ejecuta la labor evaluada.",
+            "Proceso: Proceso de trabajo al que pertenece la tarea.",
+            "Cargo: Cargo ocupacional expuesto al peligro identificado.",
+          ],
+        },
+        {
+          title: "2. EVALUACIÓN DE RIESGOS",
+          items: [
+            "Probabilidad Inicial: Estimación de ocurrencia antes de controles (1 a 5).",
+            "Consecuencia Inicial: Severidad de las posibles lesiones o pérdidas (1 a 5).",
+            "Medidas de Control Existentes: Controles de ingeniería, administrativos o EPP en terreno.",
+            "Probabilidad y Consecuencia Residual: Reevaluación tras la aplicación de controles adicionales.",
+          ],
+        },
+        {
+          title: "3. RECOMENDACIONES DE LLENADO",
+          items: [
+            "No modifique los nombres ni el orden de las columnas en la fila 1 de la hoja 'MATRIZ'.",
+            "Puede completar tantas filas como tareas y riesgos tenga su proceso.",
+          ],
+        },
+      ],
+    });
+
+    // HOJA 2: MATRIZ
+    const wsMatriz = createThemedDataSheet({
+      sheetTitle: "MATRIZ IPER",
+      columns: [
+        { header: "Centro de Trabajo", key: "workCenter", mandatory: true, width: 26 },
+        { header: "Área", key: "area", mandatory: true, width: 22 },
+        { header: "Proceso", key: "process", mandatory: true, width: 26 },
+        { header: "Subproceso", key: "subprocess", mandatory: false, width: 20 },
+        { header: "Tarea", key: "task", mandatory: true, width: 38 },
+        { header: "Cargo", key: "cargo", mandatory: true, width: 24 },
+        { header: "Rutinaria", key: "routine", mandatory: false, width: 14 },
+        { header: "Peligro / Factor de Riesgo", key: "hazard", mandatory: true, width: 38 },
+        { header: "Riesgo / Evento No Deseado", key: "risk", mandatory: true, width: 38 },
+        { header: "Medidas de Control Existentes", key: "controls", mandatory: true, width: 45 },
+        { header: "Probabilidad Inicial", key: "initProb", mandatory: true, width: 20 },
+        { header: "Consecuencia Inicial", key: "initCons", mandatory: true, width: 20 },
+        { header: "Medidas de Control Adicionales", key: "addControls", mandatory: false, width: 45 },
+        { header: "Probabilidad Residual", key: "resProb", mandatory: false, width: 20 },
+        { header: "Consecuencia Residual", key: "resCons", mandatory: false, width: 20 },
+      ],
+      data: [
+        {
+          workCenter: "Obra Hospital Talca",
+          area: "Construcción",
+          process: "Montaje estructural",
+          subprocess: "Montaje de vigas",
+          task: "Instalación y fijación de vigas metálicas en altura",
+          cargo: "Montador Estructural",
+          routine: "S",
+          hazard: "Trabajo sobre plataforma en altura física > 1.80m",
+          risk: "Caída a distinto nivel con politraumatismo grave o fatal",
+          controls: "Uso de arnés SPDC con doble cabo de vida, línea de vida certificada e inspección previa",
+          initProb: 4,
+          initCons: 4,
+          addControls: "Red perimetral anticaídas y supervisión permanente por rigger",
+          resProb: 2,
+          resCons: 2,
+        },
+      ],
+    });
+
+    XLSX.utils.book_append_sheet(wb, wsInstructions, "INSTRUCCIONES");
+    XLSX.utils.book_append_sheet(wb, wsMatriz, "MATRIZ");
+
+    XLSX.writeFile(wb, "Plantilla_Matriz_IPER_LifeOn.xlsx");
+  };
+
+  // Procesamiento de importación de Matriz IPER (Req 8)
+  const handleProcessIperImport = () => {
+    if (!importFile) {
+      setImportError("Por favor selecciona un archivo .xlsx para procesar.");
+      return;
+    }
+    setIsProcessingImport(true);
+    setImportError(null);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+
+        // Buscar hoja MATRIZ
+        const sheetName = workbook.SheetNames.find(
+          (s) => s.trim().toUpperCase() === "MATRIZ"
+        ) || workbook.SheetNames.find((s) => s.trim().toUpperCase() !== "INSTRUCCIONES") || workbook.SheetNames[0];
+
+        if (!sheetName) {
+          setImportError("El archivo no contiene hojas con datos.");
+          setIsProcessingImport(false);
+          return;
+        }
+
+        const ws = workbook.Sheets[sheetName];
+        const rawRows = normalizeImportedRows<any>(ws);
+
+        if (rawRows.length === 0) {
+          setImportError("La hoja 'MATRIZ' no contiene registros válidos para importar.");
+          setIsProcessingImport(false);
+          return;
+        }
+
+        const firstRow = rawRows[0];
+        const workCenterVal = firstRow["centro de trabajo"] || firstRow["centro"] || currentWcName;
+        const areaVal = firstRow["area"] || "Operaciones";
+        const processVal = firstRow["proceso"] || "Proceso Operativo";
+
+        const newMatrixCode = `MA-IMP-${Date.now().toString().slice(-4)}`;
+        const importedMatrix: IperMatrixItem = {
+          id: `m-imp-${Date.now()}`,
+          code: newMatrixCode,
+          name: `Matriz de Riesgos ${processVal} - ${workCenterVal}`,
+          scope: "process",
+          workCenter: String(workCenterVal).trim(),
+          workCenterName: String(workCenterVal).trim(),
+          areaName: String(areaVal).trim(),
+          processName: String(processVal).trim(),
+          responsible: newResponsible || "Prevencionista de Riesgos",
+          totalRecords: rawRows.length,
+          intolerableRisks: rawRows.filter((r: any) => {
+            const prob = Number(r["probabilidad inicial"] || 1);
+            const cons = Number(r["consecuencia inicial"] || 1);
+            return prob * cons >= 15;
+          }).length,
+          expiryText: "Vencimiento: 1 año",
+          status: "Borrador",
+        };
+
+        setMatrices([importedMatrix, ...matrices]);
+        setIsImportOpen(false);
+        setImportFile(null);
+        setIsProcessingImport(false);
+        showToast(`Matriz importada con éxito (${rawRows.length} registros analizados).`);
+      } catch (err: any) {
+        console.error("Error importando matriz:", err);
+        setImportError("Error al interpretar la planilla Excel: " + (err.message || "Formato incompatible."));
+        setIsProcessingImport(false);
+      }
+    };
+    reader.onerror = () => {
+      setImportError("No fue posible leer el archivo.");
+      setIsProcessingImport(false);
+    };
+    reader.readAsArrayBuffer(importFile);
   };
 
   const filteredMatrices = matrices.filter((m) => {
@@ -996,6 +1415,13 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
     if (!matchesCategory) return false;
 
     if (activeGridScale === "3x3" && selectedCell3x3) {
+      if (currentMethodology === "dynamic5x5_vep") {
+        const equiv = convert5x5ToVep3x3(r.prob5x5 || 1, r.impact5x5 || 1);
+        return (
+          equiv.prob3x3 === selectedCell3x3.prob &&
+          equiv.severidad3x3 === selectedCell3x3.severidad
+        );
+      }
       return (
         r.prob3x3 === selectedCell3x3.prob &&
         r.severidad3x3 === selectedCell3x3.severidad
@@ -1163,21 +1589,6 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Botón Destacado: Gestión de Áreas / Estructura Organizacional */}
-          <button
-            type="button"
-            onClick={() => setIsOrgStructureOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-teal-900 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-300 hover:border-teal-400 hover:from-teal-100 hover:to-emerald-100 shadow-2xs transition-all cursor-pointer group"
-          >
-            <div className="w-5 h-5 rounded-lg bg-teal-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-              <LuFolderTree className="w-3.5 h-3.5" />
-            </div>
-            <span>Estructura Organizacional</span>
-            <span className="hidden sm:inline text-[10px] bg-teal-200/80 text-teal-900 font-extrabold px-2 py-0.5 rounded-full">
-              {totalAreasCount} Áreas
-            </span>
-          </button>
-
           <button
             type="button"
             onClick={() => setIsImportOpen(true)}
@@ -1189,7 +1600,7 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
 
           <button
             type="button"
-            onClick={() => setIsNewMatrixOpen(true)}
+            onClick={handleOpenNewMatrix}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[#F04438] hover:bg-[#D92D20] shadow-xs transition cursor-pointer"
           >
             <LuPlus className="w-4 h-4" />
@@ -1198,30 +1609,114 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
         </div>
       </div>
 
-      {/* 2. 4 Tarjetas KPI */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
-        <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-2xs hover:shadow-xs transition">
-          <p className="text-xs font-medium text-gray-500">Matrices vigentes</p>
-          <p className="text-3xl font-bold text-gray-900 my-0.5">{countVigentes}</p>
-          <p className="text-[11px] text-gray-400">de {matrices.length} totales</p>
+      {/* ESTADO GUIADO CUANDO NO HAY ESTRUCTURA ORGANIZACIONAL (Acceso contextual según Req 12) */}
+      {areas.length === 0 && (
+        <section className="bg-white rounded-3xl p-8 sm:p-12 text-center border-2 border-dashed border-gray-200 flex flex-col items-center max-w-xl mx-auto my-4 animate-in fade-in duration-200">
+          <div className="w-16 h-16 rounded-2xl bg-red-50 text-[#F04438] flex items-center justify-center mb-4">
+            <LuFolderTree className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            Primero configura la estructura de tu organización
+          </h3>
+          <p className="text-xs sm:text-sm text-gray-500 max-w-md mb-6 leading-relaxed">
+            Para crear una Matriz IPER necesitamos conocer las áreas, procesos, subprocesos, cargos y responsables que forman parte de tu organización.
+          </p>
+          <button
+            type="button"
+            onClick={onNavigateToOrg}
+            className="px-5 py-3 bg-[#F04438] hover:bg-[#D92D20] text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs flex items-center gap-2"
+          >
+            <LuFolderTree className="w-4 h-4" />
+            <span>Configurar estructura organizacional</span>
+          </button>
+        </section>
+      )}
+
+      {/* 🌟 1. SECCIÓN DESTACADA: INFORMACIÓN DE RIESGOS LABORALES (IRL) (Req 7: inmediatamente bajo el título) */}
+      <div className="bg-gradient-to-br from-teal-50/90 via-emerald-50/40 to-cyan-50/30 border-2 border-teal-200/90 rounded-2xl p-6 shadow-xs relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center shadow-md flex-shrink-0">
+              <LuFileText className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-black uppercase tracking-wider text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded-full border border-teal-200">
+                  Documento Principal
+                </span>
+                <h3 className="text-lg font-black text-gray-900 tracking-tight">
+                  Información de Riesgos Laborales (IRL)
+                </h3>
+              </div>
+              <p className="text-xs text-gray-600 mt-1 max-w-2xl leading-relaxed">
+                Genera y consulta la información de riesgos aplicable a cada cargo a partir de las matrices IPER vigentes de tu organización.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsIrlCargoListOpen(true)}
+            className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-2 whitespace-nowrap self-stretch lg:self-auto justify-center"
+          >
+            <LuFileText className="w-4 h-4" />
+            <span>Ver Información de Riesgos Laborales</span>
+          </button>
         </div>
 
-        <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-2xs hover:shadow-xs transition">
+        {/* Fila de Métricas IRL */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-teal-200/60">
+          <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-teal-100">
+            <span className="text-[10px] text-gray-500 font-semibold uppercase">Cargos con IRL</span>
+            <p className="text-xl font-black text-gray-900 mt-0.5">{irlMetrics.total}</p>
+          </div>
+          <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-teal-100">
+            <span className="text-[10px] text-emerald-600 font-semibold uppercase">IRL actualizados</span>
+            <p className="text-xl font-black text-emerald-700 mt-0.5">{irlMetrics.updated}</p>
+          </div>
+          <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-teal-100">
+            <span className="text-[10px] text-amber-600 font-semibold uppercase">IRL pendientes</span>
+            <p className="text-xl font-black text-amber-700 mt-0.5">{irlMetrics.pending}</p>
+          </div>
+          <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-teal-100">
+            <span className="text-[10px] text-gray-500 font-semibold uppercase">Última actualización</span>
+            <p className="text-xs font-bold text-gray-800 mt-1.5 truncate">{irlMetrics.latestDate}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Tarjetas KPI de Matrices (Req 7: Total, Vigentes, En revisión, Borradores, Observadas/Vencidas) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="border border-gray-100 rounded-2xl p-4 bg-white shadow-2xs hover:shadow-xs transition">
+          <p className="text-xs font-medium text-gray-500">Total matrices</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900 my-0.5">{matrices.length}</p>
+          <p className="text-[11px] text-gray-400">En la organización</p>
+        </div>
+
+        <div className="border border-gray-100 rounded-2xl p-4 bg-white shadow-2xs hover:shadow-xs transition">
+          <p className="text-xs font-medium text-gray-500">Matrices vigentes</p>
+          <p className="text-2xl sm:text-3xl font-bold text-emerald-600 my-0.5">{countVigentes}</p>
+          <p className="text-[11px] font-medium text-emerald-600">Operativas</p>
+        </div>
+
+        <div className="border border-gray-100 rounded-2xl p-4 bg-white shadow-2xs hover:shadow-xs transition">
           <p className="text-xs font-medium text-gray-500">En revisión / aprobación</p>
-          <p className="text-3xl font-bold text-[#3B82F6] my-0.5">{countRevision}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-[#3B82F6] my-0.5">{countRevision}</p>
           <p className="text-[11px] font-medium text-[#3B82F6]">Flujo de validación</p>
         </div>
 
-        <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-2xs hover:shadow-xs transition">
-          <p className="text-xs font-medium text-gray-500">Observadas / Rechazadas</p>
-          <p className="text-3xl font-bold text-[#D97706] my-0.5">{countObservadas}</p>
-          <p className="text-[11px] font-medium text-[#D97706]">Requieren atención</p>
+        <div className="border border-gray-100 rounded-2xl p-4 bg-white shadow-2xs hover:shadow-xs transition">
+          <p className="text-xs font-medium text-gray-500">Borradores</p>
+          <p className="text-2xl sm:text-3xl font-bold text-slate-700 my-0.5">
+            {matrices.filter((m) => m.status === "Borrador" || m.status === "No iniciado").length}
+          </p>
+          <p className="text-[11px] font-medium text-slate-500">En confección</p>
         </div>
 
-        <div className="border border-gray-100 rounded-2xl p-5 bg-white shadow-2xs hover:shadow-xs transition">
-          <p className="text-xs font-medium text-gray-500">Matrices vencidas</p>
-          <p className="text-3xl font-bold text-[#EF4444] my-0.5">{countVencidas}</p>
-          <p className="text-[11px] font-medium text-[#EF4444]">Actualización obligatoria</p>
+        <div className="border border-gray-100 rounded-2xl p-4 bg-white shadow-2xs hover:shadow-xs transition col-span-2 sm:col-span-1">
+          <p className="text-xs font-medium text-gray-500">Observadas / Vencidas</p>
+          <p className="text-2xl sm:text-3xl font-bold text-[#EF4444] my-0.5">{countObservadas + countVencidas}</p>
+          <p className="text-[11px] font-medium text-[#EF4444]">Requieren atención</p>
         </div>
       </div>
 
@@ -1643,13 +2138,25 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
                           {GRID_3X3_VEP.map((row, rIdx) => (
                             <div key={rIdx} className="grid grid-cols-3 gap-2">
                               {row.map((cell, cIdx) => {
-                                const count = safetyRisks.filter(
-                                  (r) =>
-                                    (safetyCategoryFilter === "Todos" ||
-                                      r.category === safetyCategoryFilter) &&
+                                const count = safetyRisks.filter((r) => {
+                                  if (
+                                    safetyCategoryFilter !== "Todos" &&
+                                    r.category !== safetyCategoryFilter
+                                  ) {
+                                    return false;
+                                  }
+                                  if (currentMethodology === "dynamic5x5_vep") {
+                                    const equiv = convert5x5ToVep3x3(r.prob5x5 || 1, r.impact5x5 || 1);
+                                    return (
+                                      equiv.prob3x3 === cell.prob &&
+                                      equiv.severidad3x3 === cell.severidad
+                                    );
+                                  }
+                                  return (
                                     r.prob3x3 === cell.prob &&
                                     r.severidad3x3 === cell.severidad
-                                ).length;
+                                  );
+                                }).length;
 
                                 const isSelected =
                                   selectedCell3x3?.prob === cell.prob &&
@@ -1930,22 +2437,48 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
                         </div>
 
                         <div className="text-right flex-shrink-0">
-                          <span
-                            className={clsx(
-                              "text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs inline-block",
-                              item.vepLevel === "Crítico" && "bg-red-600 text-white",
-                              item.vepLevel === "Alto" && "bg-orange-500 text-white",
-                              item.vepLevel === "Medio" && "bg-amber-500 text-white",
-                              item.vepLevel === "Bajo" && "bg-emerald-600 text-white"
-                            )}
-                          >
-                            {activeGridScale === "3x3"
-                              ? `VEP ${item.vep}`
-                              : `Score ${item.val5x5}`}
-                          </span>
-                          <span className="text-[10px] text-gray-400 block mt-0.5 font-medium">
-                            {item.vepLevel}
-                          </span>
+                          {activeGridScale === "3x3" && currentMethodology === "dynamic5x5_vep" ? (
+                            (() => {
+                              const equiv = convert5x5ToVep3x3(item.prob5x5 || 1, item.impact5x5 || 1);
+                              return (
+                                <>
+                                  <span
+                                    className={clsx(
+                                      "text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs inline-block",
+                                      equiv.vepLevel === "Crítico" && "bg-red-600 text-white",
+                                      equiv.vepLevel === "Alto" && "bg-orange-500 text-white",
+                                      equiv.vepLevel === "Medio" && "bg-amber-500 text-white",
+                                      equiv.vepLevel === "Bajo" && "bg-emerald-600 text-white"
+                                    )}
+                                  >
+                                    VEP {equiv.vepScore}
+                                  </span>
+                                  <span className="text-[10px] text-teal-700 block mt-0.5 font-bold">
+                                    {equiv.vepLevel} (5×5: {item.val5x5} pts)
+                                  </span>
+                                </>
+                              );
+                            })()
+                          ) : (
+                            <>
+                              <span
+                                className={clsx(
+                                  "text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs inline-block",
+                                  item.vepLevel === "Crítico" && "bg-red-600 text-white",
+                                  item.vepLevel === "Alto" && "bg-orange-500 text-white",
+                                  item.vepLevel === "Medio" && "bg-amber-500 text-white",
+                                  item.vepLevel === "Bajo" && "bg-emerald-600 text-white"
+                                )}
+                              >
+                                {activeGridScale === "3x3"
+                                  ? `VEP ${item.vep}`
+                                  : `Score ${item.val5x5}`}
+                              </span>
+                              <span className="text-[10px] text-gray-400 block mt-0.5 font-medium">
+                                {item.vepLevel}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                     ))
@@ -2133,11 +2666,11 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
       )}
 
       {/* =========================================================================
-          MODAL: + NUEVA MATRIZ IPER
+          MODAL: + NUEVA MATRIZ IPER (Reqs 9-14, 39)
           ========================================================================= */}
       {isNewMatrixOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsNewMatrixOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -2147,70 +2680,198 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
 
             <h3 className="text-lg font-bold text-gray-900 mb-1">Nueva Matriz IPER</h3>
             <p className="text-xs text-gray-500 mb-4">
-              Crea un nuevo inventario de peligros y evaluación de riesgos para un centro de trabajo.
+              Selecciona el alcance organizacional y define el inventario de peligros y evaluación de riesgos.
             </p>
 
-            <form onSubmit={(e) => handleCreateMatrix(e, false)} className="flex flex-col gap-3.5">
-              {/* Sugerencias de Nombre de Matriz según el Rubro (ej: Minería) */}
-              <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 flex flex-col gap-1.5">
-                <div className="flex items-center justify-between flex-wrap gap-1">
-                  <span className="flex items-center gap-1.5 text-[11px] font-bold text-amber-950">
-                    <LuSparkles className="w-3.5 h-3.5 text-amber-600" />
-                    Matrices habituales para tu rubro:
-                  </span>
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                    {sectorProfile.sector}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                  {sectorProfile.suggestedMatrixTitles.map((title: string, sIdx: number) => (
+            <form onSubmit={(e) => handleCreateMatrix(e, false)} className="flex flex-col gap-4">
+              {/* 1. SELECCIÓN DEL ALCANCE DE LA MATRIZ (Req 9) */}
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1.5">
+                  1. Alcance de la Matriz *
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "work_center" as const, label: "Por Centro de Trabajo", icon: LuMapPin, desc: "Toda la faena/obra" },
+                    { id: "area" as const, label: "Por Área", icon: LuFolderTree, desc: "Unidad funcional" },
+                    { id: "process" as const, label: "Por Proceso", icon: LuActivity, desc: "Proceso operativo" },
+                  ].map((sc) => (
                     <button
-                      key={sIdx}
+                      key={sc.id}
                       type="button"
-                      onClick={() => setNewName(title)}
-                      className="text-[10px] font-semibold bg-white hover:bg-amber-100/80 text-amber-950 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs transition cursor-pointer text-left"
+                      onClick={() => {
+                        setMatrixScope(sc.id);
+                        setIsCustomName(false);
+                      }}
+                      className={clsx(
+                        "p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between",
+                        matrixScope === sc.id
+                          ? "bg-teal-50 border-teal-600 text-teal-900 ring-2 ring-teal-500/20 shadow-2xs font-bold"
+                          : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
+                      )}
                     >
-                      + {title}
+                      <div className="flex items-center gap-1.5 text-xs font-bold">
+                        <sc.icon className={clsx("w-3.5 h-3.5", matrixScope === sc.id ? "text-teal-600" : "text-gray-400")} />
+                        <span>{sc.label}</span>
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-normal mt-1">{sc.desc}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-gray-700 block mb-1">Código</label>
-                <input
-                  type="text"
-                  required
-                  value={newCode}
-                  onChange={(e) => setNewCode(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-mono"
-                />
+              {/* 2. SELECTORES DEPENDIENTES SEGÚN ALCANCE (Reqs 10-12, 14) */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-3">
+                {/* Selector de Centro de Trabajo (Siempre presente) */}
+                <div>
+                  <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                    Centro de Trabajo *
+                  </label>
+                  {workCenters.length > 0 ? (
+                    <select
+                      value={selectedWorkCenterId}
+                      onChange={(e) => setSelectedWorkCenterId(e.target.value)}
+                      className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                    >
+                      {workCenters.map((wc) => (
+                        <option key={wc.id} value={wc.id}>
+                          {wc.name} {wc.code ? `(${wc.code})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between">
+                      <span>No hay centros de trabajo configurados.</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsNewMatrixOpen(false);
+                          if (onNavigateToOrg) onNavigateToOrg();
+                        }}
+                        className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-[10px]"
+                      >
+                        Ir a Estructura
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Selector de Área (Si el alcance es Área o Proceso) */}
+                {(matrixScope === "area" || matrixScope === "process") && (
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                      Área Perteneciente *
+                    </label>
+                    <select
+                      value={selectedAreaId}
+                      onChange={(e) => setSelectedAreaId(e.target.value)}
+                      className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                    >
+                      {areas
+                        .filter((a) => !a.workCenterId || a.workCenterId === selectedWorkCenterId)
+                        .map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Selector de Proceso (Si el alcance es Proceso) */}
+                {matrixScope === "process" && (
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                      Proceso Perteneciente *
+                    </label>
+                    <select
+                      value={selectedProcessId}
+                      onChange={(e) => setSelectedProcessId(e.target.value)}
+                      className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                    >
+                      {(currentAreaObj?.processes || []).map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
+              {/* 3. SUGERENCIAS DE NOMBRE (SIEMPRE COMIENZAN CON "Matriz de...") (Reqs 10-12) */}
+              <div className="bg-teal-50/70 border border-teal-200/80 rounded-xl p-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <span className="flex items-center gap-1.5 text-[11px] font-bold text-teal-950">
+                    <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                    Propuestas de Nombre (inician con "Matriz de"):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomName(true);
+                      setNewName("");
+                    }}
+                    className="text-[10px] font-semibold text-teal-700 hover:text-teal-900 underline cursor-pointer"
+                  >
+                    Nombre personalizado
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-1.5 pt-0.5">
+                  {suggestedNames.map((sug, sIdx) => (
+                    <button
+                      key={sIdx}
+                      type="button"
+                      onClick={() => {
+                        setNewName(sug);
+                        setIsCustomName(false);
+                      }}
+                      className={clsx(
+                        "text-xs px-3 py-2 rounded-xl border text-left transition cursor-pointer flex items-center justify-between",
+                        newName === sug || (!newName && sIdx === 0 && !isCustomName)
+                          ? "bg-white border-teal-600 text-teal-900 font-bold ring-1 ring-teal-500/30 shadow-2xs"
+                          : "bg-white/80 hover:bg-white text-gray-700 border-teal-200"
+                      )}
+                    >
+                      <span>{sug}</span>
+                      {(newName === sug || (!newName && sIdx === 0 && !isCustomName)) && (
+                        <LuCheck className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Input de Nombre Final / Personalizado */}
               <div>
                 <label className="text-xs font-semibold text-gray-700 block mb-1">
-                  Nombre de la Matriz / Proceso
+                  Nombre de la Matriz *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Montaje Estructural y Trabajos en Altura"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-medium"
+                  placeholder={suggestedNames[0]}
+                  value={newName || (!isCustomName ? suggestedNames[0] : "")}
+                  onChange={(e) => {
+                    setNewName(e.target.value);
+                    setIsCustomName(true);
+                  }}
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-900 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
 
+              {/* Código y Responsable (Código es Opcional según Req 13) */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-700 block mb-1">
-                    Centro de Trabajo
+                    Código <span className="text-gray-400 font-normal">(Opcional)</span>
                   </label>
                   <input
                     type="text"
-                    value={newWorkCenter}
-                    onChange={(e) => setNewWorkCenter(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800"
+                    placeholder={`MA-00${matrices.length + 1}`}
+                    value={newCode}
+                    onChange={(e) => setNewCode(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-mono"
                   />
                 </div>
                 <div>
@@ -2221,12 +2882,26 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
                     type="text"
                     value={newResponsible}
                     onChange={(e) => setNewResponsible(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800"
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-medium"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-between items-center gap-2 pt-2 border-t border-gray-100">
+              {/* Descripción (Opcional según Req 13) */}
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">
+                  Descripción <span className="text-gray-400 font-normal">(Opcional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Observaciones o consideraciones específicas del alcance..."
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl p-2 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-between items-center gap-2 pt-2 border-t border-gray-100 mt-1">
                 <button
                   type="button"
                   onClick={() => setIsNewMatrixOpen(false)}
@@ -2769,46 +3444,128 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
       )}
 
       {/* =========================================================================
-          MODAL: IMPORTAR DESDE XLSX
+          MODAL: IMPORTAR MATRIZ IPER DESDE XLSX (Req 8: Máximo 2 Hojas)
           ========================================================================= */}
       {isImportOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
             <button
-              onClick={() => setIsImportOpen(false)}
+              onClick={() => {
+                setIsImportOpen(false);
+                setImportFile(null);
+                setImportError(null);
+              }}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
             >
               <LuX className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Importar Matriz desde Excel</h3>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center flex-shrink-0">
+                <LuFileSpreadsheet className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Importar Matriz IPER</h3>
+            </div>
             <p className="text-xs text-gray-500 mb-4">
-              Sube un archivo .xlsx o .csv con la estructura de tareas, peligros y controles DS 44.
+              Carga masiva estructurada de peligros, riesgos y controles según la metodología de tu organización.
             </p>
 
-            <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center bg-gray-50 flex flex-col items-center justify-center">
-              <LuFileSpreadsheet className="w-10 h-10 text-emerald-600 mb-2" />
-              <p className="text-xs font-semibold text-gray-800">Arrastra tu planilla Excel aquí</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">Formatos compatibles: .xlsx, .xls, .csv</p>
+            {/* Banner Informativo de 2 Hojas (Req 8) */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-4 text-xs text-gray-700 flex flex-col gap-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="font-bold text-gray-900 flex items-center gap-1.5">
+                  <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                  Estructura de la Plantilla (2 Hojas):
+                </span>
+                <button
+                  type="button"
+                  onClick={downloadIperTemplateXlsx}
+                  className="px-2.5 py-1 bg-white hover:bg-teal-50 text-teal-800 border border-teal-200 rounded-lg font-bold text-[11px] transition cursor-pointer shadow-2xs flex items-center gap-1"
+                >
+                  <LuDownload className="w-3.5 h-3.5 text-teal-600" />
+                  Descargar Plantilla XLSX
+                </button>
+              </div>
+              <ul className="text-[11px] text-gray-600 space-y-1 list-disc pl-4">
+                <li>
+                  <b>Hoja 1 (INSTRUCCIONES):</b> Guía de llenado, descripción de campos y ejemplos. <i>(No se importa)</i>.
+                </li>
+                <li>
+                  <b>Hoja 2 (MATRIZ):</b> Única hoja de datos que procesa LifeOn con Centro, Área, Proceso, Tarea, Cargo, Peligros y Evaluaciones.
+                </li>
+              </ul>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 mt-4">
+            {/* Zona de Subida de Archivo */}
+            <div className="border-2 border-dashed border-gray-200 hover:border-teal-400 rounded-xl p-6 text-center bg-gray-50 flex flex-col items-center justify-center transition cursor-pointer relative">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    setImportFile(e.target.files[0]);
+                    setImportError(null);
+                  }
+                }}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              />
+              <LuFileSpreadsheet className="w-10 h-10 text-emerald-600 mb-2" />
+              {importFile ? (
+                <div className="flex flex-col items-center">
+                  <p className="text-xs font-bold text-gray-900">{importFile.name}</p>
+                  <p className="text-[11px] text-emerald-600 font-medium mt-0.5">
+                    Archivo listo para procesar ({(importFile.size / 1024).toFixed(1)} KB)
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs font-semibold text-gray-800">
+                    Haz clic o arrastra tu archivo Excel aquí
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    Formato compatible: Plantilla_Matriz_IPER_LifeOn.xlsx
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Mensaje de Error si aplica */}
+            {importError && (
+              <div className="mt-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+                <LuCircleAlert className="w-4 h-4 flex-shrink-0 text-red-600" />
+                <span>{importError}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center gap-2 pt-4 border-t border-gray-100 mt-4">
               <button
                 type="button"
-                onClick={() => setIsImportOpen(false)}
+                onClick={() => {
+                  setIsImportOpen(false);
+                  setImportFile(null);
+                  setImportError(null);
+                }}
                 className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  showToast("Matriz importada con éxito desde archivo XLSX.");
-                  setIsImportOpen(false);
-                }}
-                className="px-4 py-2 text-xs font-semibold text-white bg-[#F04438] hover:bg-[#D92D20] rounded-xl transition cursor-pointer shadow-xs"
+                disabled={!importFile || isProcessingImport}
+                onClick={handleProcessIperImport}
+                className="px-4 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-40 rounded-xl transition cursor-pointer shadow-xs flex items-center gap-1.5"
               >
-                Procesar Archivo
+                {isProcessingImport ? (
+                  <>
+                    <LuRotateCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Procesando...</span>
+                  </>
+                ) : (
+                  <>
+                    <LuUpload className="w-3.5 h-3.5" />
+                    <span>Procesar e Importar</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -2820,6 +3577,328 @@ export default function IperMatrixView({ onOpenAprVirtual }: { onOpenAprVirtual?
         isOpen={isOrgStructureOpen}
         onClose={() => setIsOrgStructureOpen(false)}
       />
+
+      {/* Modal de Onboarding Inicial Exclusivo de Metodología IPER (Closable y Bloqueante según Reqs 10-11) */}
+      <IperModuleOnboardingModal
+        isOpen={(!isMiperConfigured && !isMethodologyModalDismissed) || isMethodologyModalExplicitOpen}
+        promptMessage={methodologyPromptMessage}
+        onClose={() => {
+          setIsMethodologyModalDismissed(true);
+          setIsMethodologyModalExplicitOpen(false);
+          setMethodologyPromptMessage(undefined);
+        }}
+        onConfirm={(methodology) => {
+          configureMiperModule(methodology);
+          setIsMethodologyModalDismissed(true);
+          setIsMethodologyModalExplicitOpen(false);
+          setMethodologyPromptMessage(undefined);
+          showToast("Metodología de evaluación de riesgos configurada correctamente.");
+        }}
+      />
+
+      {/* ==================================================================== */}
+      {/* MODAL: VISTA DE INFORMACIÓN DE RIESGOS LABORALES (IRL) POR CARGO (Req 16) */}
+      {/* ==================================================================== */}
+      {isIrlCargoListOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 flex flex-col justify-between animate-in fade-in zoom-in-95 duration-200">
+            <div>
+              {/* Encabezado */}
+              <div className="flex items-start justify-between gap-3 pb-4 border-b border-gray-100 mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+                    <LuFileText className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-gray-900 tracking-tight">
+                      Información de Riesgos Laborales (IRL) por Cargo
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      Documentos preventivos generados exclusivamente a partir de matrices IPER vigentes de la organización.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsIrlCargoListOpen(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition cursor-pointer"
+                >
+                  <LuX className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Lista de Cargos o Estado Vacío */}
+              {irlCargosData.length === 0 ? (
+                <div className="p-10 text-center border-2 border-dashed border-gray-200 rounded-2xl my-4">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <LuFileText className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-sm font-bold text-gray-800 mb-1">
+                    No existen matrices IPER en estado Vigente
+                  </h4>
+                  <p className="text-xs text-gray-500 max-w-md mx-auto mb-4">
+                    La Información de Riesgos Laborales (IRL) se genera automáticamente a partir de matrices en estado <strong>Vigente</strong>. Una vez que apruebes matrices IPER, los cargos asociados aparecerán aquí disponibles para emisión.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsIrlCargoListOpen(false);
+                      handleOpenNewMatrix();
+                    }}
+                    className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
+                  >
+                    Crear primera matriz IPER
+                  </button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-gray-400 font-semibold uppercase tracking-wider text-[10px]">
+                        <th className="py-3 px-3">Cargo</th>
+                        <th className="py-3 px-3">Área</th>
+                        <th className="py-3 px-3">Matrices asociadas</th>
+                        <th className="py-3 px-3">Última actualización</th>
+                        <th className="py-3 px-3">Estado</th>
+                        <th className="py-3 px-3 text-right">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {irlCargosData.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-teal-50/30 transition">
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-teal-500" />
+                              <span className="font-bold text-gray-900">{item.cargo}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-gray-600">{item.area}</td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {item.matrices.map((m) => (
+                                <span
+                                  key={m.id}
+                                  className="px-2 py-0.5 bg-gray-100 text-gray-700 font-mono text-[10px] rounded font-bold"
+                                  title={m.name}
+                                >
+                                  {m.code}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-gray-600">{item.lastUpdate}</td>
+                          <td className="py-3 px-3">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {item.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedIrlCargoItem(item)}
+                              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg shadow-xs transition cursor-pointer"
+                            >
+                              Ver IRL
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-gray-100 flex justify-end mt-4">
+              <button
+                type="button"
+                onClick={() => setIsIrlCargoListOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* MODAL: DOCUMENTO IRL COMPLETO POR CARGO */}
+      {/* ==================================================================== */}
+      {selectedIrlCargoItem && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 flex flex-col justify-between max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+            <div>
+              {/* Barra Superior con Acciones */}
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-6 gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+                    <LuFileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-gray-900">
+                      Documento Oficial IRL
+                    </h3>
+                    <p className="text-[11px] text-gray-500">
+                      {selectedIrlCargoItem.cargo} • {selectedIrlCargoItem.area}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="px-3.5 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <LuPrinter className="w-3.5 h-3.5 text-gray-500" />
+                    <span>Imprimir</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIrlCargoItem(null)}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition cursor-pointer"
+                  >
+                    <LuX className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* CUERPO DEL DOCUMENTO CORPORATIVO */}
+              <div className="bg-slate-50/60 rounded-2xl p-6 sm:p-8 border border-slate-200 text-gray-900 flex flex-col gap-6 text-xs leading-relaxed">
+                {/* Membrete Oficial */}
+                <div className="text-center pb-4 border-b border-slate-200">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-700">
+                    LIFEON SST • GESTIÓN DE RIESGOS LABORALES
+                  </span>
+                  <h2 className="text-lg sm:text-xl font-black text-gray-900 mt-1">
+                    INFORMACIÓN DE RIESGOS LABORALES (IRL)
+                  </h2>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    Obligación de Informar los Riesgos Laborales (Art. 21 D.S. N° 40 / Ley 16.744 / D.S. N° 44)
+                  </p>
+                </div>
+
+                {/* Cuadro de Identificación */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-white p-4 rounded-xl border border-slate-200 text-xs">
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-semibold block uppercase">Empresa</span>
+                    <strong className="text-gray-800 font-bold">{preferences.organizationName || "Constructora Santa María SpA"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-semibold block uppercase">Puesto / Cargo</span>
+                    <strong className="text-teal-800 font-bold">{selectedIrlCargoItem.cargo}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-semibold block uppercase">Área Operativa</span>
+                    <strong className="text-gray-800 font-bold">{selectedIrlCargoItem.area}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 font-semibold block uppercase">Fecha de Emisión</span>
+                    <span className="text-gray-700">{selectedIrlCargoItem.lastUpdate}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[10px] text-gray-400 font-semibold block uppercase">Matrices IPER Vigentes Fuente</span>
+                    <span className="text-gray-700 font-mono text-[11px]">
+                      {selectedIrlCargoItem.matrices.map((m) => m.code).join(", ")}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 1. Marco Legal */}
+                <div>
+                  <h4 className="font-extrabold text-gray-900 text-xs uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                    <LuShieldCheck className="w-4 h-4 text-teal-600" />
+                    1. Objetivo y Alcance
+                  </h4>
+                  <p className="text-gray-600 text-justify">
+                    El presente documento tiene por objetivo informar oportuna y convenientemente a los trabajadores sobre los riesgos inherentes a sus labores, las medidas preventivas adoptadas por la empresa y los métodos de trabajo correctos, conforme a lo establecido en el Artículo 21 del Decreto Supremo N° 40, en concordancia con la Ley N° 16.744 y el Decreto Supremo N° 44.
+                  </p>
+                </div>
+
+                {/* 2. Peligros y Medidas de Control (Consolidados de Matrices Vigentes) */}
+                <div>
+                  <h4 className="font-extrabold text-gray-900 text-xs uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <LuShieldAlert className="w-4 h-4 text-amber-600" />
+                    2. Peligros, Riesgos Evaluados y Medidas Preventivas Obligatorias
+                  </h4>
+                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-100 text-gray-700 font-bold border-b border-slate-200 text-[10px] uppercase">
+                          <th className="p-2.5 w-1/3">Peligro Identificado</th>
+                          <th className="p-2.5 w-1/3">Consecuencia / Evento</th>
+                          <th className="p-2.5 w-1/3">Medida Preventiva / Control DS 44</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-[11px]">
+                        {selectedIrlCargoItem.risks.map((r, rIdx) => (
+                          <tr key={rIdx}>
+                            <td className="p-2.5 font-semibold text-gray-900">{r.hazard}</td>
+                            <td className="p-2.5 text-gray-600">{r.riskEvent}</td>
+                            <td className="p-2.5 text-teal-900 bg-teal-50/40">{r.controls}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 3. EPP Obligatorio */}
+                <div>
+                  <h4 className="font-extrabold text-gray-900 text-xs uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                    <LuCheck className="w-4 h-4 text-emerald-600" />
+                    3. Elementos de Protección Personal (EPP) Obligatorios
+                  </h4>
+                  <ul className="list-disc list-inside text-gray-600 space-y-0.5 ml-1">
+                    <li>Casco de seguridad dieléctrico con barbiquejo de 3 puntas.</li>
+                    <li>Calzado de seguridad con puntera de acero o composite y suela antideslizante.</li>
+                    <li>Lentes de seguridad con protección UV y sello hermético contra partículas.</li>
+                    <li>Chaleco reflectante de alta visibilidad clase 2 o 3 según norma.</li>
+                    <li>Guantes de seguridad certificados específicos para la tarea (mecánicos / nitrilo).</li>
+                    <li>Protección respiratoria con filtros certificados según exposición a polvo o vapores.</li>
+                  </ul>
+                </div>
+
+                {/* 4. Declaración de Recepción y Firma */}
+                <div className="p-4 bg-white rounded-xl border border-slate-200 flex flex-col gap-4 mt-2">
+                  <p className="text-[11px] text-gray-600 text-justify">
+                    Declaro haber recibido la información y capacitación sobre los riesgos propios de mis funciones como <strong>{selectedIrlCargoItem.cargo}</strong>, comprometiéndome a cumplir las normas internas, los procedimientos de trabajo seguro y el uso permanente de mis EPP.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-[11px]">
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Nombre Trabajador</span>
+                      <div className="border-b border-gray-300 pt-3"></div>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">RUT</span>
+                      <div className="border-b border-gray-300 pt-3"></div>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Fecha de Entrega</span>
+                      <div className="border-b border-gray-300 pt-3 text-gray-700">{selectedIrlCargoItem.lastUpdate}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Firma</span>
+                      <div className="border-b border-gray-300 pt-3"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-100 flex justify-end mt-4">
+              <button
+                type="button"
+                onClick={() => setSelectedIrlCargoItem(null)}
+                className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs"
+              >
+                Entendido / Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

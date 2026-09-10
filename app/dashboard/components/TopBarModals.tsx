@@ -36,6 +36,12 @@ import {
   LuSlidersHorizontal,
   LuRotateCcw,
   LuLightbulb,
+  LuImage,
+  LuUpload,
+  LuTrash2,
+  LuLock,
+  LuKey,
+  LuCamera,
 } from "react-icons/lu";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import {
@@ -44,6 +50,8 @@ import {
   RiskEvaluationMethod,
   RiskManagementApproach,
 } from "@/types/preferences";
+import { OrgWorkCenter } from "@/types/orgStructure";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabaseClient";
 
 export interface NotificationItem {
   id: string;
@@ -206,20 +214,26 @@ export function UserProfileDropdown({
   userDisplayName,
   userEmail,
   activeWorkplace,
+  organizationName,
+  profilePhoto,
   onOpenAccountModal,
   onOpenSettingsModal,
   onOpenSubscriptionModal,
   onOpenTour,
+  onResetTestAccount,
   onLogout,
   onClose,
 }: {
   userDisplayName: string;
   userEmail: string;
   activeWorkplace: string;
+  organizationName?: string;
+  profilePhoto?: string | null;
   onOpenAccountModal: () => void;
   onOpenSettingsModal: () => void;
   onOpenSubscriptionModal: () => void;
   onOpenTour?: () => void;
+  onResetTestAccount?: () => void;
   onLogout: () => void;
   onClose: () => void;
 }) {
@@ -229,15 +243,25 @@ export function UserProfileDropdown({
     .map((n: string) => n[0])
     .slice(0, 2)
     .join("")
-    .toUpperCase() || "SJ";
+    .toUpperCase() || "US";
+
+  const displayOrg = organizationName || (userEmail.includes("luis") ? "Mi Organización" : "Constructora y Servicios Santiago SpA");
 
   return (
     <div className="absolute right-0 top-12 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
       {/* Cabecera del Usuario */}
       <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
-        <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
-          {initials}
-        </div>
+        {profilePhoto ? (
+          <img
+            src={profilePhoto}
+            alt={userDisplayName}
+            className="w-11 h-11 rounded-full object-cover shadow-xs flex-shrink-0 border border-teal-200"
+          />
+        ) : (
+          <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
+            {initials}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-gray-900 truncate" title={userDisplayName}>
             {userDisplayName}
@@ -255,7 +279,7 @@ export function UserProfileDropdown({
       <div className="py-3 border-b border-gray-100 flex flex-col gap-2">
         <div className="flex items-center justify-between text-xs text-gray-600">
           <span className="text-gray-400">Organización:</span>
-          <span className="font-semibold text-gray-800">Constructora LifeOn S.A.</span>
+          <span className="font-semibold text-gray-800 truncate max-w-[150px]" title={displayOrg}>{displayOrg}</span>
         </div>
         <button
           type="button"
@@ -325,6 +349,23 @@ export function UserProfileDropdown({
         )}
       </div>
 
+      {/* Botón Restablecer Cuenta (Exclusivo cuenta de prueba luis.godoy@safetyclub.cl) */}
+      {userEmail.toLowerCase().trim() === "luis.godoy@safetyclub.cl" && onResetTestAccount && (
+        <div className="pt-2 border-t border-amber-100">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onResetTestAccount();
+            }}
+            className="w-full py-2 px-3 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <LuRotateCcw className="w-4 h-4 text-amber-600" />
+            Restablecer cuenta de prueba
+          </button>
+        </div>
+      )}
+
       {/* Botón Cerrar Sesión */}
       <div className="pt-2 border-t border-gray-100">
         <button
@@ -351,31 +392,166 @@ export function AccountModal({
   onClose,
   userDisplayName,
   userEmail,
+  organizationName,
 }: {
   isOpen: boolean;
   onClose: () => void;
   userDisplayName: string;
   userEmail: string;
+  organizationName?: string;
 }) {
+  const { preferences, updatePreferences } = useLifeOnPreferences();
   const [name, setName] = useState(userDisplayName || "Sergio A. Jara Astete");
   const [rut, setRut] = useState("15.842.190-K");
   const [seremiCode, setSeremiCode] = useState("REG-SEREMI-45291 (DS 40)");
   const [email, setEmail] = useState(userEmail || "sergio.jara@lifeon.cl");
   const [phone, setPhone] = useState("+56 9 8765 4321");
-  const [company, setCompany] = useState("Constructora LifeOn S.A.");
+  const [company, setCompany] = useState(organizationName || "Constructora y Servicios Santiago SpA");
   const [position, setPosition] = useState("Jefe de Prevención de Riesgos y Medio Ambiente");
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  // Foto de perfil y Logo de empresa
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(preferences.profilePhoto || null);
+  const [orgLogo, setOrgLogo] = useState<string | null>(preferences.organizationLogo || null);
+
+  // Estados de cambio de contraseña
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  useEffect(() => {
+    if (userDisplayName) setName(userDisplayName);
+    if (userEmail) setEmail(userEmail);
+    if (organizationName) setCompany(organizationName);
+    setProfilePhoto(preferences.profilePhoto || null);
+    setOrgLogo(preferences.organizationLogo || null);
+  }, [userDisplayName, userEmail, organizationName, preferences.profilePhoto, preferences.organizationLogo]);
+
   if (!isOpen) return null;
+
+  const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.match(/^image\/(png|jpeg|jpg|webp)$/i)) {
+      alert("Formato no compatible. Por favor selecciona una imagen JPG, PNG o WEBP.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      alert("La imagen excede el límite recomendado de 3MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const dataUrl = evt.target?.result as string;
+      setProfilePhoto(dataUrl);
+      updatePreferences({ profilePhoto: dataUrl });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteProfilePhoto = () => {
+    setProfilePhoto(null);
+    updatePreferences({ profilePhoto: null });
+  };
+
+  const handleOrgLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.match(/^image\/(png|jpeg|jpg|webp|svg\+xml)$/i)) {
+      alert("Formato no compatible. Por favor selecciona un logo PNG, JPG, WEBP o SVG.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      alert("El logo excede el límite de 3MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const dataUrl = evt.target?.result as string;
+      setOrgLogo(dataUrl);
+      updatePreferences({ organizationLogo: dataUrl });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteOrgLogo = () => {
+    setOrgLogo(null);
+    updatePreferences({ organizationLogo: null });
+  };
+
+  const handlePasswordChangeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (!currentPassword) {
+      setPasswordError("Debes ingresar tu contraseña actual.");
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError("La nueva contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("La nueva contraseña y su confirmación no coinciden.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const client = getSupabaseClient();
+      if (client && isSupabaseConfigured()) {
+        const { error } = await client.auth.updateUser({ password: newPassword });
+        if (error) {
+          setPasswordError(error.message || "Error al actualizar contraseña en el proveedor de autenticación.");
+          setIsChangingPassword(false);
+          return;
+        }
+      } else {
+        const isLuis = userEmail.toLowerCase().includes("luis.godoy");
+        const expectedCurrent = isLuis ? "luis" : "serg";
+        if (currentPassword !== expectedCurrent && currentPassword !== "admin123") {
+          setPasswordError("La contraseña actual no es correcta.");
+          setIsChangingPassword(false);
+          return;
+        }
+      }
+
+      setPasswordSuccess("Contraseña actualizada exitosamente.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      setPasswordError("Error al procesar el cambio de contraseña.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    updatePreferences({
+      profilePhoto,
+      organizationLogo: orgLogo,
+      organizationName: company,
+    });
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
       onClose();
     }, 1200);
   };
+
+  const userInitials = name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "SJ";
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -387,26 +563,108 @@ export function AccountModal({
           <LuX className="w-5 h-5" />
         </button>
 
-        {/* Encabezado */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-            {name
-              .split(" ")
-              .filter(Boolean)
-              .map((n) => n[0])
-              .slice(0, 2)
-              .join("")
-              .toUpperCase() || "SJ"}
+        {/* Encabezado con Avatar / Foto */}
+        <div className="flex items-center gap-4 mb-5 pb-4 border-b border-gray-100">
+          <div className="relative">
+            {profilePhoto ? (
+              <img
+                src={profilePhoto}
+                alt={name}
+                className="w-14 h-14 rounded-2xl object-cover border border-teal-200 shadow-xs"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                {userInitials}
+              </div>
+            )}
           </div>
           <div>
             <h3 className="text-lg font-bold text-gray-900">Tu Cuenta y Credenciales SST</h3>
             <p className="text-xs text-gray-500">
-              Datos personales, registro profesional ante el SNS / SEREMI y firma digital.
+              Datos personales, fotografía, logo institucional, credenciales y seguridad.
             </p>
           </div>
         </div>
 
-        {/* Formulario */}
+        {/* Sección: Fotografía de Perfil */}
+        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 flex items-center justify-center border border-gray-300">
+              {profilePhoto ? (
+                <img src={profilePhoto} alt="Perfil" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-gray-500">{userInitials}</span>
+              )}
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-gray-800">Foto de Perfil</h4>
+              <p className="text-[11px] text-gray-500">Formatos JPG, PNG, WEBP (máx. 3MB)</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="px-3 py-1.5 rounded-xl text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 cursor-pointer transition flex items-center gap-1.5">
+              <LuUpload className="w-3.5 h-3.5" />
+              <span>{profilePhoto ? "Cambiar foto" : "Subir foto"}</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                onChange={handleProfilePhotoChange}
+                className="hidden"
+              />
+            </label>
+            {profilePhoto && (
+              <button
+                type="button"
+                onClick={handleDeleteProfilePhoto}
+                className="p-1.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 transition cursor-pointer"
+                title="Eliminar foto y volver al avatar por defecto"
+              >
+                <LuTrash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Sección: Logo de la Empresa */}
+        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-20 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center p-1 overflow-hidden flex-shrink-0">
+              {orgLogo ? (
+                <img src={orgLogo} alt="Logo empresa" className="max-w-full max-h-full object-contain" />
+              ) : (
+                <LuBuilding2 className="w-6 h-6 text-gray-400" />
+              )}
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-gray-800">Logo de la Empresa</h4>
+              <p className="text-[11px] text-gray-500">Visible en la barra lateral (PNG, JPG, WEBP, SVG)</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="px-3 py-1.5 rounded-xl text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 cursor-pointer transition flex items-center gap-1.5">
+              <LuUpload className="w-3.5 h-3.5" />
+              <span>{orgLogo ? "Cambiar logo" : "Cargar logo"}</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                onChange={handleOrgLogoChange}
+                className="hidden"
+              />
+            </label>
+            {orgLogo && (
+              <button
+                type="button"
+                onClick={handleDeleteOrgLogo}
+                className="p-1.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 transition cursor-pointer"
+                title="Eliminar logo corporativo"
+              >
+                <LuTrash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Formulario de Datos Personales */}
         <form onSubmit={handleSave} className="flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -523,33 +781,110 @@ export function AccountModal({
           {savedSuccess && (
             <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2 animate-in fade-in">
               <LuCircleCheck className="w-4 h-4 text-emerald-600" />
-              <span>Datos guardados exitosamente.</span>
+              <span>Datos personales y credenciales guardados exitosamente.</span>
             </div>
           )}
 
-          {/* Botones de acción */}
+          {/* Botón Guardar Datos Personales */}
           <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
-            >
-              Cerrar
-            </button>
             <button
               type="submit"
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition cursor-pointer shadow-xs"
             >
               <LuSave className="w-4 h-4" />
-              Guardar Cambios
+              Guardar Datos de Cuenta
             </button>
           </div>
         </form>
+
+        {/* Sección: Cambiar Contraseña */}
+        <div className="mt-6 pt-5 border-t border-gray-100">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <LuKey className="w-4 h-4" />
+            </div>
+            <h4 className="text-sm font-bold text-gray-900">Cambiar Contraseña</h4>
+          </div>
+
+          <form onSubmit={handlePasswordChangeSubmit} className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-gray-700 block mb-1">
+                  Contraseña Actual
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-gray-700 block mb-1">
+                  Nueva Contraseña
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-gray-700 block mb-1">
+                  Confirmar Contraseña
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repite la contraseña"
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                />
+              </div>
+            </div>
+
+            {passwordError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-2">
+                {passwordError}
+              </p>
+            )}
+
+            {passwordSuccess && (
+              <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2 flex items-center gap-1.5">
+                <LuCircleCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>{passwordSuccess}</span>
+              </p>
+            )}
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isChangingPassword}
+                className="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition cursor-pointer disabled:opacity-50"
+              >
+                {isChangingPassword ? "Actualizando..." : "Actualizar Contraseña"}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Botón Cerrar Modal */}
+        <div className="flex justify-end pt-4 mt-4 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+          >
+            Cerrar
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
 /* =========================================================================
    MODAL 2: CONFIGURACIÓN DEL ESPACIO DE TRABAJO
    ========================================================================= */
@@ -565,17 +900,14 @@ export function SettingsModal({
   const { preferences, updatePreferences } = useLifeOnPreferences();
 
   // Tab activo dentro del modal de configuración
-  const [activeTab, setActiveTab] = useState<"methodology" | "notifications" | "security">("methodology");
+  const [activeTab, setActiveTab] = useState<"general" | "notifications" | "security">("general");
 
-  // Estado sincronizado con las preferencias centrales
-  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(preferences.experienceLevel);
-  const [guidanceLevel, setGuidanceLevel] = useState<GuidanceLevel>(preferences.guidanceLevel);
-  const [riskEvaluationMethod, setRiskEvaluationMethod] = useState<RiskEvaluationMethod>(preferences.riskEvaluationMethod);
-  const [riskManagementApproach, setRiskManagementApproach] = useState<RiskManagementApproach>(preferences.riskManagementApproach);
-  const [modules, setModules] = useState(preferences.modules);
+  // Campos editables del espacio
+  const [orgName, setOrgName] = useState(preferences.organizationName || "");
+  const [orgSector, setOrgSector] = useState(preferences.organizationSector || "Construcción");
+  const [orgSize, setOrgSize] = useState(preferences.organizationSize || "51 a 100 trabajadores");
 
   // Estados secundarios normativos y notificaciones
-  const [riskModel, setRiskModel] = useState("ds44");
   const [reviewPeriod, setReviewPeriod] = useState("semestral");
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [aprAlerts, setAprAlerts] = useState(true);
@@ -586,11 +918,9 @@ export function SettingsModal({
   // Actualizar estado local cuando se abra el modal o cambien las preferencias
   useEffect(() => {
     if (isOpen) {
-      setExperienceLevel(preferences.experienceLevel);
-      setGuidanceLevel(preferences.guidanceLevel);
-      setRiskEvaluationMethod(preferences.riskEvaluationMethod);
-      setRiskManagementApproach(preferences.riskManagementApproach);
-      setModules(preferences.modules);
+      setOrgName(preferences.organizationName || "");
+      setOrgSector(preferences.organizationSector || "Construcción");
+      setOrgSize(preferences.organizationSize || "51 a 100 trabajadores");
     }
   }, [isOpen, preferences]);
 
@@ -599,11 +929,9 @@ export function SettingsModal({
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updatePreferences({
-      experienceLevel,
-      guidanceLevel,
-      riskEvaluationMethod,
-      riskManagementApproach,
-      modules,
+      organizationName: orgName.trim() || preferences.organizationName,
+      organizationSector: orgSector,
+      organizationSize: orgSize,
     });
     setSaved(true);
     setTimeout(() => {
@@ -611,6 +939,26 @@ export function SettingsModal({
       onClose();
     }, 1000);
   };
+
+  const SECTORS_LIST = [
+    "Construcción",
+    "Minería y Extracción",
+    "Servicios e Ingeniería",
+    "Manufactura e Industria",
+    "Logística y Transporte",
+    "Salud y Asistencia",
+    "Comercio y Retail",
+    "Otro Rubro",
+  ];
+
+  const WORKER_RANGES_LIST = [
+    "1 a 20 trabajadores",
+    "21 a 50 trabajadores",
+    "51 a 100 trabajadores",
+    "101 a 200 trabajadores",
+    "201 a 500 trabajadores",
+    "Más de 500 trabajadores",
+  ];
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -629,7 +977,7 @@ export function SettingsModal({
           <div>
             <h3 className="text-lg font-bold text-gray-900">Configuración del Espacio</h3>
             <p className="text-xs text-gray-500">
-              Personaliza el nivel de experiencia, metodología preventiva y alertas operativas.
+              Administra los datos generales de la organización, notificaciones y criterios normativos.
             </p>
           </div>
         </div>
@@ -638,16 +986,16 @@ export function SettingsModal({
         <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-4">
           <button
             type="button"
-            onClick={() => setActiveTab("methodology")}
+            onClick={() => setActiveTab("general")}
             className={clsx(
               "px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5",
-              activeTab === "methodology"
+              activeTab === "general"
                 ? "bg-teal-600 text-white shadow-2xs"
                 : "text-gray-600 hover:bg-gray-100"
             )}
           >
-            <LuSlidersHorizontal className="w-3.5 h-3.5" />
-            Experiencia y metodologías
+            <LuBuilding2 className="w-3.5 h-3.5" />
+            Información del Espacio
           </button>
           <button
             type="button"
@@ -679,234 +1027,126 @@ export function SettingsModal({
 
         <form onSubmit={handleSave} className="flex flex-col gap-4">
           {/* =========================================================================
-              TAB 1: EXPERIENCIA Y METODOLOGÍAS
+              TAB 1: INFORMACIÓN DEL ESPACIO
               ========================================================================= */}
-          {activeTab === "methodology" && (
+          {activeTab === "general" && (
             <div className="flex flex-col gap-4 animate-in fade-in duration-150">
-              {/* Advertencia preventiva no destructiva */}
-              <div className="p-3.5 bg-amber-50/90 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
-                <LuTriangleAlert className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold">Advertencia sobre cambio de metodología:</span>
-                  <p className="text-[11px] text-amber-800 mt-0.5 leading-snug">
-                    Cambiar la metodología puede afectar la forma en que se evalúan o visualizan tus matrices actuales. Las matrices existentes mantendrán su integridad técnica sin conversiones destructivas automáticas.
-                  </p>
-                </div>
-              </div>
-
-              {/* 1. Nivel de Experiencia */}
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
-                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <LuSparkles className="w-3.5 h-3.5 text-teal-600" /> Nivel de Experiencia en Prevención
-                </span>
-                <p className="text-[11px] text-gray-500 mb-1">
-                  Ajusta la complejidad del lenguaje y los términos técnicos en todos los módulos.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setExperienceLevel("expert")}
-                    className={clsx(
-                      "p-2.5 rounded-xl border text-xs font-medium text-left transition cursor-pointer flex flex-col justify-between",
-                      experienceLevel === "expert"
-                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
-                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
-                    )}
-                  >
-                    <span className="font-bold block mb-0.5">Especialista</span>
-                    <span className="text-[10px] text-gray-500">Términos técnicos directos</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setExperienceLevel("intermediate")}
-                    className={clsx(
-                      "p-2.5 rounded-xl border text-xs font-medium text-left transition cursor-pointer flex flex-col justify-between",
-                      experienceLevel === "intermediate"
-                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
-                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
-                    )}
-                  >
-                    <span className="font-bold block mb-0.5">Básico / Medio</span>
-                    <span className="text-[10px] text-gray-500">Equilibrio con ejemplos</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setExperienceLevel("guided")}
-                    className={clsx(
-                      "p-2.5 rounded-xl border text-xs font-medium text-left transition cursor-pointer flex flex-col justify-between",
-                      experienceLevel === "guided"
-                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
-                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
-                    )}
-                  >
-                    <span className="font-bold block mb-0.5">Guiado</span>
-                    <span className="text-[10px] text-gray-500">Preguntas sencillas y apoyo</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* 2. Metodología de Evaluación Matriz IPER */}
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
-                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <LuTable className="w-3.5 h-3.5 text-teal-600" /> Metodología de Evaluación IPER
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
-                  <button
-                    type="button"
-                    onClick={() => setRiskEvaluationMethod("ds44")}
-                    className={clsx(
-                      "p-2.5 rounded-xl border text-xs text-left transition cursor-pointer flex flex-col justify-between",
-                      riskEvaluationMethod === "ds44"
-                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
-                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
-                    )}
-                  >
-                    <span className="font-bold">DS 44 / ISL</span>
-                    <span className="text-[10px] text-emerald-700 font-medium">Recomendada Chile</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setRiskEvaluationMethod("matrix5x5")}
-                    className={clsx(
-                      "p-2.5 rounded-xl border text-xs text-left transition cursor-pointer flex flex-col justify-between",
-                      riskEvaluationMethod === "matrix5x5"
-                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
-                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
-                    )}
-                  >
-                    <span className="font-bold">Matriz 5 × 5</span>
-                    <span className="text-[10px] text-gray-500">5 Prob. × 5 Consec.</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setRiskEvaluationMethod("pending")}
-                    className={clsx(
-                      "p-2.5 rounded-xl border text-xs text-left transition cursor-pointer flex flex-col justify-between",
-                      riskEvaluationMethod === "pending"
-                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
-                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
-                    )}
-                  >
-                    <span className="font-bold">Por definir</span>
-                    <span className="text-[10px] text-gray-500">En primera matriz</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* 3. Enfoque de Profundidad de Riesgos */}
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
-                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <LuShieldAlert className="w-3.5 h-3.5 text-teal-600" /> Enfoque de Gestión de Riesgos
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                  <button
-                    type="button"
-                    onClick={() => setRiskManagementApproach("simplified")}
-                    className={clsx(
-                      "p-3 rounded-xl border text-xs text-left transition cursor-pointer flex flex-col justify-between",
-                      riskManagementApproach === "simplified"
-                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
-                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
-                    )}
-                  >
-                    <span className="font-bold">Matriz IPER Simplificada</span>
-                    <span className="text-[10px] text-gray-500 mt-0.5">
-                      Flujo ágil: Proceso &rarr; Tarea &rarr; Peligro &rarr; Control &rarr; Residual
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setRiskManagementApproach("critical_controls")}
-                    className={clsx(
-                      "p-3 rounded-xl border text-xs text-left transition cursor-pointer flex flex-col justify-between",
-                      riskManagementApproach === "critical_controls"
-                        ? "bg-teal-50 border-teal-500 text-teal-900 font-semibold ring-1 ring-teal-500"
-                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
-                    )}
-                  >
-                    <span className="font-bold">Controles Críticos (Avanzada)</span>
-                    <span className="text-[10px] text-gray-500 mt-0.5">
-                      Enfoque Bowtie, controles críticos preventivos/mitigadores y verificación
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* 4. Nivel de Acompañamiento */}
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
-                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <LuCircleHelp className="w-3.5 h-3.5 text-teal-600" /> Nivel de Acompañamiento
-                </span>
-                <select
-                  value={guidanceLevel}
-                  onChange={(e) => setGuidanceLevel(e.target.value as GuidanceLevel)}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 bg-white"
-                >
-                  <option value="high">Guíame paso a paso (Explicaciones detalladas y ejemplos continuos)</option>
-                  <option value="contextual">Ayuda cuando la necesite (Información contextual en puntos clave)</option>
-                  <option value="minimal">Prefiero una experiencia directa (Interfaz compacta sin ayudas extras)</option>
-                </select>
-              </div>
-
-              {/* 5. Módulos Preferentes */}
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
-                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <LuTable className="w-3.5 h-3.5 text-teal-600" /> Módulos en Uso
-                </span>
-                <div className="flex flex-col sm:flex-row gap-3 pt-1">
-                  <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={modules.miper}
-                      onChange={(e) => setModules((prev) => ({ ...prev, miper: e.target.checked }))}
-                      className="w-4 h-4 accent-teal-600 rounded"
-                    />
-                    <span>Matriz IPER</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={modules.documentManagement}
-                      onChange={(e) => setModules((prev) => ({ ...prev, documentManagement: e.target.checked }))}
-                      className="w-4 h-4 accent-teal-600 rounded"
-                    />
-                    <span>Gestión Documental</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={modules.aprVirtual}
-                      onChange={(e) => setModules((prev) => ({ ...prev, aprVirtual: e.target.checked }))}
-                      className="w-4 h-4 accent-teal-600 rounded"
-                    />
-                    <span>APR Virtual IA</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Re-ejecutar Onboarding */}
-              {onOpenOnboarding && (
-                <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                  <div className="text-[11px] text-gray-500">
-                    ¿Quieres reiniciar el proceso completo guiado?
+              {/* Bloque Informativo: Configuraciones Iniciales del Onboarding (NO MODIFICABLES) */}
+              <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-200/80 flex flex-col gap-3">
+                <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-gray-800 uppercase tracking-wider">
+                    <LuLock className="w-4 h-4 text-teal-600" />
+                    <span>Configuración Inicial de la Organización</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={onOpenOnboarding}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-teal-700 hover:text-teal-800 font-semibold bg-teal-50 hover:bg-teal-100 rounded-lg transition cursor-pointer"
-                  >
-                    <LuRotateCcw className="w-3.5 h-3.5" />
-                    Reiniciar Asistente
-                  </button>
+                  <span className="text-[10px] font-semibold bg-gray-200/80 text-gray-700 px-2 py-0.5 rounded-full">
+                    No modificable
+                  </span>
                 </div>
-              )}
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  Las siguientes decisiones fueron establecidas durante el Onboarding general y constituyen la base metodológica de la organización:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  {/* 1. Nivel de conocimientos */}
+                  <div className="p-3 bg-white rounded-xl border border-gray-200 flex flex-col justify-between">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                      Nivel de Conocimientos
+                    </span>
+                    <span className="text-xs font-bold text-gray-900">
+                      {preferences.experienceLevel === "expert"
+                        ? "Conocimientos avanzados"
+                        : preferences.experienceLevel === "intermediate"
+                        ? "Básico / Intermedio"
+                        : "Sin conocimientos especializados"}
+                    </span>
+                    <span className="text-[10px] text-gray-400 mt-1">Definido en onboarding</span>
+                  </div>
+
+                  {/* 2. Enfoque de Gestión de Riesgos */}
+                  <div className="p-3 bg-white rounded-xl border border-gray-200 flex flex-col justify-between">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                      Enfoque de Gestión
+                    </span>
+                    <span className="text-xs font-bold text-teal-700">
+                      {preferences.riskManagementApproach === "critical_controls"
+                        ? "Controles Críticos (ICMM)"
+                        : "Gestión de Riesgos IPER (Simple)"}
+                    </span>
+                    <span className="text-[10px] text-gray-400 mt-1">Metodología base</span>
+                  </div>
+
+                  {/* 3. Nivel de Acompañamiento */}
+                  <div className="p-3 bg-white rounded-xl border border-gray-200 flex flex-col justify-between">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                      Nivel de Acompañamiento
+                    </span>
+                    <span className="text-xs font-bold text-gray-900">
+                      {preferences.guidanceLevel === "high"
+                        ? "Guíame paso a paso"
+                        : preferences.guidanceLevel === "contextual"
+                        ? "Ayuda cuando la necesite"
+                        : "Experiencia directa"}
+                    </span>
+                    <span className="text-[10px] text-gray-400 mt-1">Asistencia de interfaz</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Campos Editables de la Organización */}
+              <div className="p-4 bg-white rounded-2xl border border-gray-200 flex flex-col gap-3">
+                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <LuBuilding2 className="w-3.5 h-3.5 text-teal-600" /> Datos de la Empresa
+                </span>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
+                    Nombre de la Organización o Razón Social
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700 block mb-1">
+                      Sector Económico / Rubro
+                    </label>
+                    <select
+                      value={orgSector}
+                      onChange={(e) => setOrgSector(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 bg-white"
+                    >
+                      {SECTORS_LIST.map((sec) => (
+                        <option key={sec} value={sec}>
+                          {sec}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700 block mb-1">
+                      Cantidad de Trabajadores
+                    </label>
+                    <select
+                      value={orgSize}
+                      onChange={(e) => setOrgSize(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 bg-white"
+                    >
+                      {WORKER_RANGES_LIST.map((rng) => (
+                        <option key={rng} value={rng}>
+                          {rng}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1302,21 +1542,18 @@ export function FilterWorkplaceModal({
   isOpen,
   activeWorkplace,
   setActiveWorkplace,
+  workCenters = [],
   onClose,
 }: {
   isOpen: boolean;
   activeWorkplace: string;
   setActiveWorkplace: (wp: string) => void;
+  workCenters?: OrgWorkCenter[];
   onClose: () => void;
 }) {
-  const workplaces = [
-    { id: "all", name: "Todas las Sedes (Consolidado)", address: "Región Metropolitana y Regiones" },
-    { id: "central", name: "Obra Central Santiago", address: "Av. Libertador Bernardo O'Higgins #1240" },
-    { id: "norte", name: "Planta Industrial Norte", address: "Sector Industrial La Negra, Antofagasta" },
-    { id: "matriz", name: "Casa Matriz y Oficinas Centrales", address: "Av. Providencia #1760, Santiago" },
-  ];
-
   if (!isOpen) return null;
+
+  const hasMultiple = workCenters.length > 1;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -1333,37 +1570,86 @@ export function FilterWorkplaceModal({
             <LuBuilding2 className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Seleccionar Centro de Trabajo</h3>
-            <p className="text-xs text-gray-500">Filtra métricas, matrices y documentos por faena</p>
+            <h3 className="text-lg font-bold text-gray-900">Centro de Trabajo</h3>
+            <p className="text-xs text-gray-500">Selecciona el centro para filtrar la información de la organización</p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2.5 my-4">
-          {workplaces.map((wp) => (
-            <button
-              key={wp.id}
-              onClick={() => {
-                setActiveWorkplace(wp.name);
-                onClose();
-              }}
-              className={clsx(
-                "p-3.5 rounded-xl border text-left transition cursor-pointer flex items-center justify-between",
-                activeWorkplace === wp.name
-                  ? "bg-teal-50/70 border-teal-500 text-teal-900 font-semibold"
-                  : "bg-gray-50 hover:bg-gray-100 border-gray-100 text-gray-800"
-              )}
-            >
-              <div>
-                <p className="text-xs font-semibold">{wp.name}</p>
-                <p className="text-[11px] text-gray-500 mt-0.5">{wp.address}</p>
-              </div>
-              {activeWorkplace === wp.name && (
-                <span className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs">
-                  <LuCheck className="w-3.5 h-3.5" />
-                </span>
-              )}
-            </button>
-          ))}
+        {workCenters.length === 0 ? (
+          <div className="p-6 text-center text-gray-500 bg-gray-50 rounded-2xl border border-gray-200 my-4 flex flex-col items-center">
+            <div className="w-12 h-12 rounded-xl bg-gray-100 text-gray-400 flex items-center justify-center mb-3">
+              <LuBuilding2 className="w-6 h-6" />
+            </div>
+            <h4 className="text-xs font-bold text-gray-800">Sin Centros de Trabajo</h4>
+            <p className="text-[11px] text-gray-500 mt-1 max-w-xs leading-relaxed">
+              Tu organización aún no registra Centros de Trabajo. Puedes crearlos o importarlos desde el módulo de Estructura Organizacional.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 my-4 max-h-72 overflow-y-auto pr-1">
+            {hasMultiple && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveWorkplace("Todos los Centros de Trabajo");
+                  onClose();
+                }}
+                className={clsx(
+                  "p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between",
+                  activeWorkplace === "Todos los Centros de Trabajo"
+                    ? "bg-teal-50/70 border-teal-500 text-teal-900 font-semibold"
+                    : "bg-gray-50 hover:bg-gray-100 border-gray-100 text-gray-800"
+                )}
+              >
+                <div>
+                  <p className="text-xs font-semibold">Todos los Centros de Trabajo</p>
+                  <p className="text-[10px] text-gray-500">Vista consolidada de toda la organización</p>
+                </div>
+                {activeWorkplace === "Todos los Centros de Trabajo" && (
+                  <span className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs">
+                    <LuCheck className="w-3.5 h-3.5" />
+                  </span>
+                )}
+              </button>
+            )}
+
+            {workCenters.map((wc) => (
+              <button
+                key={wc.id}
+                type="button"
+                onClick={() => {
+                  setActiveWorkplace(wc.name);
+                  onClose();
+                }}
+                className={clsx(
+                  "p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between",
+                  activeWorkplace === wc.name
+                    ? "bg-teal-50/70 border-teal-500 text-teal-900 font-semibold"
+                    : "bg-gray-50 hover:bg-gray-100 border-gray-100 text-gray-800"
+                )}
+              >
+                <div className="min-w-0 flex-1 mr-2">
+                  <p className="text-xs font-semibold truncate">{wc.name}</p>
+                  <p className="text-[10px] text-gray-500 truncate">{wc.address || wc.code || "Sede operativa"}</p>
+                </div>
+                {activeWorkplace === wc.name && (
+                  <span className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs flex-shrink-0">
+                    <LuCheck className="w-3.5 h-3.5" />
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="pt-3 border-t border-gray-100 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+          >
+            Cerrar
+          </button>
         </div>
       </div>
     </div>
@@ -1438,3 +1724,58 @@ export function GlobalSearchDropdown({
     </div>
   );
 }
+
+/* =========================================================================
+   MODAL DE CONFIRMACIÓN: RESTABLECER CUENTA DE PRUEBA
+   ========================================================================= */
+export function ResetAccountConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-red-100 p-6 relative">
+        <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">
+          <LuTriangleAlert className="w-6 h-6" />
+        </div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">¿Restablecer cuenta?</h3>
+        <p className="text-sm text-gray-600 mb-3">
+          Esta acción eliminará toda la configuración y datos creados en esta cuenta de prueba y la dejará como una cuenta nueva.
+        </p>
+        <div className="p-3 bg-red-50/80 border border-red-200 rounded-xl mb-6">
+          <p className="text-xs font-semibold text-red-700 flex items-center gap-1.5">
+            <LuTriangleAlert className="w-4 h-4 shrink-0 text-red-600" />
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition cursor-pointer"
+          >
+            Restablecer cuenta
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
