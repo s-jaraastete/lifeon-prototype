@@ -1,11 +1,11 @@
-import { Suspense } from "react";
-import { getServerData } from "@/lib/requests";
 import { SubscriptionDashboardOverview } from "@/types/admin";
 import { formatReferenceAmount } from "@/utils/pricingHelpers";
 import StatCard from "../../components/StatCard";
 import OverdueStatusButton from "./filters/OverdueStatusButton";
 
-const DASHBOARD_TAG = "subscriptions-dashboard";
+type SubscriptionDashboardProps = {
+  data: SubscriptionDashboardOverview;
+};
 
 type StatTone = "default" | "success" | "danger";
 
@@ -43,7 +43,7 @@ const toCards = (data: SubscriptionDashboardOverview) => {
       note: snapshotNote(mrr.change_percentage),
       tone: snapshotTone(mrr.change_percentage),
     },
-{
+    {
       label: "Suscripciones vencidas",
       value: formatDecimal(overdue.value),
       note: <OverdueStatusButton />,
@@ -58,12 +58,8 @@ const toCards = (data: SubscriptionDashboardOverview) => {
   ];
 };
 
-const StatGrid = async () => {
-  const { data } = await getServerData("/admin-overview/subscriptions/dashboard/", {
-    useAccessToken: true,
-    next: { tags: [DASHBOARD_TAG] },
-  });
-  const cards = toCards(data as SubscriptionDashboardOverview);
+const StatGrid = ({ data }: SubscriptionDashboardProps) => {
+  const cards = toCards(data);
 
   return (
     <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -74,15 +70,7 @@ const StatGrid = async () => {
   );
 };
 
-const StatGridFallback = () => (
-  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-    {[0, 1, 2, 3].map((i) => (
-      <StatCard key={i} label="—" value="—" note={null} />
-    ))}
-  </div>
-);
-
-const SubscriptionDashboard = () => {
+const SubscriptionDashboard = ({ data }: SubscriptionDashboardProps) => {
   return (
     <section className="rounded-2xl bg-surface-primary p-6 shadow-soft lg:p-7">
       <div className="flex items-start gap-4">
@@ -96,9 +84,7 @@ const SubscriptionDashboard = () => {
         </div>
       </div>
 
-      <Suspense fallback={<StatGridFallback />}>
-        <StatGrid />
-      </Suspense>
+      <StatGrid data={data} />
     </section>
   );
 };

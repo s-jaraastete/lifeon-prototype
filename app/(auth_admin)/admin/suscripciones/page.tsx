@@ -1,3 +1,5 @@
+import { SubscriptionDashboardOverview } from "@/types/admin";
+import { getServerData } from "@/lib/requests";
 import SubscriptionDashboard from "./components/SubscriptionDashboard";
 import SubscriptionsTable from "./components/SubscriptionsTable";
 import SubscriptionDetailProvider from "./components/detail/SubscriptionDetailProvider";
@@ -24,11 +26,23 @@ type PageProps = {
 
 const SuscripcionesPage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
+  let data: SubscriptionDashboardOverview | null = null;
+
+  try {
+    const dashboardResponse = await getServerData("/admin-overview/subscriptions/dashboard/", {
+      useAccessToken: true,
+      cache: "no-store",
+    });
+    data = dashboardResponse?.data ?? null;
+  } catch {
+    data = null;
+  }
+
 
   return (
     <SubscriptionDetailProvider>
       <div className="w-full mx-auto flex flex-col gap-4">
-        <SubscriptionDashboard />
+        {data && <SubscriptionDashboard data={data} />}
         <div className="rounded-2xl bg-surface-primary p-6">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
