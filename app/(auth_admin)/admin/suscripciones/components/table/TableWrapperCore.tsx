@@ -12,7 +12,7 @@ type TableWrapperCoreProps<T> = {
   isLoading?: boolean,
   noDataMessage?: ReactNode
   extraRow?: (item: T, index?: number) => ReactNode
-  stickyLastColumn?: boolean
+  stickyLastColumns?: 1 | 2
 }
 
 const TableWrapperCore = <T, >(props: TableWrapperCoreProps<T>) => {
@@ -21,7 +21,8 @@ const TableWrapperCore = <T, >(props: TableWrapperCoreProps<T>) => {
         <table
           className={clsx(
             'w-full',
-            props.stickyLastColumn && 'sticky-last-column',
+            props.stickyLastColumns === 1 && 'sticky-last-column',
+            props.stickyLastColumns === 2 && 'sticky-last-two-columns',
           )}
         >
         <thead>
@@ -31,7 +32,7 @@ const TableWrapperCore = <T, >(props: TableWrapperCoreProps<T>) => {
                 key={typeof(header) === 'string' ? header : header.label}
                 className={clsx(
                 'h-[50px] whitespace-nowrap border-b border-gray-300 px-5 py-2.5 text-left text-body-sm font-medium leading-[22px] text-gray-950',
-                !props.stickyLastColumn
+                !props.stickyLastColumns
                   && idx === props.headers.length - 1
                   && (typeof header === 'string' || !header.className)
                   && 'w-1',

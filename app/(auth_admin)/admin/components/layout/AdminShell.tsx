@@ -31,7 +31,7 @@ export default function AdminShell({ children, ufValue }: AdminShellProps) {
         </div>
 
         <div className="flex min-w-0 flex-col pb-3">
-          <div className="bg-teal-50 pt-3 pb-4 rounded-2xl sticky top-0 z-30 ">
+          <div className="bg-teal-50 pt-3 pb-4 sticky top-0 z-30 ">
             <Header
               collapsed={collapsed}
               onToggle={() => setCollapsed((value) => !value)}
@@ -39,8 +39,8 @@ export default function AdminShell({ children, ufValue }: AdminShellProps) {
             />
           </div>
           
-          <div className="flex justify-center">
-            <main className="flex min-w-0 max-w-354 flex-col gap-4 w-full">{children}</main>
+          <div className="flex justify-center"> 
+            <main className="flex min-w-0 max-w-500 flex-col gap-4 w-full">{children}</main>
           </div>
         </div>
       </div>
