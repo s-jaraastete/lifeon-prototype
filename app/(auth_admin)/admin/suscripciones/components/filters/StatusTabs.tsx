@@ -8,6 +8,7 @@ const statusTabs: { label: string; value: string | null }[] = [
   { label: "Activas", value: "active" },
   { label: "Suspendidas", value: "suspended" },
   { label: "Canceladas", value: "cancelled" },
+  // { label: "Pendientes", value: "pending_payment_method" },
 ];
 
 const StatusTabs = () => {
@@ -25,17 +26,17 @@ const StatusTabs = () => {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-1 bg-surface-tertiary rounded-lg p-0.75">
       {statusTabs.map((tab) => (
         <button
           key={tab.label}
           type="button"
           onClick={() => updateStatus(tab.value)}
           className={clsx(
-            "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+            "rounded-lg px-2 py-1.5 text-sm font-medium transition-colors cursor-pointer",
             (currentStatus ?? null) === tab.value
-              ? "bg-neutral-primary text-white"
-              : "bg-surface-secondary text-neutral-secondary hover:bg-stroke hover:text-neutral-primary"
+              ? "bg-surface-primary text-neutral-primary"
+              : "text-neutral-secondary hover:bg-stroke hover:text-neutral-primary"
           )}
         >
           {tab.label}

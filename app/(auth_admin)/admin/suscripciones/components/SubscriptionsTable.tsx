@@ -1,8 +1,17 @@
 import clsx from "clsx";
 import ServerTableWrapper from "./table/ServerTableWrapper";
-import { Subscription, SubscriptionStatus } from "@/types/admin";
-import { formatReferenceAmount } from "@/utils/pricingHelpers";
+import { Subscription } from "@/types/admin";
 import SubscriptionRowAction from "./detail/SubscriptionRowAction";
+import {
+  DISPLAY_FALLBACK,
+  SUBSCRIPTION_STATUS_LABELS,
+  SUBSCRIPTION_STATUS_STYLES,
+  formatPaymentMethod,
+  formatSubscriptionDate,
+  getBillingPeriodLabel,
+  getClientTypeLabel,
+  getMrrDisplay,
+} from "../utils/subscriptionDisplay";
 
 type SubscriptionsTableProps = {
   params: { [key: string]: string };
@@ -23,56 +32,42 @@ const headers = [
   "Acciones",
 ];
 
-const statusStyles: Record<SubscriptionStatus, string> = {
-  pending_payment_method: "bg-yellow-100 text-yellow-800",
-  pending_initial_payment: "bg-yellow-100 text-yellow-800",
-  trialing: "bg-blue-100 text-blue-800",
-  active: "bg-green-100 text-green-800",
-  past_due: "bg-red-100 text-red-800",
-  suspended: "bg-orange-100 text-orange-800",
-  cancelled: "bg-gray-100 text-gray-800",
-  expired: "bg-gray-100 text-gray-800",
-};
-
-const statusLabels: Record<SubscriptionStatus, string> = {
-  pending_payment_method: /* "Pendiente método de pago" */ "Pendiente",
-  pending_initial_payment: "Pendiente de pago inicial",
-  trialing: "En prueba",
-  active: "Activa",
-  past_due: "Pendiente",
-  suspended: "Suspendida",
-  cancelled: "Cancelada",
-  expired: "Expirada",
-  // plan_free: "Plan free",
-};
-
-const formatDate = (date: string | null) =>
-  date ? new Date(date).toISOString().split("T")[0] : "—";
-
+// TODO:
+// 1. Ajustar todos los campos que puedan ser null o undefined para que muestren un valor por defecto, como "N/A"
+// 2. Verificar si es correcto que suscripciones sin cobro muestren MRR o ciclo
 const RowContent = (sub: Subscription) => (
   <>
-    <td className="font-medium text-neutral-primary">{sub.subscription_id}</td>
-    <td className="text-neutral-primary">{sub.client_name}</td>
-    <td className="text-neutral-primary">{sub.pack_name_snapshot}</td>
-    <td className="text-neutral-primary">
-      {sub.billing_period === "monthly" ? "Mensual" : "Anual"}
-    </td>
-    <td className="text-right font-medium text-neutral-primary">
-      ${formatReferenceAmount(sub.mrr_clp)}
-    </td>
-    <td className="text-neutral-secondary">{formatDate(sub.created)}</td>
+    <td className="text-neutral-secondary">{sub.subscription_id}</td>
     <td className="text-neutral-secondary">
-      {formatDate(sub.next_billing_at)}
+      {sub.client_name || DISPLAY_FALLBACK}
+      <span className="block text-sm text-neutral-tertiary">
+        {getClientTypeLabel(sub.client_type)}
+      </span>
     </td>
-    <td className="text-neutral-secondary">{sub.card_type || "Sin cobro"}</td>
+    <td className="text-neutral-secondary">{sub.pack_name_snapshot}</td>
+    <td className="text-neutral-secondary">
+      {getBillingPeriodLabel(sub.billing_period)}
+    </td>
+    <td className="text-right text-neutral-secondary">
+      {getMrrDisplay(sub.mrr_clp)}
+    </td>
+    <td className="text-neutral-secondary">
+      {formatSubscriptionDate(sub.created)}
+    </td>
+    <td className="text-neutral-secondary">
+      {formatSubscriptionDate(sub.next_billing_at)}
+    </td>
+    <td className="text-neutral-secondary">
+      {formatPaymentMethod(sub)}
+    </td>
     <td>
       <span
         className={clsx(
-          "inline-block rounded-full px-2.5 py-0.5 text-xs font-medium",
-          statusStyles[sub.status]
+          "inline-block rounded-lg px-2 py-0.75 text-xs font-medium",
+          SUBSCRIPTION_STATUS_STYLES[sub.status]
         )}
       >
-        {statusLabels[sub.status]}
+        {SUBSCRIPTION_STATUS_LABELS[sub.status]}
       </span>
     </td>
     <td>
@@ -89,7 +84,9 @@ const SubscriptionsTable = ({ params }: SubscriptionsTableProps) => {
       endpoint="/admin-overview/subscriptions"
       params={params}
       pageSize={PAGE_SIZE}
+      serverTag={["admin-subscriptions"]}
       noDataMessage="No se encontraron suscripciones"
+      stickyLastColumn
     />
   );
 };

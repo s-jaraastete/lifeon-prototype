@@ -10,11 +10,20 @@ import UserMenu from "@/app/components/ui/UserMenu";
 type HeaderProps = {
   collapsed: boolean;
   onToggle: () => void;
+  ufValue: number | null;
 };
 
-export default function Header({ collapsed, onToggle }: HeaderProps) {
+export default function Header({ collapsed, onToggle, ufValue }: HeaderProps) {
+  const formattedUfValue = (
+    ufValue === null
+      ? "No disponible"
+      : `CLP $${new Intl.NumberFormat("es-CL", {
+        maximumFractionDigits: 0,
+      }).format(ufValue)}`
+  );
+
   return (
-    <header className="rounded-2xl bg-surface-primary px-5 py-2.5 shadow-soft backdrop-blur">
+    <header className="rounded-2xl bg-surface-primary px-5 py-2.5 shadow-soft backdrop-blur z-30">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -36,11 +45,11 @@ export default function Header({ collapsed, onToggle }: HeaderProps) {
             )}
           </button>
 
-          <span className="rounded-lg bg-grey-300 px-1.5 py-1 text-[10px] font-medium text-neutral-primary">
+          <span className="rounded-lg bg-gray-300 px-1.5 py-1 text-[10px] font-medium text-neutral-primary">
             Panel de Administración
           </span>
           <span className="text-xs font-medium text-neutral-tertiary">
-            Valor UF: CLP $40.000
+            Valor UF de hoy: {formattedUfValue}
           </span>
         </div>
 
@@ -60,6 +69,7 @@ export default function Header({ collapsed, onToggle }: HeaderProps) {
             className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg cursor-pointer ring-1 ring-stroke-primary bg-white text-neutral-secondary transition hover:bg-surface-tertiary hover:text-secondary"
           >
             <LuBell className="h-6 w-6" />
+            {/* TODO: borrar si ya no se usa */}
             {/* <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500" /> */}
           </button>
 

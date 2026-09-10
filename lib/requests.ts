@@ -47,7 +47,11 @@ export const getServerData =  async (path: string, options?: getServerData): Pro
   return {data, code: response.status}
 }
 
-export const postServerData =  async (path: string, options?: getServerData): Promise<serverDataOutput> => {
+export const postServerData = async (
+  path: string,
+  body: Record<string, unknown> = {},
+  options?: getServerData,
+): Promise<serverDataOutput> => {
   let authorization = {}
   if (options?.useAccessToken) {
     const session = await getServerSession(nextAuthOptions)
@@ -61,7 +65,7 @@ export const postServerData =  async (path: string, options?: getServerData): Pr
       'Content-Type': 'application/json',
       ...authorization
     },
-    body: JSON.stringify({}),
+    body: JSON.stringify(body),
     next: options?.next ?? {},
     cache: options?.cache ?? "force-cache"
   })

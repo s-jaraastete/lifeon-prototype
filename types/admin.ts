@@ -15,11 +15,21 @@ export type SubscriptionStatus =
   | "cancelled"
   | "expired";
 
+export type SubscriptionAction =
+  | "suspend"
+  | "plan_change"
+  | "retry_payment"
+  | "payment_reminder"
+  | "reactivate"
+  | "cancel"
+  | "archive";
+
 export type PlanItem = {
   display_name: string;
 };
 
 export type Subscription = {
+  public_id: string;
   subscription_id: string;
   client_name: string;
   client_type: string | null;
@@ -35,4 +45,5 @@ export type Subscription = {
   card_type: string | null;
   card_last_four: string | null;
   status: SubscriptionStatus;
+  available_actions: SubscriptionAction[];
 };

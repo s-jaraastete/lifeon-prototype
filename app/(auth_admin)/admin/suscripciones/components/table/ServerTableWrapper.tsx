@@ -45,7 +45,7 @@ const ServerPagination = async (props: ServerPaginationProps) => {
   
   return (
     <div className='flex items-center justify-between'>
-      <p className='text-body-sm leading-[22px] text-gray-800'>
+      <p className='text-body-sm leading-5.5 text-gray-800'>
         Mostrando{' '}
         <span className='font-semibold text-gray-950'>
           {data && data.count > 0
@@ -75,7 +75,8 @@ type ServerTableDataProps<T> = {
     [key: string]: string
   },
   serverTag?: string[],
-  noDataMessage?: ReactNode
+  noDataMessage?: ReactNode,
+  stickyLastColumn?: boolean
 }
 
 const ServerTableData = async <T, >(props: ServerTableDataProps<T>) => {
@@ -96,6 +97,7 @@ const ServerTableData = async <T, >(props: ServerTableDataProps<T>) => {
         data={data.results}
         isLoading={false}
         noDataMessage={props.noDataMessage}
+        stickyLastColumn={props.stickyLastColumn}
       />
     </>
   )
@@ -114,7 +116,8 @@ type ServerTableWrapperProps<T> = {
     [key: string]: string
   },
   serverTag?: string[],
-  noDataMessage?: ReactNode
+  noDataMessage?: ReactNode,
+  stickyLastColumn?: boolean
 }
 
 const ServerTableWrapper = <T, >(props: ServerTableWrapperProps<T>) => {
