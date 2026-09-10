@@ -60,7 +60,7 @@ const TableWrapperCore = <T, >(props: TableWrapperCoreProps<T>) => {
           ) : (
             props.data.map((item, index) => (
               <Fragment key={index}>
-                <tr className='whitespace-nowrap border-b border-gray-300 align-middle last:border-none hover:bg-gray-100 [&>td]:min-h-[50px] [&>td]:px-5 [&>td]:py-2.5 [&>td]:text-body-sm [&>td]:leading-[22px] [&>td]:text-gray-800'>
+                <tr className='whitespace-nowrap border-b border-gray-300 align-middle last:border-none hover:bg-gray-100 [&>td]:min-h-12.5 [&>td]:px-5 [&>td]:py-2.5 [&>td]:text-body-sm [&>td]:leading-5.5 [&>td]:text-gray-800'>
                   {props.row(item, index)}
                 </tr>
                 {props.extraRow?.(item, index)}

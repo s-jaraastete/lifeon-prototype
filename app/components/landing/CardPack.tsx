@@ -29,7 +29,7 @@ const CardPack = ({ chip, icon, bgIcon, title, description, details, borderButto
         <h3 className="text-xl font-semibold text-base-black w-50 mt-3">
           {title}
           {titleChip && (
-            <span className="ml-2 text-[10px] font-medium bg-[#DBEAFE] text-[#155DFC] px-1.5 py-0.5 rounded-lg align-middle">
+            <span className="ml-2 text-[10px] font-medium bg-[#DBEAFE] text-blue-600 px-1.5 py-0.5 rounded-lg align-middle">
               {titleChip}
             </span>
           )}
