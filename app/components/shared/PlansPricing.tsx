@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 
 import { useCart } from '@/providers/CartProvider';
 import type {CartBillingPeriod, CartItem} from '@/providers/CartProvider';
@@ -10,9 +9,10 @@ import type {CartBillingPeriod, CartItem} from '@/providers/CartProvider';
 import Switch from '../ui/Switch';
 import CardSlider from './CardSlider';
 import PlanPricingCard, { PlanPricingCardProps } from './PlanPricingCard';
+import { AprIcon, DocumentacionIcon, MiperIcon } from './baseModules';
 
 // Icons
-import { LuCheck, LuFileSearch2, LuTable } from 'react-icons/lu';
+import { LuCheck } from 'react-icons/lu';
 
 
 interface PlansPricingProps {
@@ -20,32 +20,37 @@ interface PlansPricingProps {
 }
 
 const IPERModule = {
-  icon: <LuTable size={10} className="text-black" />,
-  bgIcon: "bg-purple-300",
+  icon: <MiperIcon box="w-4.5 h-4.5" iconSize={10} />,
   text: 'Matriz IPER ',
 };
 
 const DocumentationModule = {
-  icon: <LuFileSearch2 size={10} className="text-black" />,
-  bgIcon: "bg-[#7dd3fc]",
+  icon: <DocumentacionIcon box="w-4.5 h-4.5" iconSize={10} />,
   text: 'Programa y Documentación preventiva ',
 };
 
 const APRVirtualModule = {
-  icon: <Image src="/svg/apr-icon.svg" width={10} height={10} alt="APR" />,
-  bgIcon: "bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
+  icon: <AprIcon box="w-4.5 h-4.5" iconSize={10} />,
   text: 'APR Virtual',
   hasAiBadge: true,
 };
 
 const APRAssistantModule = {
-  icon: <LuCheck size={18} className="text-secondary font-bold" />,
+  icon: (
+    <span className="w-4.5 h-4.5 flex items-center justify-center shrink-0">
+      <LuCheck size={18} className="text-secondary font-bold" />
+    </span>
+  ),
   text: 'APR virtual Assistant',
   hasAiBadge: true,
 };
 
 const CheckFeature = {
-  icon: <LuCheck size={18} className="text-secondary font-bold" />,
+  icon: (
+    <span className="w-4.5 h-4.5 flex items-center justify-center shrink-0">
+      <LuCheck size={18} className="text-secondary font-bold" />
+    </span>
+  ),
 };
 
 // TODO: Quitar este comentario cuando todo funcione bien.

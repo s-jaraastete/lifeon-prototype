@@ -543,16 +543,16 @@ body {
   outline-color: var(--color-secondary);
 }
 
-@utility sticky-last-column {
-  & th:last-child,
-  & td:last-child {
+@utility sticky-right {
+  & th[data-sticky],
+  & td[data-sticky] {
     position: sticky;
-    right: 0;
+    right: var(--sticky-right, 0);
     z-index: 10;
     background-color: var(--color-white);
   }
-  & th:last-child::before,
-  & td:last-child::before {
+  & th[data-sticky-edge]::before,
+  & td[data-sticky-edge]::before {
     content: '';
     position: absolute;
     inset-block: 0;
@@ -561,10 +561,10 @@ body {
     background-image: linear-gradient(to right, transparent, var(--color-white));
     pointer-events: none;
   }
-  & tr:hover td:last-child {
+  & tr:hover td[data-sticky] {
     background-color: var(--color-gray-100);
   }
-  & tr:hover td:last-child::before {
+  & tr:hover td[data-sticky-edge]::before {
     background-image: linear-gradient(to right, transparent, var(--color-gray-100));
   }
 }

@@ -1,6 +1,7 @@
 import LoadingState from '@/components/reusable/LoadingState'
 import clsx from 'clsx'
 import { Fragment, ReactNode } from 'react'
+import TableRoot from './TableRoot'
 
 type TableWrapperCoreProps<T> = {
   headers: (string | {
@@ -18,7 +19,8 @@ type TableWrapperCoreProps<T> = {
 const TableWrapperCore = <T, >(props: TableWrapperCoreProps<T>) => {
   return (
     <div className='overflow-x-auto rounded-lg border border-gray-300 bg-white'>
-        <table
+        <TableRoot
+          stickyRightColumns={props.stickyRightColumns}
           className={clsx(
             'w-full',
             props.stickyLastColumns === 1 && 'sticky-last-column',
@@ -31,7 +33,7 @@ const TableWrapperCore = <T, >(props: TableWrapperCoreProps<T>) => {
               <th
                 key={typeof(header) === 'string' ? header : header.label}
                 className={clsx(
-                'h-[50px] whitespace-nowrap border-b border-gray-300 px-5 py-2.5 text-left text-body-sm font-medium leading-[22px] text-gray-950',
+                'h-12.5whitespace-nowrap border-b border-gray-300 px-5 py-2.5 text-left text-body-sm font-medium leading-5.5 text-gray-950',
                 !props.stickyLastColumns
                   && idx === props.headers.length - 1
                   && (typeof header === 'string' || !header.className)
@@ -68,7 +70,7 @@ const TableWrapperCore = <T, >(props: TableWrapperCoreProps<T>) => {
             ))
           )}
         </tbody>
-      </table>
+        </TableRoot>
     </div>
   )
 }

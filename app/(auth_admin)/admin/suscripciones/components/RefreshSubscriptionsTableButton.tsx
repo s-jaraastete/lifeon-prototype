@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { LuRefreshCw } from "react-icons/lu";
-import { refreshSubscriptionsTable } from "../../services/subscriptionActions";
+import { refreshSubscriptionsTable } from "../services/subscriptionActions";
 
 const RefreshSubscriptionsTableButton = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);

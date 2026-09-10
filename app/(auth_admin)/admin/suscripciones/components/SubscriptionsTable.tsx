@@ -1,4 +1,5 @@
-import ServerTableWrapper from "./table/ServerTableWrapper";
+import clsx from "clsx";
+import ServerTableWrapper from "../../components/shared/table/ServerTableWrapper";
 import { Subscription } from "@/types/admin";
 import SubscriptionRowAction from "./detail/SubscriptionRowAction";
 import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
