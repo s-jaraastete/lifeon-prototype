@@ -569,6 +569,19 @@ body {
   }
 }
 
+@utility sticky-last-column {
+  & th:last-child,
+  & td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 10;
+    background-color: var(--color-white);
+  }
+  & tr:hover td:last-child {
+    background-color: var(--color-gray-100);
+  }
+}
+
 @utility sticky-last-two-columns {
   & th:last-child,
   & td:last-child {
