@@ -10,6 +10,7 @@ export interface OrgWorkCenter {
   description?: string;
   status: EntityStatus;
   createdAt?: string;
+  organizationId?: string;
 }
 
 export interface OrgSubprocess {
@@ -19,6 +20,7 @@ export interface OrgSubprocess {
   description?: string;
   processId?: string;
   status?: EntityStatus;
+  organizationId?: string;
 }
 
 export interface OrgProcess {
@@ -32,6 +34,7 @@ export interface OrgProcess {
   workCenterName?: string;
   status?: EntityStatus;
   subprocesses: OrgSubprocess[];
+  organizationId?: string;
 }
 
 export interface OrgArea {
@@ -44,6 +47,7 @@ export interface OrgArea {
   description?: string;
   status?: EntityStatus;
   processes: OrgProcess[];
+  organizationId?: string;
 }
 
 export interface OrgPosition {
@@ -64,6 +68,7 @@ export interface OrgPosition {
   createdAt?: string;
   areaId?: string;
   areaName?: string;
+  organizationId?: string;
 }
 
 export interface OrgUser {
@@ -77,6 +82,7 @@ export interface OrgUser {
   role?: UserRole;
   status: EntityStatus;
   createdAt?: string;
+  organizationId?: string;
 }
 
 export interface OrgStructureData {

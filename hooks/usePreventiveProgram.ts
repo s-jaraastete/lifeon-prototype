@@ -10,6 +10,10 @@ import {
 } from "@/types/preventiveProgram";
 import { useLifeOnPreferences } from "./useLifeOnPreferences";
 import { getScopedStorageKey } from "@/lib/auth/authService";
+import {
+  savePreventiveActivitiesToSupabase,
+  fetchPreventiveActivitiesFromSupabase,
+} from "@/lib/services/supabaseService";
 
 export const PREVENTIVE_PROGRAM_STORAGE_KEY = "lifeon_preventive_program";
 
@@ -677,7 +681,7 @@ export const DEMO_PREVENTIVE_ACTIVITIES: ProgramActivity[] = BASE_ANNUAL_PROGRAM
 );
 
 export function usePreventiveProgram() {
-  const { currentUser } = useLifeOnPreferences();
+  const { currentUser, configurePreventivePlanningModule } = useLifeOnPreferences();
   const [activities, setActivities] = useState<ProgramActivity[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -687,47 +691,98 @@ export function usePreventiveProgram() {
     [orgId]
   );
 
-  // Cargar estado inicial según organización
+  // Cargar estado inicial según organización y sincronizar con Supabase
   useEffect(() => {
+    let localActivities: ProgramActivity[] | null = null;
     try {
       const stored = window.localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
+          localActivities = parsed;
           setActivities(parsed);
-          setIsLoaded(true);
-          return;
         }
-      }
-
-      // Si no hay nada guardado:
-      if (orgId === "org_luis") {
-        // Cuenta de Luis Godoy: completamente vacía
-        setActivities([]);
-      } else {
-        // Cuenta demo: precargar actividades demo anuales
-        setActivities(DEMO_PREVENTIVE_ACTIVITIES);
-        window.localStorage.setItem(storageKey, JSON.stringify(DEMO_PREVENTIVE_ACTIVITIES));
       }
     } catch (e) {
       console.warn("No se pudo cargar el programa preventivo:", e);
-      setActivities(orgId === "org_luis" ? [] : DEMO_PREVENTIVE_ACTIVITIES);
-    } finally {
-      setIsLoaded(true);
     }
+
+    if (!localActivities) {
+      if (orgId !== "org_demo") {
+        setActivities([]);
+      } else {
+        setActivities(DEMO_PREVENTIVE_ACTIVITIES);
+        try {
+          window.localStorage.setItem(storageKey, JSON.stringify(DEMO_PREVENTIVE_ACTIVITIES));
+        } catch (_) {}
+      }
+    }
+
+    // Hidratar desde Supabase como fuente definitiva de verdad
+    fetchPreventiveActivitiesFromSupabase(orgId)
+      .then((cloudActivities) => {
+        if (cloudActivities && Array.isArray(cloudActivities) && cloudActivities.length > 0) {
+          setActivities(cloudActivities);
+          try {
+            window.localStorage.setItem(storageKey, JSON.stringify(cloudActivities));
+          } catch (_) {}
+        } else if (localActivities && localActivities.length > 0 && orgId !== "org_demo") {
+          // Si teníamos datos locales no sincronizados en la nube, persistirlos
+          savePreventiveActivitiesToSupabase(localActivities, orgId);
+        }
+      })
+      .catch((err) => {
+        console.warn("Error hidratando actividades preventivas de Supabase:", err);
+      })
+      .finally(() => {
+        setIsLoaded(true);
+      });
+
+    const handleProgSync = (e: any) => {
+      if (e?.detail?.activities) {
+        if (!e.detail.orgId || e.detail.orgId === orgId) {
+          setActivities(e.detail.activities);
+        }
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("lifeon-preventive-program-change", handleProgSync);
+      window.addEventListener("lifeon-session-change", handleProgSync);
+      window.addEventListener("storage", handleProgSync);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("lifeon-preventive-program-change", handleProgSync);
+        window.removeEventListener("lifeon-session-change", handleProgSync);
+        window.removeEventListener("storage", handleProgSync);
+      }
+    };
   }, [storageKey, orgId]);
 
-  // Persistir en localStorage
+  // Persistir en localStorage y en Supabase
   const persistActivities = useCallback(
     (newActivities: ProgramActivity[]) => {
       setActivities(newActivities);
       try {
         window.localStorage.setItem(storageKey, JSON.stringify(newActivities));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("lifeon-preventive-program-change", {
+              detail: { orgId, activities: newActivities },
+            })
+          );
+        }
       } catch (e) {
         console.warn("Error guardando programa preventivo en localStorage:", e);
       }
+      savePreventiveActivitiesToSupabase(newActivities, orgId);
+      if (newActivities.length > 0) {
+        configurePreventivePlanningModule(true, "upload_existing");
+      }
     },
-    [storageKey]
+    [storageKey, orgId, configurePreventivePlanningModule]
   );
 
   // CRUD Actividades

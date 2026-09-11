@@ -269,23 +269,36 @@ export function useOrgStructure() {
   const storageKey = useMemo(() => getScopedStorageKey(ORG_STRUCTURE_STORAGE_KEY, orgId), [orgId]);
 
   // Cargar estado inicial según organización
-  useEffect(() => {
+  const loadOrgData = useCallback(() => {
+    const isDemoOrg = orgId === "org_demo";
     try {
-      const stored = window.localStorage.getItem(storageKey);
+      const stored = typeof window !== "undefined" ? window.localStorage.getItem(storageKey) : null;
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed) {
-          // Soportar tanto formato plano (array de áreas) como formato compuesto (OrgStructureData)
+          const userSelf: OrgUser[] = currentUser?.email
+            ? [
+                {
+                  id: currentUser.id,
+                  organizationId: orgId,
+                  name: currentUser.name,
+                  email: currentUser.email,
+                  role: "Administrador",
+                  status: "Activo",
+                },
+              ]
+            : [];
+
           if (Array.isArray(parsed)) {
-            setWorkCenters(orgId === "org_luis" ? [] : DEMO_WORK_CENTERS);
+            setWorkCenters(isDemoOrg ? DEMO_WORK_CENTERS : []);
             setAreas(parsed);
-            setPositions(orgId === "org_luis" ? [] : DEMO_POSITIONS);
-            setUsers(orgId === "org_luis" ? [] : DEMO_USERS);
+            setPositions(isDemoOrg ? DEMO_POSITIONS : []);
+            setUsers(isDemoOrg ? DEMO_USERS : userSelf);
           } else {
-            setWorkCenters(parsed.workCenters || (orgId === "org_luis" ? [] : DEMO_WORK_CENTERS));
+            setWorkCenters(parsed.workCenters || (isDemoOrg ? DEMO_WORK_CENTERS : []));
             setAreas(parsed.areas || []);
-            setPositions(parsed.positions || (orgId === "org_luis" ? [] : DEMO_POSITIONS));
-            setUsers(parsed.users || (orgId === "org_luis" ? [] : DEMO_USERS));
+            setPositions(parsed.positions || (isDemoOrg ? DEMO_POSITIONS : []));
+            setUsers(parsed.users || (isDemoOrg ? DEMO_USERS : userSelf));
           }
           setIsLoaded(true);
           return;
@@ -293,20 +306,25 @@ export function useOrgStructure() {
       }
 
       // Si no existe almacenamiento previo:
-      if (orgId === "org_luis") {
-        // Cuenta de Luis Godoy: completamente vacía
+      if (!isDemoOrg) {
+        // Cuentas de prueba u organizaciones reales no demo: inician vacías
         setWorkCenters([]);
         setAreas([]);
         setPositions([]);
-        setUsers([
-          {
-            id: "usr-luis",
-            name: "Luis Godoy",
-            email: "luis.godoy@safetyclub.cl",
-            role: "Administrador",
-            status: "Activo",
-          },
-        ]);
+        setUsers(
+          currentUser?.email
+            ? [
+                {
+                  id: currentUser.id,
+                  organizationId: orgId,
+                  name: currentUser.name,
+                  email: currentUser.email,
+                  role: "Administrador",
+                  status: "Activo",
+                },
+              ]
+            : []
+        );
       } else {
         // Cuenta demo: inicializar con datos demo precargados
         const initAreas = getDefaultOrgStructure(preferences?.organizationSector);
@@ -320,20 +338,50 @@ export function useOrgStructure() {
           positions: DEMO_POSITIONS,
           users: DEMO_USERS,
         };
-        window.localStorage.setItem(storageKey, JSON.stringify(demoData));
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(storageKey, JSON.stringify(demoData));
+        }
       }
 
-      // Si es cuenta demo y Supabase está disponible, hidratar
-      if (orgId === "org_demo") {
-        fetchOrgStructureFromSupabase().then((cloudAreas) => {
-          if (cloudAreas && Array.isArray(cloudAreas) && cloudAreas.length > 0) {
-            setAreas(cloudAreas);
+      // Hidratar inmediatamente desde Supabase (FUENTE ÚNICA DE VERDAD)
+      fetchOrgStructureFromSupabase(orgId).then((cloudData) => {
+        if (cloudData) {
+          const hasCloudContent =
+            (cloudData.workCenters && cloudData.workCenters.length > 0) ||
+            (cloudData.areas && cloudData.areas.length > 0) ||
+            (cloudData.positions && cloudData.positions.length > 0) ||
+            (cloudData.users && cloudData.users.length > 0);
+
+          if (hasCloudContent) {
+            setWorkCenters(cloudData.workCenters || []);
+            setAreas(cloudData.areas || []);
+            setPositions(cloudData.positions || []);
+            setUsers(cloudData.users || []);
+
+            const payload: OrgStructureData = {
+              workCenters: cloudData.workCenters || [],
+              areas: cloudData.areas || [],
+              positions: cloudData.positions || [],
+              users: cloudData.users || [],
+              lastUpdated: cloudData.lastUpdated || new Date().toISOString(),
+            };
+
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(storageKey, JSON.stringify(payload));
+              window.dispatchEvent(
+                new CustomEvent("lifeon-org-structure-change", {
+                  detail: { orgId, payload },
+                })
+              );
+            }
           }
-        });
-      }
+        }
+      }).catch((err) => {
+        console.warn("Error hidratando estructura desde Supabase:", err);
+      });
     } catch (e) {
       console.warn("No se pudo cargar la estructura organizacional de localStorage:", e);
-      if (orgId === "org_luis") {
+      if (!isDemoOrg) {
         setWorkCenters([]);
         setAreas([]);
         setPositions([]);
@@ -349,7 +397,41 @@ export function useOrgStructure() {
     }
   }, [storageKey, orgId, preferences?.organizationSector]);
 
-  // Guardar en localStorage
+  useEffect(() => {
+    loadOrgData();
+
+    // Sincronización reactiva entre instancias del hook y cambio de sesión
+    const handleOrgSync = (e: any) => {
+      if (e?.detail?.payload) {
+        if (!e.detail.orgId || e.detail.orgId === orgId) {
+          const p = e.detail.payload;
+          setWorkCenters(p.workCenters || []);
+          setAreas(p.areas || []);
+          setPositions(p.positions || []);
+          setUsers(p.users || []);
+          setIsLoaded(true);
+        }
+      } else {
+        loadOrgData();
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("lifeon-org-structure-change", handleOrgSync);
+      window.addEventListener("lifeon-session-change", handleOrgSync);
+      window.addEventListener("storage", handleOrgSync);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("lifeon-org-structure-change", handleOrgSync);
+        window.removeEventListener("lifeon-session-change", handleOrgSync);
+        window.removeEventListener("storage", handleOrgSync);
+      }
+    };
+  }, [loadOrgData, orgId]);
+
+  // Guardar en localStorage y Supabase, y emitir evento reactivo a todos los componentes
   const persistState = useCallback(
     (
       newWorkCenters: OrgWorkCenter[],
@@ -371,14 +453,22 @@ export function useOrgStructure() {
       };
 
       try {
-        window.localStorage.setItem(storageKey, JSON.stringify(payload));
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(storageKey, JSON.stringify(payload));
+          // Notificar a otras instancias del hook (ej: TopBar selector en page.tsx)
+          window.dispatchEvent(
+            new CustomEvent("lifeon-org-structure-change", {
+              detail: { orgId, payload },
+            })
+          );
+        }
       } catch (e) {
         console.warn("Error al guardar estructura organizacional en localStorage:", e);
       }
 
-      if (orgId === "org_demo") {
-        saveOrgStructureToSupabase(newAreas);
-      }
+      saveOrgStructureToSupabase(payload, orgId).catch((err) => {
+        console.warn("Error persistiendo estructura en Supabase:", err);
+      });
     },
     [storageKey, orgId]
   );
@@ -396,12 +486,13 @@ export function useOrgStructure() {
         address: data.address?.trim(),
         status: "Activo",
         createdAt: new Date().toISOString().split("T")[0],
+        organizationId: orgId,
       };
       const updated = [...workCenters, newWc];
       persistState(updated, areas, positions, users);
       return newWc;
     },
-    [workCenters, areas, positions, users, persistState]
+    [workCenters, areas, positions, users, persistState, orgId]
   );
 
   const updateWorkCenter = useCallback(
@@ -475,12 +566,13 @@ export function useOrgStructure() {
         workCenterName: resolvedWcName,
         status: "Activo",
         processes: [],
+        organizationId: orgId,
       };
       const updated = [...areas, newArea];
       persistState(workCenters, updated, positions, users);
       return newArea;
     },
-    [workCenters, areas, positions, users, persistState]
+    [workCenters, areas, positions, users, persistState, orgId]
   );
 
   const updateArea = useCallback(
@@ -518,18 +610,24 @@ export function useOrgStructure() {
   // ==========================================================================
   const addProcess = useCallback(
     (areaId: string, name: string, code?: string, description?: string, subprocessesList?: string[]) => {
+      const area = areas.find((a) => a.id === areaId);
       const newProc: OrgProcess = {
         id: `proc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         name: name.trim(),
         code: code?.trim() || `PR-00${Date.now().toString().slice(-3)}`,
         description: description?.trim(),
         areaId,
+        areaName: area?.name,
+        workCenterId: area?.workCenterId,
+        workCenterName: area?.workCenterName || area?.workCenter,
         status: "Activo",
+        organizationId: orgId,
         subprocesses: (subprocessesList || []).map((sub, sIdx) => ({
           id: `sub-${Date.now()}-${sIdx}`,
           name: sub.trim(),
           processId: `proc-${Date.now()}`,
           status: "Activo",
+          organizationId: orgId,
         })),
       };
 
@@ -546,7 +644,7 @@ export function useOrgStructure() {
       persistState(workCenters, updated, positions, users);
       return newProc;
     },
-    [workCenters, areas, positions, users, persistState]
+    [workCenters, areas, positions, users, persistState, orgId]
   );
 
   const updateProcess = useCallback(
@@ -605,6 +703,7 @@ export function useOrgStructure() {
         name: subName.trim(),
         processId,
         status: "Activo",
+        organizationId: orgId,
       };
 
       const updated = areas.map((a) => {
@@ -626,7 +725,7 @@ export function useOrgStructure() {
       });
       persistState(workCenters, updated, positions, users);
     },
-    [workCenters, areas, positions, users, persistState]
+    [workCenters, areas, positions, users, persistState, orgId]
   );
 
   const toggleSubprocessStatus = useCallback(
@@ -686,6 +785,12 @@ export function useOrgStructure() {
       }
     ) => {
       const area = areas.find((a) => a.id === areaId);
+      const men = staffData?.menCount ?? 0;
+      const women = staffData?.womenCount ?? 0;
+      const other = staffData?.otherCount ?? 0;
+      const calcStaff = men + women + other;
+      const totalStaff = calcStaff > 0 ? calcStaff : (staffData?.totalStaff || 1);
+
       const newPos: OrgPosition = {
         id: `pos-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         name: name.trim(),
@@ -695,10 +800,11 @@ export function useOrgStructure() {
         description: description?.trim(),
         status: "Activo",
         createdAt: new Date().toISOString().split("T")[0],
-        totalStaff: staffData?.totalStaff || 0,
-        menCount: staffData?.menCount || 0,
-        womenCount: staffData?.womenCount || 0,
-        otherCount: staffData?.otherCount || 0,
+        organizationId: orgId,
+        totalStaff,
+        menCount: men,
+        womenCount: women,
+        otherCount: other,
         disabledCount: staffData?.disabledCount || 0,
         sensitiveCount: staffData?.sensitiveCount || 0,
         specialConditionsNote: staffData?.specialConditionsNote || "",
@@ -707,12 +813,23 @@ export function useOrgStructure() {
       persistState(workCenters, areas, updated, users);
       return newPos;
     },
-    [workCenters, areas, positions, users, persistState]
+    [workCenters, areas, positions, users, persistState, orgId]
   );
 
   const updatePosition = useCallback(
     (posId: string, updates: Partial<OrgPosition>) => {
-      const updated = positions.map((p) => (p.id === posId ? { ...p, ...updates } : p));
+      const updated = positions.map((p) => {
+        if (p.id === posId) {
+          const merged = { ...p, ...updates };
+          const men = merged.menCount ?? 0;
+          const women = merged.womenCount ?? 0;
+          const other = merged.otherCount ?? 0;
+          const calcStaff = men + women + other;
+          merged.totalStaff = calcStaff > 0 ? calcStaff : (merged.totalStaff || 0);
+          return merged;
+        }
+        return p;
+      });
       persistState(workCenters, areas, updated, users);
     },
     [workCenters, areas, positions, users, persistState]
@@ -751,12 +868,13 @@ export function useOrgStructure() {
         role,
         status: "Activo",
         createdAt: new Date().toISOString(),
+        organizationId: orgId,
       };
       const updated = [...users, newUser];
       persistState(workCenters, areas, positions, updated);
       return newUser;
     },
-    [workCenters, areas, positions, users, persistState]
+    [workCenters, areas, positions, users, persistState, orgId]
   );
 
   const updateUser = useCallback(
@@ -1720,6 +1838,7 @@ export function useOrgStructure() {
               description: wcRow.description,
               status: wcRow.status || "Activo",
               createdAt: new Date().toISOString().split("T")[0],
+              organizationId: orgId,
             };
             updatedWorkCenters.push(wc);
           }
@@ -1742,6 +1861,7 @@ export function useOrgStructure() {
             workCenter: matchedWc?.name || aRow.workCenter || "Faena Principal",
             workCenterId: matchedWc?.id,
             workCenterName: matchedWc?.name,
+            organizationId: orgId,
             processes: [],
           };
           updatedAreas.push(area);
@@ -1762,6 +1882,7 @@ export function useOrgStructure() {
             code: pRow.areaCode || `AR-00${updatedAreas.length + 1}`,
             status: "Activo",
             workCenter: "Faena Principal",
+            organizationId: orgId,
             processes: [],
           };
           updatedAreas.push(area);
@@ -1776,6 +1897,10 @@ export function useOrgStructure() {
             description: pRow.description,
             status: pRow.status || "Activo",
             areaId: area.id,
+            areaName: area.name,
+            workCenterId: area.workCenterId,
+            workCenterName: area.workCenterName || area.workCenter,
+            organizationId: orgId,
             subprocesses: [],
           };
           area.processes.push(proc);
@@ -1800,6 +1925,7 @@ export function useOrgStructure() {
                 description: sRow.description,
                 status: sRow.status || "Activo",
                 processId: proc.id,
+                organizationId: orgId,
               });
             }
             break;
@@ -1811,15 +1937,23 @@ export function useOrgStructure() {
       parsedData.positions.forEach((cRow) => {
         let pos = updatedPositions.find((p) => p.name.toLowerCase() === cRow.name.toLowerCase());
         if (!pos) {
+          const men = cRow.menCount || 0;
+          const women = cRow.womenCount || 0;
+          const other = cRow.otherCount || 0;
+          const calcTotal = men + women + other;
+          const totalStaff = calcTotal > 0 ? calcTotal : (cRow.totalStaff || 1);
+
           pos = {
             id: `pos-imp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
             name: cRow.name,
             code: cRow.code || `CARG-00${updatedPositions.length + 1}`,
             description: cRow.description,
             status: cRow.status || "Activo",
-            totalStaff: cRow.totalStaff || 0,
-            menCount: cRow.menCount || 0,
-            womenCount: cRow.womenCount || 0,
+            organizationId: orgId,
+            totalStaff,
+            menCount: men,
+            womenCount: women,
+            otherCount: other,
             disabledCount: cRow.disabledCount || 0,
             sensitiveCount: cRow.sensitiveCount || 0,
           };
@@ -1843,6 +1977,7 @@ export function useOrgStructure() {
             areaName: area?.name || uRow.area,
             role: uRow.role || "Editor",
             status: uRow.status || "Activo",
+            organizationId: orgId,
             createdAt: new Date().toISOString(),
           });
         }
@@ -1850,7 +1985,7 @@ export function useOrgStructure() {
 
       persistState(updatedWorkCenters, updatedAreas, updatedPositions, updatedUsers);
     },
-    [workCenters, areas, positions, users, persistState]
+    [workCenters, areas, positions, users, persistState, orgId]
   );
 
   const downloadTemplateCsv = useCallback(() => {

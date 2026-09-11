@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import clsx from "clsx";
 import {
   LuArrowLeft,
@@ -49,6 +49,9 @@ export interface IperEvaluationRow {
   residualLevel: "Crítico" | "Alto" | "Medio" | "Bajo";
   controlStatus: "Implementado" | "En proceso" | "Pendiente";
   responsible: string;
+  cargo?: string;
+  area?: string;
+  workCenter?: string;
 }
 
 const DEFAULT_EVALUATIONS: Record<string, IperEvaluationRow[]> = {
@@ -143,9 +146,13 @@ export default function IperMatrixDetailView({
   onOpenAprVirtual,
   initialOpenWizard,
 }: IperMatrixDetailViewProps) {
-  const [evaluations, setEvaluations] = useState<IperEvaluationRow[]>(
-    matrix.status === "No iniciado" ? [] : DEFAULT_EVALUATIONS[matrix.code] || []
-  );
+  const [evaluations, setEvaluations] = useState<IperEvaluationRow[]>(() => {
+    if (matrix.evaluations && Array.isArray(matrix.evaluations) && matrix.evaluations.length > 0) {
+      return matrix.evaluations;
+    }
+    if (matrix.status === "No iniciado") return [];
+    return DEFAULT_EVALUATIONS[matrix.code] || [];
+  });
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("Todos");
 
@@ -176,16 +183,37 @@ export default function IperMatrixDetailView({
   const [formControlStatus, setFormControlStatus] = useState<"Implementado" | "En proceso" | "Pendiente">("Implementado");
 
   // General Edit Form State
-  const [generalName, setGeneralName] = useState(matrix.name);
-  const [generalWorkCenter, setGeneralWorkCenter] = useState(matrix.workCenter);
-  const [generalResponsible, setGeneralResponsible] = useState(matrix.responsible);
+  const [generalName, setGeneralName] = useState(matrix.name || matrix.title || "");
+  const [generalWorkCenter, setGeneralWorkCenter] = useState(matrix.workCenter || matrix.workCenterName || "");
+  const [generalResponsible, setGeneralResponsible] = useState(matrix.responsible || "");
   const [generalStatus, setGeneralStatus] = useState<MatrixStatus>(matrix.status);
+
+  // Mantener los campos del formulario sincronizados con las actualizaciones del prop matrix
+  useEffect(() => {
+    setGeneralName(matrix.name || matrix.title || "");
+    setGeneralWorkCenter(matrix.workCenter || matrix.workCenterName || "");
+    setGeneralResponsible(matrix.responsible || "");
+    setGeneralStatus(matrix.status);
+  }, [matrix.name, matrix.title, matrix.workCenter, matrix.workCenterName, matrix.responsible, matrix.status]);
 
   const calculateLevel = (score: number): "Crítico" | "Alto" | "Medio" | "Bajo" => {
     if (score >= 16) return "Crítico";
     if (score >= 10) return "Alto";
     if (score >= 5) return "Medio";
     return "Bajo";
+  };
+
+  const updateEvaluationsAndSync = (newEvals: IperEvaluationRow[]) => {
+    setEvaluations(newEvals);
+    const criticalCount = newEvals.filter((e) => e.initialLevel === "Crítico").length;
+    onUpdateMatrix({
+      ...matrix,
+      name: matrix.name || matrix.title || "",
+      title: matrix.title || matrix.name || "",
+      evaluations: newEvals,
+      totalRecords: newEvals.length,
+      intolerableRisks: criticalCount,
+    });
   };
 
   const handleSaveEvaluation = (e: React.FormEvent) => {
@@ -218,12 +246,12 @@ export default function IperMatrixDetailView({
             }
           : row
       );
-      setEvaluations(updated);
+      updateEvaluationsAndSync(updated);
       setEditingRow(null);
     } else {
       // Add new
       const newRow: IperEvaluationRow = {
-        id: `EV-0${evaluations.length + 1}`,
+        id: `EV-${String(evaluations.length + 1).padStart(2, "0")}`,
         process: formProcess,
         task: formTask,
         hazard: formHazard,
@@ -240,7 +268,7 @@ export default function IperMatrixDetailView({
         controlStatus: formControlStatus,
         responsible: matrix.responsible,
       };
-      setEvaluations([...evaluations, newRow]);
+      updateEvaluationsAndSync([...evaluations, newRow]);
     }
 
     setIsAddEvaluationOpen(false);
@@ -277,12 +305,21 @@ export default function IperMatrixDetailView({
 
   const handleSaveGeneral = (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanName = generalName.trim();
+    const cleanWc = generalWorkCenter.trim();
+    const cleanResp = generalResponsible.trim();
+
     const updated: IperMatrixItem = {
       ...matrix,
-      name: generalName,
-      workCenter: generalWorkCenter,
-      responsible: generalResponsible,
+      name: cleanName,
+      title: cleanName,
+      workCenter: cleanWc,
+      workCenterName: cleanWc,
+      responsible: cleanResp,
       status: generalStatus,
+      evaluations: evaluations,
+      totalRecords: evaluations.length,
+      intolerableRisks: evaluations.filter((ev) => ev.initialLevel === "Crítico").length,
     };
     onUpdateMatrix(updated);
     setIsEditGeneralOpen(false);
@@ -332,8 +369,15 @@ export default function IperMatrixDetailView({
         onClose={() => setIsWizardOpen(false)}
         onFinish={(newEvaluations, updatedMatrix) => {
           const toAdd = Array.isArray(newEvaluations) ? newEvaluations : [newEvaluations];
-          setEvaluations([...toAdd, ...evaluations]);
-          onUpdateMatrix(updatedMatrix);
+          const allEvals = [...toAdd, ...evaluations];
+          setEvaluations(allEvals);
+          const criticalCount = allEvals.filter((e) => e.initialLevel === "Crítico").length;
+          onUpdateMatrix({
+            ...updatedMatrix,
+            evaluations: allEvals,
+            totalRecords: allEvals.length,
+            intolerableRisks: criticalCount,
+          });
           setIsWizardOpen(false);
         }}
       />
@@ -830,7 +874,8 @@ export default function IperMatrixDetailView({
                           type="button"
                           onClick={() => {
                             if (confirm(`¿Eliminar la evaluación "${row.task}"?`)) {
-                              setEvaluations(evaluations.filter((e) => e.id !== row.id));
+                              const updated = evaluations.filter((e) => e.id !== row.id);
+                              updateEvaluationsAndSync(updated);
                             }
                           }}
                           title="Eliminar"

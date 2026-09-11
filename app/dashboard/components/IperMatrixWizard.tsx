@@ -255,8 +255,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   const [tasks, setTasks] = useState<TaskItem[]>([]);
 
   // Formulario de Tarea en Etapa 1
-  const [taskFormAreaId, setTaskFormAreaId] = useState("");
-  const [taskFormProcessId, setTaskFormProcessId] = useState("");
+  const [taskFormAreaId, setTaskFormAreaId] = useState(matrix.areaId || "");
+  const [taskFormProcessId, setTaskFormProcessId] = useState(matrix.processId || "");
   const [taskFormSubprocess, setTaskFormSubprocess] = useState("");
   const [taskFormName, setTaskFormName] = useState("");
   const [taskFormType, setTaskFormType] = useState<"Rutinaria" | "No rutinaria">("Rutinaria");
@@ -319,6 +319,10 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   }, [areas]);
 
   const currentArea = useMemo(() => {
+    if (taskFormAreaId) {
+      const byId = activeAreas.find((a) => a.id === taskFormAreaId);
+      if (byId) return byId;
+    }
     if (matrix.areaId) {
       const byId = activeAreas.find((a) => a.id === matrix.areaId);
       if (byId) return byId;
@@ -328,7 +332,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
       if (byName) return byName;
     }
     if (activeAreas.length === 0) return null;
-    return activeAreas.find((a) => a.id === taskFormAreaId) || activeAreas[0];
+    return activeAreas[0];
   }, [activeAreas, matrix.areaId, matrix.areaName, taskFormAreaId]);
 
   const currentAreaProcesses = useMemo(() => {
@@ -337,19 +341,20 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   }, [currentArea]);
 
   const currentProcess = useMemo(() => {
-    if (matrix.processId) {
+    if (taskFormProcessId) {
+      const byId = currentAreaProcesses.find((p) => p.id === taskFormProcessId);
+      if (byId) return byId;
+    }
+    if (!taskFormAreaId && matrix.processId) {
       const byId = currentAreaProcesses.find((p) => p.id === matrix.processId);
       if (byId) return byId;
     }
-    if (matrix.processName) {
+    if (!taskFormAreaId && matrix.processName) {
       const byName = currentAreaProcesses.find((p) => p.name === matrix.processName);
       if (byName) return byName;
     }
-    if (currentAreaProcesses.length === 0) return null;
-    return (
-      currentAreaProcesses.find((p) => p.id === taskFormProcessId) || currentAreaProcesses[0]
-    );
-  }, [currentAreaProcesses, matrix.processId, matrix.processName, taskFormProcessId]);
+    return null;
+  }, [currentAreaProcesses, matrix.processId, matrix.processName, taskFormAreaId, taskFormProcessId]);
 
   const currentSubprocesses = useMemo(() => {
     if (!currentProcess) return [];
@@ -589,27 +594,24 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   // =========================================================================
   // HANDLERS: ETAPA 1 (TAREAS Y CARGOS INDIVIDUALES)
   // =========================================================================
-  const handleAddPositionToTaskForm = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddPositionToTaskForm = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!posFormName.trim()) return;
+    if (taskFormPositionsList.some((p) => p.name.toLowerCase() === posFormName.trim().toLowerCase())) return;
 
+    const found = positions.find((p) => p.name.toLowerCase() === posFormName.trim().toLowerCase());
     const newPos: JobPositionItem = {
-      id: `pos-${Date.now()}`,
+      id: found?.id || `pos-${Date.now()}`,
       name: posFormName.trim(),
-      headcountMen: posFormMen,
-      headcountWomen: posFormWomen,
-      headcountDiversity: posFormDiv,
-      hasSensitivePeople: posFormSensitive,
-      hasDisabledPeople: posFormDisabled,
+      headcountMen: found?.menCount ?? 1,
+      headcountWomen: found?.womenCount ?? 0,
+      headcountDiversity: found?.otherCount ?? 0,
+      hasSensitivePeople: (found?.sensitiveCount ?? 0) > 0,
+      hasDisabledPeople: (found?.disabledCount ?? 0) > 0,
     };
 
     setTaskFormPositionsList([...taskFormPositionsList, newPos]);
     setPosFormName("");
-    setPosFormMen(1);
-    setPosFormWomen(0);
-    setPosFormDiv(0);
-    setPosFormSensitive(false);
-    setPosFormDisabled(false);
   };
 
   const handleRemovePositionFromTaskForm = (posId: string) => {
@@ -621,8 +623,13 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
     if (!taskFormName.trim()) return;
     if (taskFormPositionsList.length === 0) return;
 
+    if (currentAreaProcesses.length > 0 && !currentProcess) {
+      alert("Por favor selecciona un Proceso perteneciente.");
+      return;
+    }
+
     const selectedArea = currentArea || activeAreas[0];
-    const selectedProc = currentProcess || (selectedArea?.processes || []).filter((p) => p.status !== "Inactivo")[0];
+    const selectedProc = currentProcess || (currentAreaProcesses.length > 0 ? currentAreaProcesses[0] : null);
 
     const finalPositions = taskFormPositionsList;
     const totalMen = finalPositions.reduce((acc, p) => acc + p.headcountMen, 0);
@@ -790,6 +797,11 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
           id: `EV-${Date.now().toString().slice(-4)}-${task.id.slice(-3)}-${idx + 1}`,
           process: task.areaName ? `${task.areaName} › ${task.processName}` : task.processName,
           task: task.subprocessName ? `[${task.subprocessName}] ${task.name}` : task.name,
+          cargo: task.positions && task.positions.length > 0
+            ? task.positions.map((p) => p.name).join(", ")
+            : task.jobPositions || undefined,
+          area: task.areaName || matrix.areaName,
+          workCenter: matrix.workCenterName,
           hazard: hItem.hazardDescription || hItem.specificRiskName,
           riskEvent: `[${hItem.specificRiskCode}] ${hItem.specificRiskName} (${hItem.riskClassification})`,
           probInitial: hItem.probValue,
@@ -1039,23 +1051,12 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           onChange={(e) => {
                             const newAreaId = e.target.value;
                             setTaskFormAreaId(newAreaId);
-                            const foundA = activeAreas.find((a) => a.id === newAreaId);
-                            const validProcesses = (foundA?.processes || []).filter((p) => p.status !== "Inactivo");
-                            if (foundA && validProcesses.length > 0) {
-                              setTaskFormProcessId(validProcesses[0].id);
-                              const validSubs = (validProcesses[0].subprocesses || []).filter((s) => s.status !== "Inactivo");
-                              if (validSubs.length > 0) {
-                                setTaskFormSubprocess(validSubs[0].name);
-                              } else {
-                                setTaskFormSubprocess("");
-                              }
-                            } else {
-                              setTaskFormProcessId("");
-                              setTaskFormSubprocess("");
-                            }
+                            setTaskFormProcessId("");
+                            setTaskFormSubprocess("");
                           }}
                           className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
                         >
+                          <option value="">[Seleccionar Área]</option>
                           {activeAreas.map((a) => (
                             <option key={a.id} value={a.id}>
                               {a.name} {a.code ? `(${a.code})` : ""}
@@ -1069,29 +1070,31 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           2. Proceso Perteneciente *
                         </label>
                         <select
-                          value={taskFormProcessId || currentProcess?.id || ""}
+                          value={taskFormProcessId}
                           onChange={(e) => {
                             const newProcId = e.target.value;
                             setTaskFormProcessId(newProcId);
                             const foundP = currentAreaProcesses.find((p) => p.id === newProcId);
-                            if (foundP && foundP.subprocesses.length > 0) {
-                              setTaskFormSubprocess(foundP.subprocesses[0].name);
+                            if (foundP && foundP.subprocesses && foundP.subprocesses.length > 0) {
+                              const validSubs = foundP.subprocesses.filter((s) => s.status !== "Inactivo");
+                              if (validSubs.length > 0) {
+                                setTaskFormSubprocess(validSubs[0].name);
+                              } else {
+                                setTaskFormSubprocess("");
+                              }
                             } else {
                               setTaskFormSubprocess("");
                             }
                           }}
-                          disabled={currentAreaProcesses.length === 0}
+                          disabled={!currentArea || currentAreaProcesses.length === 0}
                           className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium disabled:bg-gray-100 disabled:opacity-60"
                         >
-                          {currentAreaProcesses.length === 0 ? (
-                            <option value="">(Sin procesos en esta área)</option>
-                          ) : (
-                            currentAreaProcesses.map((proc) => (
-                              <option key={proc.id} value={proc.id}>
-                                {proc.name}
-                              </option>
-                            ))
-                          )}
+                          <option value="">[Seleccionar Proceso]</option>
+                          {currentAreaProcesses.map((proc) => (
+                            <option key={proc.id} value={proc.id}>
+                              {proc.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -1102,7 +1105,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                         <select
                           value={taskFormSubprocess}
                           onChange={(e) => setTaskFormSubprocess(e.target.value)}
-                          disabled={currentSubprocesses.length === 0}
+                          disabled={!currentProcess || currentSubprocesses.length === 0}
                           className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium disabled:bg-gray-100 disabled:opacity-60"
                         >
                           <option value="">(Sin subproceso específico)</option>
@@ -1233,151 +1236,63 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           </button>
                         </div>
                       ) : (
-                        <>
-                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                            <div className="sm:col-span-6">
-                              <label className="text-[11px] font-semibold text-gray-600 block mb-1">
-                                Cargo de la Organización
+                        <div className="flex flex-col gap-3">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5">
+                            <div className="flex-1">
+                              <label className="text-[11px] font-semibold text-gray-700 block mb-1">
+                                Cargo de la Organización *
                               </label>
                               <select
                                 value={posFormName}
-                                onChange={(e) => {
-                                  const cName = e.target.value;
-                                  setPosFormName(cName);
-                                  const found = positions.find((p) => p.name === cName);
-                                  if (found) {
-                                    setPosFormMen(found.menCount ?? 1);
-                                    setPosFormWomen(found.womenCount ?? 0);
-                                    setPosFormDiv(found.otherCount ?? 0);
-                                    setPosFormSensitive((found.sensitiveCount ?? 0) > 0);
-                                    setPosFormDisabled((found.disabledCount ?? 0) > 0);
-                                  }
-                                }}
-                                className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl p-2 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
+                                onChange={(e) => setPosFormName(e.target.value)}
+                                className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
                               >
                                 <option value="">Seleccionar cargo de la organización...</option>
                                 {positions
                                   .filter((p) => p.status !== "Inactivo")
                                   .map((pos) => (
                                     <option key={pos.id} value={pos.name}>
-                                      {pos.name} {pos.areaName ? `(${pos.areaName})` : ""} - Dotación: {pos.totalStaff ?? (pos.menCount || 0) + (pos.womenCount || 0)}
+                                      {pos.name} {pos.areaName ? `(${pos.areaName})` : ""}
                                     </option>
                                   ))}
                               </select>
-                            </div>
-
-                            <div className="sm:col-span-6">
-                              <label className="text-[11px] font-semibold text-gray-600 block mb-1">
-                                Dotación Expuesta en esta Tarea
-                              </label>
-                              <div className="grid grid-cols-3 gap-2">
-                                <div className="flex items-center bg-[#F8FAFC] border border-gray-200 rounded-xl px-2 py-1">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={posFormMen}
-                                    onChange={(e) => setPosFormMen(Number(e.target.value))}
-                                    className="w-8 bg-transparent text-xs font-bold text-gray-900 focus:outline-none"
-                                  />
-                                  <span className="text-[10px] text-gray-500 ml-auto font-medium">♂ Hombres</span>
-                                </div>
-                                <div className="flex items-center bg-[#F8FAFC] border border-gray-200 rounded-xl px-2 py-1">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={posFormWomen}
-                                    onChange={(e) => setPosFormWomen(Number(e.target.value))}
-                                    className="w-8 bg-transparent text-xs font-bold text-gray-900 focus:outline-none"
-                                  />
-                                  <span className="text-[10px] text-gray-500 ml-auto font-medium">♀ Mujeres</span>
-                                </div>
-                                <div className="flex items-center bg-[#F8FAFC] border border-gray-200 rounded-xl px-2 py-1">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={posFormDiv}
-                                    onChange={(e) => setPosFormDiv(Number(e.target.value))}
-                                    className="w-8 bg-transparent text-xs font-bold text-gray-900 focus:outline-none"
-                                  />
-                                  <span className="text-[10px] text-gray-500 ml-auto font-medium">⚥ Div</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Opciones marcables: Sensibilidad y Discapacidad */}
-                          <div className="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-gray-100">
-                            <div className="flex items-center gap-4 text-xs text-gray-700">
-                              <label className="flex items-center gap-1.5 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={posFormSensitive}
-                                  onChange={(e) => setPosFormSensitive(e.target.checked)}
-                                  className="accent-teal-600 w-3.5 h-3.5"
-                                />
-                                <span className="text-[11px] font-medium">Personas especialmente sensibles</span>
-                              </label>
-                              <label className="flex items-center gap-1.5 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={posFormDisabled}
-                                  onChange={(e) => setPosFormDisabled(e.target.checked)}
-                                  className="accent-teal-600 w-3.5 h-3.5"
-                                />
-                                <span className="text-[11px] font-medium">Personas con discapacidad</span>
-                              </label>
                             </div>
 
                             <button
                               type="button"
                               onClick={handleAddPositionToTaskForm}
                               disabled={!posFormName.trim()}
-                              className="px-3.5 py-1.5 text-xs font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition cursor-pointer disabled:opacity-40"
+                              className="px-4 py-2.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1.5 whitespace-nowrap shadow-2xs"
                             >
-                              + Asignar este Cargo
+                              <LuPlus className="w-3.5 h-3.5" />
+                              + Agregar cargo a la tarea
                             </button>
                           </div>
-                        </>
-                      )}
 
-                      {/* Lista de Cargos agregados para esta tarea */}
-                      {taskFormPositionsList.length > 0 && (
-                        <div className="pt-2 border-t border-gray-100 flex flex-col gap-1.5">
-                          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                            Cargos asignados a esta tarea ({taskFormPositionsList.length}):
-                          </span>
-                          <div className="flex flex-col gap-1.5">
-                            {taskFormPositionsList.map((pos) => (
-                              <div
-                                key={pos.id}
-                                className="bg-gray-50 rounded-xl p-2 px-3 flex items-center justify-between gap-2 text-xs border border-gray-200"
-                              >
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-bold text-gray-800">{pos.name}</span>
-                                  <span className="text-[11px] text-gray-500 font-mono">
-                                    (Dotación: {pos.headcountMen} ♂, {pos.headcountWomen} ♀, {pos.headcountDiversity} ⚥)
-                                  </span>
-                                  {pos.hasSensitivePeople && (
-                                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-medium">
-                                      Sensible
-                                    </span>
-                                  )}
-                                  {pos.hasDisabledPeople && (
-                                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200 font-medium">
-                                      Discapacidad
-                                    </span>
-                                  )}
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemovePositionFromTaskForm(pos.id)}
-                                  className="text-gray-400 hover:text-red-600 cursor-pointer p-1"
+                          {/* Lista de Cargos agregados para esta tarea */}
+                          {taskFormPositionsList.length > 0 && (
+                            <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center gap-2">
+                              <span className="text-[11px] font-semibold text-gray-500">
+                                Cargos asignados ({taskFormPositionsList.length}):
+                              </span>
+                              {taskFormPositionsList.map((pos) => (
+                                <span
+                                  key={pos.id}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-teal-50 text-teal-800 border border-teal-200 text-xs font-semibold"
                                 >
-                                  <LuTrash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
+                                  <span>{pos.name}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemovePositionFromTaskForm(pos.id)}
+                                    className="text-teal-600 hover:text-red-600 cursor-pointer p-0.5 ml-0.5"
+                                    title="Quitar cargo"
+                                  >
+                                    <LuX className="w-3.5 h-3.5" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1385,7 +1300,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     <div className="flex items-center justify-between pt-1">
                       {taskFormPositionsList.length === 0 && (
                         <p className="text-[11px] text-amber-700 font-medium">
-                          * Asigna al menos un cargo con su dotación para poder incorporar la tarea.
+                          * Asigna al menos un cargo para poder incorporar la tarea.
                         </p>
                       )}
                       <button
@@ -1469,7 +1384,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
 
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">
-                                    {task.positions?.length || 0} Puesto(s) &bull; {totalHeadcount} pers.
+                                    {task.positions?.length || 0} Cargo(s) asignado(s)
                                   </span>
 
                                   <button
@@ -1490,35 +1405,20 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                 </div>
                               </div>
 
-                              {/* Sección Expandible: Detalle de Puestos */}
+                              {/* Sección Expandible: Detalle de Cargos */}
                               {isExpanded && (
                                 <div className="p-4 pt-0 border-t border-gray-100 mt-1 bg-gray-50/40">
                                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2 pt-3">
-                                    Detalle de Puestos y Dotación ({task.positions?.length || 0}):
+                                    Cargos Ocupacionales Asignados ({task.positions?.length || 0}):
                                   </span>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <div className="flex flex-wrap gap-2">
                                     {task.positions?.map((pos) => (
-                                      <div
+                                      <span
                                         key={pos.id}
-                                        className="bg-white rounded-xl p-2.5 border border-gray-200 text-[11px] flex items-center justify-between flex-wrap gap-1 shadow-2xs"
+                                        className="inline-flex items-center px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-800 shadow-2xs"
                                       >
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          <span className="font-bold text-gray-800">{pos.name}</span>
-                                          {pos.hasSensitivePeople && (
-                                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 font-semibold">
-                                              Sensible
-                                            </span>
-                                          )}
-                                          {pos.hasDisabledPeople && (
-                                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-50 text-blue-800 border border-blue-200 font-semibold">
-                                              Discapacidad
-                                            </span>
-                                          )}
-                                        </div>
-                                        <span className="font-mono text-[10px] text-gray-500 font-semibold">
-                                          {pos.headcountMen}♂ {pos.headcountWomen}♀ {pos.headcountDiversity}⚥
-                                        </span>
-                                      </div>
+                                        {pos.name}
+                                      </span>
                                     ))}
                                   </div>
                                 </div>

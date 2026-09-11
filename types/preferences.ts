@@ -47,6 +47,7 @@ export interface OrganizationPreferences {
   tourCompleted?: boolean;
   organizationLogo?: string | null;
   profilePhoto?: string | null;
+  preventiveActivities?: any[];
 }
 
 export const DEFAULT_MODULE_CONFIGURATIONS: OrganizationModuleConfigurations = {

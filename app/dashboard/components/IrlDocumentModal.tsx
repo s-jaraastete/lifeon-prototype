@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import clsx from "clsx";
 import {
   LuX,
@@ -36,40 +36,32 @@ export default function IrlDocumentModal({
   evaluations,
   onClose,
 }: IrlDocumentModalProps) {
-  // Extraer cargos disponibles de las evaluaciones o puestos comunes de faena
+  // Extraer cargos disponibles EXCLUSIVAMENTE de las evaluaciones reales de la matriz (Reqs 3, 4, 7)
   const availablePositions = useMemo(() => {
     const uniquePositions = new Set<string>();
-
-    if (matrix.name.toLowerCase().includes("pesados") || matrix.code === "MA-001") {
-      uniquePositions.add("Operador de Excavadora / Maquinaria Pesada");
-      uniquePositions.add("Rigger / Señalero de Maniobras");
-      uniquePositions.add("Conductor de Camión Tolva");
-      uniquePositions.add("Mecánico de Mantenimiento de Faena");
-    } else if (matrix.name.toLowerCase().includes("mina") || matrix.code === "MA-002") {
-      uniquePositions.add("Operador de Perforadora");
-      uniquePositions.add("Técnico en Tronadura");
-      uniquePositions.add("Conductor de Camión de Extracción (CAEX)");
-      uniquePositions.add("Supervisor de Turno Mina");
-    } else if (matrix.name.toLowerCase().includes("eléctric") || matrix.code === "MA-003") {
-      uniquePositions.add("Electricista Especialista BT/MT");
-      uniquePositions.add("Técnico en Tableros Eléctricos");
-      uniquePositions.add("Ayudante de Electricidad");
-    } else if (matrix.name.toLowerCase().includes("química") || matrix.code === "MA-004") {
-      uniquePositions.add("Operador de Bodega de Sustancias Peligrosas");
-      uniquePositions.add("Encargado de Recepción y Despacho Químico");
-      uniquePositions.add("Técnico de Manejo de Residuos (RESPEL)");
-    } else {
-      uniquePositions.add("Operador de Faena Principal");
-      uniquePositions.add("Técnico de Mantenimiento Operacional");
-      uniquePositions.add("Ayudante de Cuadrilla");
-    }
-
-    return Array.from(uniquePositions);
-  }, [matrix]);
+    evaluations.forEach((ev) => {
+      if (ev.cargo && typeof ev.cargo === "string") {
+        ev.cargo
+          .split(/[,/;•]/)
+          .map((c) => c.trim())
+          .filter(Boolean)
+          .forEach((cargo) => uniquePositions.add(cargo));
+      }
+    });
+    return Array.from(uniquePositions).sort((a, b) => a.localeCompare(b));
+  }, [evaluations]);
 
   const [selectedPosition, setSelectedPosition] = useState<string>(
-    availablePositions[0] || "Operador de Faena"
+    () => availablePositions[0] || ""
   );
+
+  // Sincronizar posición seleccionada si cambian las evaluaciones
+  useEffect(() => {
+    if (availablePositions.length > 0 && (!selectedPosition || !availablePositions.includes(selectedPosition))) {
+      setSelectedPosition(availablePositions[0]);
+    }
+  }, [availablePositions, selectedPosition]);
+
   const [activeTab, setActiveTab] = useState<"document" | "signatures">("document");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -79,7 +71,7 @@ export default function IrlDocumentModal({
       id: "w-1",
       name: "Juan Ignacio Morales Castro",
       rut: "15.423.891-K",
-      position: availablePositions[0] || "Operador",
+      position: availablePositions[0] || "Trabajador",
       deliveryDate: "2026-08-15",
       status: "Firmado",
     },
@@ -87,7 +79,7 @@ export default function IrlDocumentModal({
       id: "w-2",
       name: "Rodrigo Esteban Tapia Silva",
       rut: "16.890.342-3",
-      position: availablePositions[0] || "Operador",
+      position: availablePositions[0] || "Trabajador",
       deliveryDate: "2026-08-18",
       status: "Pendiente",
     },
@@ -95,15 +87,15 @@ export default function IrlDocumentModal({
       id: "w-3",
       name: "Valentina Andrea Muñoz Lagos",
       rut: "18.234.567-8",
-      position: availablePositions[1] || availablePositions[0] || "Operador",
+      position: availablePositions[1] || availablePositions[0] || "Trabajador",
       deliveryDate: "2026-08-10",
       status: "Firmado",
     },
     {
       id: "w-4",
-      name: "Patricio Alejandro Vega Rivas",
+      name: "Cristóbal Andrés Vergara Soto",
       rut: "14.789.012-4",
-      position: availablePositions[0] || "Operador",
+      position: availablePositions[0] || "Trabajador",
       deliveryDate: "2026-08-20",
       status: "Firmado",
     },
@@ -121,11 +113,16 @@ export default function IrlDocumentModal({
     window.print();
   };
 
-  // Filtrar evaluaciones relevantes para el cargo seleccionado
+  // Filtrar evaluaciones relevantes EXCLUSIVAMENTE para el cargo seleccionado (Reqs 4, 5, 7)
   const positionEvaluations = useMemo(() => {
-    if (evaluations.length === 0) return [];
-    return evaluations;
-  }, [evaluations]);
+    if (!selectedPosition || evaluations.length === 0) return [];
+    const target = selectedPosition.trim().toLowerCase();
+    return evaluations.filter((ev) => {
+      if (!ev.cargo) return false;
+      const cargos = ev.cargo.split(/[,/;•]/).map((c) => c.trim().toLowerCase());
+      return cargos.includes(target) || ev.cargo.toLowerCase().includes(target);
+    });
+  }, [evaluations, selectedPosition]);
 
   const filteredSignatures = workerSignatures.filter(
     (w) =>

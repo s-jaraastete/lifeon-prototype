@@ -49,14 +49,20 @@ import {
   createThemedDataSheet,
   createThemedInstructionsSheet,
   normalizeImportedRows,
+  parseIperWorkbookWithMetadata,
 } from "@/lib/xlsx/lifeOnWorkbookTheme";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import { getSectorRiskProfile } from "@/data/sectorRiskTemplates";
-import IperMatrixDetailView from "./IperMatrixDetailView";
+import IperMatrixDetailView, { IperEvaluationRow } from "./IperMatrixDetailView";
 import OrgStructureModal from "./OrgStructureModal";
 import IperModuleOnboardingModal from "./IperModuleOnboardingModal";
 import { convert5x5ToVep3x3 } from "@/lib/riskEngine/riskEquivalence";
 import { useOrgStructure } from "@/hooks/useOrgStructure";
+import {
+  saveIperMatricesToSupabase,
+  fetchIperMatricesFromSupabase,
+  deleteIperMatrixFromSupabase,
+} from "@/lib/services/supabaseService";
 
 export type MatrixStatus =
   | "Vigente"
@@ -76,6 +82,7 @@ export interface IperMatrixItem {
   id: string;
   code: string;
   name: string;
+  title?: string;
   workCenter: string;
   responsible: string;
   totalRecords: number | string;
@@ -92,6 +99,7 @@ export interface IperMatrixItem {
   processId?: string;
   processName?: string;
   description?: string;
+  evaluations?: IperEvaluationRow[];
 }
 
 export interface SafetyEmergencyRiskItem {
@@ -579,10 +587,38 @@ export default function IperMatrixView({
   const isMiperConfigured = preferences.moduleConfigurations?.miper?.configured ?? false;
   const currentMethodology = preferences.moduleConfigurations?.miper?.methodology || "dynamic5x5_vep";
 
+  const orgId = currentUser?.orgId || "org_demo";
+  const storageKey = `lifeon_iper_matrices_${orgId}`;
+
   const [viewMode, setViewMode] = useState<"grid" | "list" | "significance">("grid");
-  const [matrices, setMatrices] = useState<IperMatrixItem[]>(() =>
-    currentUser?.orgId === "org_luis" ? [] : INITIAL_MATRICES
-  );
+  const [matrices, setMatrices] = useState<IperMatrixItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(`lifeon_iper_matrices_${currentUser?.orgId || "org_demo"}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return (!currentUser?.orgId || currentUser?.orgId === "org_demo") ? INITIAL_MATRICES : [];
+  });
+
+  const updateAndPersistMatrices = (newMatrices: IperMatrixItem[]) => {
+    setMatrices(newMatrices);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(newMatrices));
+        window.dispatchEvent(
+          new CustomEvent("lifeon-iper-matrices-change", {
+            detail: { orgId, matrices: newMatrices },
+          })
+        );
+      } catch (e) {}
+    }
+    saveIperMatricesToSupabase(newMatrices, orgId);
+  };
+
   const [selectedMatrix, setSelectedMatrix] = useState<IperMatrixItem | null>(null);
   const [openWizardOnSelect, setOpenWizardOnSelect] = useState(false);
 
@@ -599,25 +635,57 @@ export default function IperMatrixView({
     }
   }, [currentMethodology]);
 
+  const isDemo = !currentUser?.orgId || currentUser?.orgId === "org_demo";
   const [safetyRisks, setSafetyRisks] = useState<SafetyEmergencyRiskItem[]>(() =>
-    currentUser?.orgId === "org_luis" ? [] : INITIAL_SAFETY_EMERGENCY_RISKS
+    isDemo ? INITIAL_SAFETY_EMERGENCY_RISKS : []
   );
   const [protocolRisks, setProtocolRisks] = useState<ProtocolRiskItem[]>(() =>
-    currentUser?.orgId === "org_luis" ? [] : INITIAL_PROTOCOL_RISKS
+    isDemo ? INITIAL_PROTOCOL_RISKS : []
   );
 
-  // Sincronizar al cambiar de usuario
+  // Sincronizar al cambiar de usuario o montar
   useEffect(() => {
-    if (currentUser?.orgId === "org_luis") {
+    let localData: IperMatrixItem[] | null = null;
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) localData = parsed;
+        }
+      } catch (e) {}
+    }
+
+    const isOrgDemo = !orgId || orgId === "org_demo";
+
+    if (localData && localData.length > 0) {
+      setMatrices(localData);
+    } else if (!isOrgDemo) {
       setMatrices([]);
+    } else {
+      setMatrices(INITIAL_MATRICES);
+    }
+
+    if (!isOrgDemo) {
       setSafetyRisks([]);
       setProtocolRisks([]);
     } else {
-      setMatrices(INITIAL_MATRICES);
       setSafetyRisks(INITIAL_SAFETY_EMERGENCY_RISKS);
       setProtocolRisks(INITIAL_PROTOCOL_RISKS);
     }
-  }, [currentUser?.orgId]);
+
+    // Sincronizar con Supabase
+    fetchIperMatricesFromSupabase(orgId).then((remote) => {
+      if (remote && Array.isArray(remote) && remote.length > 0) {
+        setMatrices(remote);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(remote));
+          } catch (e) {}
+        }
+      }
+    });
+  }, [orgId, storageKey]);
 
   const [selectedCell3x3, setSelectedCell3x3] = useState<{ prob: number; severidad: number; vep: number } | null>(null);
   const [selectedCell5x5, setSelectedCell5x5] = useState<{ prob: number; impact: number; val: number } | null>(null);
@@ -650,16 +718,24 @@ export default function IperMatrixView({
     matrices: IperMatrixItem[];
     lastUpdate: string;
     status: "Actualizado" | "Pendiente";
-    risks: { hazard: string; riskEvent: string; controls: string }[];
+    risks: {
+      task: string;
+      hazard: string;
+      riskEvent: string;
+      controls: string;
+      matrixCode: string;
+      matrixName: string;
+      area: string;
+    }[];
   } | null>(null);
 
-  // Matrices en estado Vigente (Fuente exclusiva para IRL según Req 14)
+  // Matrices en estado Vigente (Fuente exclusiva para IRL según Reqs 3-7)
   const vigentesMatrices = useMemo(
     () => matrices.filter((m) => m.status === "Vigente"),
     [matrices]
   );
 
-  // Consolidación de IRL por Cargo
+  // Consolidación de IRL por Cargo EXCLUSIVAMENTE a partir de Matrices Vigentes y sus Evaluaciones Reales
   const irlCargosData = useMemo(() => {
     if (vigentesMatrices.length === 0) return [];
 
@@ -671,61 +747,74 @@ export default function IperMatrixView({
         matrices: IperMatrixItem[];
         lastUpdate: string;
         status: "Actualizado" | "Pendiente";
-        risks: { hazard: string; riskEvent: string; controls: string }[];
+        risks: {
+          task: string;
+          hazard: string;
+          riskEvent: string;
+          controls: string;
+          matrixCode: string;
+          matrixName: string;
+          area: string;
+        }[];
       }
     >();
 
-    const baseCargos = positions.length > 0
-      ? positions.map((p) => ({ name: p.name, area: p.areaName || "Operaciones" }))
-      : [
-          { name: "Jefe de Terreno / Administrador de Obra", area: "Operaciones y Montaje" },
-          { name: "Supervisor de Operaciones y Montaje", area: "Operaciones y Montaje" },
-          { name: "Maestro Mayor Albañil / Demoledor", area: "Operaciones y Montaje" },
-          { name: "Operador de Maquinaria y Equipos", area: "Operaciones y Montaje" },
-          { name: "Encargado de Bodega y Pañol", area: "Instalación de Faena y Bodegas" },
-        ];
+    vigentesMatrices.forEach((mat) => {
+      const evals = mat.evaluations || (mat as any).hazards || [];
+      evals.forEach((ev: IperEvaluationRow) => {
+        const rawCargo = ev.cargo;
+        if (!rawCargo || typeof rawCargo !== "string" || !rawCargo.trim()) return;
 
-    baseCargos.forEach((c) => {
-      const sampleRisks = [
-        {
-          hazard: "Caída de distinto nivel en plataformas o andamios > 1.80m",
-          riskEvent: "Politraumatismo / Lesiones graves o fatales por caída",
-          controls: "Uso obligatorio de arnés de seguridad SPDC con doble cabo de vida certificado, líneas de vida inspeccionadas y tarjetas de andamio operativas.",
-        },
-        {
-          hazard: "Atropello o atrapamiento por maquinaria pesada en movimiento",
-          riskEvent: "Aplastamiento por vehículo o equipo móvil en retroceso",
-          controls: "Segregación física peatón-maquinaria, uso permanente de chaleco reflectante alta visibilidad, alarmas de retroceso y balizas operativas.",
-        },
-        {
-          hazard: "Exposición a polvo con contenido de sílice libre cristalizada",
-          riskEvent: "Silicosis pulmonar / Enfermedad profesional de origen respiratorio",
-          controls: "Humectación permanente en frentes de trabajo, uso de protección respiratoria con filtros P100 certificados, cabinas cerradas con aire presurizado.",
-        },
-        {
-          hazard: "Derrumbe de taludes y paredes de excavación",
-          riskEvent: "Sepultamiento / Asfixia por atrapamiento en zanja",
-          controls: "Entibación según NCh 349 en excavaciones > 1.50m, pretiles perimetrales a 1.5m del borde, prohibición de acopio de material en el coronamiento.",
-        },
-        {
-          hazard: "Contacto eléctrico directo / arco eléctrico en tableros y generadores",
-          riskEvent: "Electrocución / Quemaduras graves por descarga eléctrica",
-          controls: "Bloqueo y etiquetado LOTO con candado personal, verificación de energía cero, uso de guantes dieléctricos y herramientas aisladas 1000V.",
-        },
-      ];
+        // Si vienen múltiples cargos asociados (separados por coma, punto y coma o barra)
+        const cargosList = rawCargo
+          .split(/[,/;•]/)
+          .map((c) => c.trim())
+          .filter(Boolean);
 
-      cargoMap.set(c.name, {
-        cargo: c.name,
-        area: c.area,
-        matrices: vigentesMatrices,
-        lastUpdate: vigentesMatrices[0].lastReviewDate || "Hoy",
-        status: "Actualizado",
-        risks: sampleRisks,
+        cargosList.forEach((cargoName) => {
+          const key = cargoName.toLowerCase();
+          const existing = cargoMap.get(key);
+
+          const riskItem = {
+            task: ev.task || "Tarea no especificada",
+            hazard: ev.hazard || "Peligro no especificado",
+            riskEvent: ev.riskEvent || "Riesgo no especificado",
+            controls: ev.controls || "Medidas de control según procedimiento",
+            matrixCode: mat.code,
+            matrixName: mat.name || mat.title || "Matriz IPER",
+            area: ev.area || mat.areaName || (mat as any).area || "Operaciones",
+          };
+
+          if (!existing) {
+            cargoMap.set(key, {
+              cargo: cargoName,
+              area: ev.area || mat.areaName || (mat as any).area || "Operaciones",
+              matrices: [mat],
+              lastUpdate: mat.lastReviewDate || (mat as any).lastReview || "Reciente",
+              status: "Actualizado",
+              risks: [riskItem],
+            });
+          } else {
+            if (!existing.matrices.some((m) => m.id === mat.id)) {
+              existing.matrices.push(mat);
+            }
+            // Consolidar riesgos evitando duplicados exactos (mismo peligro + evento + tarea)
+            const isDuplicate = existing.risks.some(
+              (r) =>
+                r.hazard.toLowerCase() === riskItem.hazard.toLowerCase() &&
+                r.riskEvent.toLowerCase() === riskItem.riskEvent.toLowerCase() &&
+                r.task.toLowerCase() === riskItem.task.toLowerCase()
+            );
+            if (!isDuplicate) {
+              existing.risks.push(riskItem);
+            }
+          }
+        });
       });
     });
 
-    return Array.from(cargoMap.values());
-  }, [vigentesMatrices, positions]);
+    return Array.from(cargoMap.values()).sort((a, b) => a.cargo.localeCompare(b.cargo));
+  }, [vigentesMatrices]);
 
   const irlMetrics = useMemo(() => {
     const total = irlCargosData.length;
@@ -794,6 +883,7 @@ export default function IperMatrixView({
   // Import State (Req 8)
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [importErrorsList, setImportErrorsList] = useState<string[]>([]);
   const [isProcessingImport, setIsProcessingImport] = useState(false);
 
   // Auto-selección y dependencias de selectores para nueva matriz
@@ -820,10 +910,10 @@ export default function IperMatrixView({
 
   useEffect(() => {
     const currentArea = areas.find((a) => a.id === selectedAreaId);
-    const availableProcs = currentArea?.processes || [];
+    const availableProcs = (currentArea?.processes || []).filter((p) => p.status !== "Inactivo");
     if (availableProcs.length > 0) {
       if (!availableProcs.some((p) => p.id === selectedProcessId)) {
-        setSelectedProcessId(availableProcs[0].id);
+        setSelectedProcessId("");
       }
     } else {
       setSelectedProcessId("");
@@ -887,18 +977,17 @@ export default function IperMatrixView({
 
   // Status Updater with Notification
   const updateMatrixStatus = (id: string, newStatus: MatrixStatus, feedbackMsg: string) => {
-    setMatrices((prev) =>
-      prev.map((m) => {
-        if (m.id === id) {
-          return {
-            ...m,
-            status: newStatus,
-            isExpired: newStatus === "Vencida" || newStatus === "Rechazada",
-          };
-        }
-        return m;
-      })
-    );
+    const updated = matrices.map((m) => {
+      if (m.id === id || (m.id && id && (m.id.endsWith(id) || id.endsWith(m.id)))) {
+        return {
+          ...m,
+          status: newStatus,
+          isExpired: newStatus === "Vencida" || newStatus === "Rechazada",
+        };
+      }
+      return m;
+    });
+    updateAndPersistMatrices(updated);
     showToast(feedbackMsg);
   };
 
@@ -941,27 +1030,41 @@ export default function IperMatrixView({
   const handleSaveEditData = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMatrix) return;
-    setMatrices((prev) =>
-      prev.map((m) =>
-        m.id === editingMatrix.id
-          ? {
-              ...m,
-              code: editFormCode,
-              name: editFormName,
-              workCenter: editFormWorkCenter,
-              responsible: editFormResponsible,
-            }
-          : m
-      )
+    const cleanName = editFormName.trim();
+    const cleanWc = editFormWorkCenter.trim();
+    const cleanResp = editFormResponsible.trim();
+    const cleanCode = editFormCode.trim();
+
+    const updated = matrices.map((m) =>
+      m.id === editingMatrix.id ||
+      (m.id && editingMatrix.id && (m.id.endsWith(editingMatrix.id) || editingMatrix.id.endsWith(m.id)))
+        ? {
+            ...m,
+            code: cleanCode,
+            name: cleanName,
+            title: cleanName,
+            workCenter: cleanWc,
+            workCenterName: cleanWc,
+            responsible: cleanResp,
+          }
+        : m
     );
+    updateAndPersistMatrices(updated);
     setIsEditDataOpen(false);
-    showToast(`Datos de matriz ${editFormCode} actualizados.`);
+    showToast(`Datos de matriz ${cleanCode} actualizados y guardados.`);
   };
 
   // Delete Matrix
   const handleConfirmDelete = () => {
     if (!matrixToDelete) return;
-    setMatrices((prev) => prev.filter((m) => m.id !== matrixToDelete.id));
+    const toDeleteId = matrixToDelete.id;
+    const updated = matrices.filter(
+      (m) =>
+        m.id !== toDeleteId &&
+        !(m.id && toDeleteId && (m.id.endsWith(toDeleteId) || toDeleteId.endsWith(m.id)))
+    );
+    updateAndPersistMatrices(updated);
+    deleteIperMatrixFromSupabase(toDeleteId, orgId);
     setIsDeleteConfirmOpen(false);
     showToast(`Matriz ${matrixToDelete.code} eliminada.`);
     setMatrixToDelete(null);
@@ -1209,7 +1312,7 @@ export default function IperMatrixView({
       status: "Borrador",
     };
 
-    setMatrices([newItem, ...matrices]);
+    updateAndPersistMatrices([newItem, ...matrices]);
     setIsNewMatrixOpen(false);
     setNewName("");
     setNewCode("");
@@ -1224,6 +1327,7 @@ export default function IperMatrixView({
   };
 
   // Descarga de Plantilla Oficial de Matriz IPER (2 hojas: INSTRUCCIONES y MATRIZ con branding LifeOn)
+  // Descarga de Plantilla Oficial de Matriz IPER (2 hojas: INSTRUCCIONES y MATRIZ con branding LifeOn)
   const downloadIperTemplateXlsx = () => {
     const wb = XLSX.utils.book_new();
 
@@ -1234,20 +1338,28 @@ export default function IperMatrixView({
       legendNotes: [
         "La hoja 'INSTRUCCIONES' es solo informativa y no es leída durante la importación.",
         "La hoja 'MATRIZ' es la ÚNICA hoja procesada para cargar los riesgos.",
+        "Zona Superior de Metadatos: Es OBLIGATORIO indicar el 'Nombre de la Matriz' en la zona superior de la hoja 'MATRIZ'.",
         "Los valores de Probabilidad y Consecuencia deben ser números entre 1 y 5 (o 1 y 3 según metodología VEP).",
       ],
       sections: [
         {
-          title: "1. RELACIÓN CON ESTRUCTURA ORGANIZACIONAL",
+          title: "1. METADATOS PRINCIPALES DE LA MATRIZ",
+          items: [
+            "Nombre de la Matriz: Campo OBLIGATORIO en la zona superior de la hoja 'MATRIZ'. Define el nombre formal con el que se registrará la matriz.",
+            "Tipo de Matriz, Centro de Trabajo, Área, Proceso y Código: Campos opcionales para caracterizar el alcance organizacional.",
+          ],
+        },
+        {
+          title: "2. RELACIÓN CON ESTRUCTURA ORGANIZACIONAL",
           items: [
             "Centro de Trabajo: Debe corresponder a una sede u obra registrada en tu organización.",
             "Área: Área operativa donde se ejecuta la labor evaluada.",
             "Proceso: Proceso de trabajo al que pertenece la tarea.",
-            "Cargo: Cargo ocupacional expuesto al peligro identificado.",
+            "Cargo: Cargo ocupacional expuesto al peligro identificado (indispensable para generación automática de IRL).",
           ],
         },
         {
-          title: "2. EVALUACIÓN DE RIESGOS",
+          title: "3. EVALUACIÓN DE RIESGOS",
           items: [
             "Probabilidad Inicial: Estimación de ocurrencia antes de controles (1 a 5).",
             "Consecuencia Inicial: Severidad de las posibles lesiones o pérdidas (1 a 5).",
@@ -1256,9 +1368,9 @@ export default function IperMatrixView({
           ],
         },
         {
-          title: "3. RECOMENDACIONES DE LLENADO",
+          title: "4. RECOMENDACIONES DE LLENADO",
           items: [
-            "No modifique los nombres ni el orden de las columnas en la fila 1 de la hoja 'MATRIZ'.",
+            "No modifique los nombres ni el orden de las columnas de la tabla.",
             "Puede completar tantas filas como tareas y riesgos tenga su proceso.",
           ],
         },
@@ -1268,6 +1380,15 @@ export default function IperMatrixView({
     // HOJA 2: MATRIZ
     const wsMatriz = createThemedDataSheet({
       sheetTitle: "MATRIZ IPER",
+      metadata: [
+        { label: "Nombre de la Matriz", value: "Matriz de Identificación de Peligros y Evaluación de Riesgos - Operaciones", mandatory: true },
+        { label: "Tipo de Matriz", value: "Por Proceso", mandatory: false },
+        { label: "Centro de Trabajo", value: "Obra Hospital Talca", mandatory: false },
+        { label: "Área", value: "Construcción", mandatory: false },
+        { label: "Proceso", value: "Montaje estructural", mandatory: false },
+        { label: "Código", value: "MA-IMP-01", mandatory: false },
+        { label: "Descripción", value: "Evaluación integral de tareas críticas de montaje", mandatory: false },
+      ],
       columns: [
         { header: "Centro de Trabajo", key: "workCenter", mandatory: true, width: 26 },
         { header: "Área", key: "area", mandatory: true, width: 22 },
@@ -1312,14 +1433,16 @@ export default function IperMatrixView({
     XLSX.writeFile(wb, "Plantilla_Matriz_IPER_LifeOn.xlsx");
   };
 
-  // Procesamiento de importación de Matriz IPER (Req 8)
+  // Procesamiento de importación de Matriz IPER (Req 8 - Transaccional con fila por fila)
   const handleProcessIperImport = () => {
     if (!importFile) {
       setImportError("Por favor selecciona un archivo .xlsx para procesar.");
+      setImportErrorsList([]);
       return;
     }
     setIsProcessingImport(true);
     setImportError(null);
+    setImportErrorsList([]);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1328,9 +1451,10 @@ export default function IperMatrixView({
         const workbook = XLSX.read(data, { type: "array" });
 
         // Buscar hoja MATRIZ
-        const sheetName = workbook.SheetNames.find(
-          (s) => s.trim().toUpperCase() === "MATRIZ"
-        ) || workbook.SheetNames.find((s) => s.trim().toUpperCase() !== "INSTRUCCIONES") || workbook.SheetNames[0];
+        const sheetName =
+          workbook.SheetNames.find((s) => s.trim().toUpperCase() === "MATRIZ") ||
+          workbook.SheetNames.find((s) => s.trim().toUpperCase() !== "INSTRUCCIONES") ||
+          workbook.SheetNames[0];
 
         if (!sheetName) {
           setImportError("El archivo no contiene hojas con datos.");
@@ -1339,7 +1463,20 @@ export default function IperMatrixView({
         }
 
         const ws = workbook.Sheets[sheetName];
-        const rawRows = normalizeImportedRows<any>(ws);
+        const parsed = parseIperWorkbookWithMetadata(ws);
+        const rawRows = parsed.rows;
+        const parsedMatrixName = parsed.matrixName ? parsed.matrixName.trim() : "";
+
+        // Validación estricta del Nombre de la Matriz (Reqs 1 y 2)
+        if (!parsedMatrixName) {
+          setImportError("Debes indicar el nombre de la Matriz.");
+          setImportErrorsList([
+            "Debes indicar el nombre de la Matriz.",
+            "Completa la casilla 'Nombre de la Matriz' en la zona superior de metadatos o agrega la columna 'Nombre de la Matriz'."
+          ]);
+          setIsProcessingImport(false);
+          return;
+        }
 
         if (rawRows.length === 0) {
           setImportError("La hoja 'MATRIZ' no contiene registros válidos para importar.");
@@ -1347,37 +1484,139 @@ export default function IperMatrixView({
           return;
         }
 
-        const firstRow = rawRows[0];
-        const workCenterVal = firstRow["centro de trabajo"] || firstRow["centro"] || currentWcName;
-        const areaVal = firstRow["area"] || "Operaciones";
-        const processVal = firstRow["proceso"] || "Proceso Operativo";
+        // VALIDACIÓN TRANSACCIONAL DE TODAS LAS FILAS
+        const errors: string[] = [];
+        const validRowsData: IperEvaluationRow[] = [];
 
-        const newMatrixCode = `MA-IMP-${Date.now().toString().slice(-4)}`;
+        rawRows.forEach((row: any, idx: number) => {
+          const rowNum = idx + 2; // Fila real en Excel
+
+          const wcVal = (row["centro de trabajo"] || row["centro"] || row["workcenter"] || parsed.workCenter || currentWcName || "").toString().trim();
+          const areaVal = (row["area"] || row["área"] || parsed.area || "Operaciones").toString().trim();
+          const procVal = (row["proceso"] || row["process"] || parsed.process || "").toString().trim();
+          const taskVal = (row["tarea"] || row["task"] || "").toString().trim();
+          const cargoVal = (row["cargo"] || row["puesto"] || row["jobposition"] || "").toString().trim();
+          const hazardVal = (row["peligro / factor de riesgo"] || row["peligro"] || row["hazard"] || row["factor de riesgo"] || "").toString().trim();
+          const riskVal = (row["riesgo / evento no deseado"] || row["riesgo"] || row["risk"] || row["evento no deseado"] || "").toString().trim();
+          const controlsVal = (row["medidas de control existentes"] || row["medidas de control"] || row["controles"] || row["controls"] || "").toString().trim();
+          const addControlsVal = (row["medidas de control adicionales"] || row["controles adicionales"] || row["addcontrols"] || "").toString().trim();
+
+          const rawInitProb = row["probabilidad inicial"] ?? row["probabilidad"] ?? row["initprob"];
+          const rawInitCons = row["consecuencia inicial"] ?? row["consecuencia"] ?? row["severidad inicial"] ?? row["initcons"];
+          const initProb = Number(rawInitProb);
+          const initCons = Number(rawInitCons);
+
+          const rawResProb = row["probabilidad residual"] ?? row["resprob"];
+          const rawResCons = row["consecuencia residual"] ?? row["rescons"];
+
+          if (!wcVal) errors.push(`Fila ${rowNum}: Falta el 'Centro de Trabajo'.`);
+          if (!areaVal) errors.push(`Fila ${rowNum}: Falta el 'Área'.`);
+          if (!procVal) errors.push(`Fila ${rowNum}: Falta el 'Proceso'.`);
+          if (!taskVal) errors.push(`Fila ${rowNum}: Falta la 'Tarea'.`);
+          if (!cargoVal) errors.push(`Fila ${rowNum}: Falta el 'Cargo'.`);
+          if (!hazardVal) errors.push(`Fila ${rowNum}: Falta el 'Peligro / Factor de Riesgo'.`);
+          if (!riskVal) errors.push(`Fila ${rowNum}: Falta el 'Riesgo / Evento No Deseado'.`);
+          if (!controlsVal) errors.push(`Fila ${rowNum}: Falta 'Medidas de Control Existentes'.`);
+
+          if (isNaN(initProb) || initProb < 1 || initProb > 5) {
+            errors.push(`Fila ${rowNum}: 'Probabilidad Inicial' (${rawInitProb ?? "vacía"}) debe ser un número entero entre 1 y 5.`);
+          }
+          if (isNaN(initCons) || initCons < 1 || initCons > 5) {
+            errors.push(`Fila ${rowNum}: 'Consecuencia Inicial' (${rawInitCons ?? "vacía"}) debe ser un número entero entre 1 y 5.`);
+          }
+
+          let resProb = rawResProb !== undefined && rawResProb !== null && rawResProb !== "" ? Number(rawResProb) : Math.max(1, Math.floor((initProb || 2) / 2));
+          let resCons = rawResCons !== undefined && rawResCons !== null && rawResCons !== "" ? Number(rawResCons) : Math.max(1, Math.floor((initCons || 2) / 2));
+
+          if (rawResProb !== undefined && rawResProb !== null && rawResProb !== "") {
+            if (isNaN(resProb) || resProb < 1 || resProb > 5) {
+              errors.push(`Fila ${rowNum}: 'Probabilidad Residual' debe ser un número entre 1 y 5.`);
+            }
+          }
+          if (rawResCons !== undefined && rawResCons !== null && rawResCons !== "") {
+            if (isNaN(resCons) || resCons < 1 || resCons > 5) {
+              errors.push(`Fila ${rowNum}: 'Consecuencia Residual' debe ser un número entre 1 y 5.`);
+            }
+          }
+
+          const initScore = (isNaN(initProb) ? 1 : initProb) * (isNaN(initCons) ? 1 : initCons);
+          const resScore = resProb * resCons;
+
+          if (resScore > initScore) {
+            errors.push(`Fila ${rowNum}: El riesgo residual (${resScore}) no puede superar al riesgo inicial (${initScore}).`);
+          }
+
+          if (errors.length === 0) {
+            const initialLevel: "Crítico" | "Alto" | "Medio" | "Bajo" =
+              initScore >= 16 ? "Crítico" : initScore >= 10 ? "Alto" : initScore >= 5 ? "Medio" : "Bajo";
+            const residualLevel: "Crítico" | "Alto" | "Medio" | "Bajo" =
+              resScore >= 16 ? "Crítico" : resScore >= 10 ? "Alto" : resScore >= 5 ? "Medio" : "Bajo";
+
+            validRowsData.push({
+              id: `EV-${String(idx + 1).padStart(2, "0")}`,
+              process: procVal,
+              task: taskVal,
+              hazard: hazardVal,
+              riskEvent: riskVal,
+              probInitial: initProb,
+              sevInitial: initCons,
+              riskInitial: initScore,
+              initialLevel,
+              controls: addControlsVal ? `${controlsVal} • Control adicional: ${addControlsVal}` : controlsVal,
+              probResidual: resProb,
+              sevResidual: resCons,
+              riskResidual: resScore,
+              residualLevel,
+              controlStatus: "Implementado",
+              responsible: newResponsible || "Prevencionista de Riesgos",
+              cargo: cargoVal,
+              area: areaVal,
+              workCenter: wcVal,
+            });
+          }
+        });
+
+        // Si hay errores, NO SE CREA LA MATRIZ (Transaccional)
+        if (errors.length > 0) {
+          setImportErrorsList(errors);
+          setImportError(`Se detectaron ${errors.length} inconsistencias en la planilla. Corrige el archivo para reintentar.`);
+          setIsProcessingImport(false);
+          return;
+        }
+
+        const firstRow = rawRows[0];
+        const workCenterVal = (parsed.workCenter || firstRow["centro de trabajo"] || firstRow["centro"] || currentWcName || "Centro Principal").toString().trim();
+        const areaVal = (parsed.area || firstRow["area"] || "Operaciones").toString().trim();
+        const processVal = (parsed.process || firstRow["proceso"] || "Proceso Operativo").toString().trim();
+
+        const newMatrixCode = parsed.code || `MA-IMP-${Date.now().toString().slice(-4)}`;
         const importedMatrix: IperMatrixItem = {
           id: `m-imp-${Date.now()}`,
           code: newMatrixCode,
-          name: `Matriz de Riesgos ${processVal} - ${workCenterVal}`,
-          scope: "process",
-          workCenter: String(workCenterVal).trim(),
-          workCenterName: String(workCenterVal).trim(),
-          areaName: String(areaVal).trim(),
-          processName: String(processVal).trim(),
+          name: parsedMatrixName,
+          title: parsedMatrixName,
+          scope: (parsed.matrixType as any) || "process",
+          workCenter: workCenterVal,
+          workCenterName: workCenterVal,
+          areaName: areaVal,
+          processName: processVal,
           responsible: newResponsible || "Prevencionista de Riesgos",
-          totalRecords: rawRows.length,
-          intolerableRisks: rawRows.filter((r: any) => {
-            const prob = Number(r["probabilidad inicial"] || 1);
-            const cons = Number(r["consecuencia inicial"] || 1);
-            return prob * cons >= 15;
-          }).length,
+          totalRecords: validRowsData.length,
+          intolerableRisks: validRowsData.filter((e) => e.initialLevel === "Crítico").length,
           expiryText: "Vencimiento: 1 año",
           status: "Borrador",
+          evaluations: validRowsData,
         };
 
-        setMatrices([importedMatrix, ...matrices]);
+        const updatedList = [importedMatrix, ...matrices];
+        updateAndPersistMatrices(updatedList);
+
         setIsImportOpen(false);
         setImportFile(null);
+        setImportError(null);
+        setImportErrorsList([]);
         setIsProcessingImport(false);
-        showToast(`Matriz importada con éxito (${rawRows.length} registros analizados).`);
+        showToast(`Matriz '${parsedMatrixName}' importada con éxito: ${validRowsData.length} evaluaciones cargadas en estado Borrador.`);
       } catch (err: any) {
         console.error("Error importando matriz:", err);
         setImportError("Error al interpretar la planilla Excel: " + (err.message || "Formato incompatible."));
@@ -1454,25 +1693,47 @@ export default function IperMatrixView({
           setOpenWizardOnSelect(false);
         }}
         onUpdateMatrix={(updated) => {
-          setMatrices(matrices.map((m) => (m.id === updated.id ? updated : m)));
+          const updatedList = matrices.map((m) =>
+            m.id === updated.id ||
+            (m.id && updated.id && (m.id.endsWith(updated.id) || updated.id.endsWith(m.id)))
+              ? updated
+              : m
+          );
+          updateAndPersistMatrices(updatedList);
           setSelectedMatrix(updated);
+          showToast(`Matriz '${updated.name}' guardada correctamente.`);
         }}
         onOpenAprVirtual={onOpenAprVirtual}
       />
     );
   }
 
-  // Calculated Counters
-  const countVigentes = matrices.filter((m) => m.status === "Vigente").length;
-  const countRevision = matrices.filter((m) =>
-    ["En revisión", "En aprobación", "En actualización", "En modificación"].includes(m.status)
-  ).length;
-  const countObservadas = matrices.filter((m) =>
-    ["Observada", "Observado", "Rechazada"].includes(m.status)
-  ).length;
-  const countVencidas = matrices.filter(
-    (m) => ["Vencida", "Vencido"].includes(m.status) || m.isExpired
-  ).length;
+  // Calculated Counters con normalización insensible a mayúsculas
+  const countVigentes = matrices.filter((m) => {
+    const s = (m.status || "").toLowerCase().trim();
+    return s === "vigente" || s === "aprobada" || s === "aprobado";
+  }).length;
+  const countRevision = matrices.filter((m) => {
+    const s = (m.status || "").toLowerCase().trim();
+    return (
+      s === "en revisión" ||
+      s === "en revision" ||
+      s === "en aprobación" ||
+      s === "en aprobacion" ||
+      s === "en actualización" ||
+      s === "en actualizacion" ||
+      s === "en modificación" ||
+      s === "en modificacion"
+    );
+  }).length;
+  const countObservadas = matrices.filter((m) => {
+    const s = (m.status || "").toLowerCase().trim();
+    return s === "observada" || s === "observado" || s === "rechazada";
+  }).length;
+  const countVencidas = matrices.filter((m) => {
+    const s = (m.status || "").toLowerCase().trim();
+    return s === "vencida" || s === "vencido" || m.isExpired;
+  }).length;
 
   return (
     <div className="flex flex-col gap-3 font-[family-name:var(--font-poppins)] animate-in fade-in duration-300 relative">
@@ -2763,7 +3024,10 @@ export default function IperMatrixView({
                     </label>
                     <select
                       value={selectedAreaId}
-                      onChange={(e) => setSelectedAreaId(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedAreaId(e.target.value);
+                        setSelectedProcessId("");
+                      }}
                       className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                     >
                       {areas
@@ -2788,11 +3052,14 @@ export default function IperMatrixView({
                       onChange={(e) => setSelectedProcessId(e.target.value)}
                       className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                     >
-                      {(currentAreaObj?.processes || []).map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
+                      <option value="">[Seleccionar Proceso]</option>
+                      {(currentAreaObj?.processes || [])
+                        .filter((p) => p.status !== "Inactivo")
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
                     </select>
                   </div>
                 )}
@@ -3531,9 +3798,25 @@ export default function IperMatrixView({
 
             {/* Mensaje de Error si aplica */}
             {importError && (
-              <div className="mt-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
-                <LuCircleAlert className="w-4 h-4 flex-shrink-0 text-red-600" />
-                <span>{importError}</span>
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                <div className="flex items-center gap-2 font-semibold mb-1">
+                  <LuCircleAlert className="w-4 h-4 flex-shrink-0 text-red-600" />
+                  <span>{importError}</span>
+                </div>
+                {importErrorsList.length > 0 && (
+                  <div className="max-h-40 overflow-y-auto mt-2 pl-6 pr-2">
+                    <ul className="list-disc space-y-1 text-[11px] text-red-800">
+                      {importErrorsList.slice(0, 10).map((err, idx) => (
+                        <li key={idx}>{err}</li>
+                      ))}
+                    </ul>
+                    {importErrorsList.length > 10 && (
+                      <p className="text-[10px] text-red-600 mt-1 italic">
+                        ...y {importErrorsList.length - 10} inconsistencias más.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -3544,6 +3827,7 @@ export default function IperMatrixView({
                   setIsImportOpen(false);
                   setImportFile(null);
                   setImportError(null);
+                  setImportErrorsList([]);
                 }}
                 className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
               >
@@ -3826,17 +4110,21 @@ export default function IperMatrixView({
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-slate-100 text-gray-700 font-bold border-b border-slate-200 text-[10px] uppercase">
-                          <th className="p-2.5 w-1/3">Peligro Identificado</th>
-                          <th className="p-2.5 w-1/3">Consecuencia / Evento</th>
-                          <th className="p-2.5 w-1/3">Medida Preventiva / Control DS 44</th>
+                          <th className="p-2.5 w-1/5">Tarea Evaluada</th>
+                          <th className="p-2.5 w-1/4">Peligro Identificado</th>
+                          <th className="p-2.5 w-1/4">Consecuencia / Evento</th>
+                          <th className="p-2.5 w-1/4">Medida Preventiva / Control DS 44</th>
+                          <th className="p-2.5 w-1/12 text-center">Matriz</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-[11px]">
                         {selectedIrlCargoItem.risks.map((r, rIdx) => (
                           <tr key={rIdx}>
-                            <td className="p-2.5 font-semibold text-gray-900">{r.hazard}</td>
+                            <td className="p-2.5 font-semibold text-gray-800">{r.task}</td>
+                            <td className="p-2.5 text-gray-900">{r.hazard}</td>
                             <td className="p-2.5 text-gray-600">{r.riskEvent}</td>
                             <td className="p-2.5 text-teal-900 bg-teal-50/40">{r.controls}</td>
+                            <td className="p-2.5 text-center font-mono text-[10px] text-gray-600 font-bold">{r.matrixCode}</td>
                           </tr>
                         ))}
                       </tbody>

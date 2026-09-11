@@ -14,7 +14,7 @@ import {
   fetchPreferencesFromSupabase,
   savePreferencesToSupabase,
 } from "@/lib/services/supabaseService";
-import { getActiveUser, getScopedStorageKey, AuthUser } from "@/lib/auth/authService";
+import { getActiveUser, getScopedStorageKey, AuthUser, SESSION_CHANGE_EVENT } from "@/lib/auth/authService";
 
 export const PREFERENCES_STORAGE_KEY = "lifeon_org_preferences";
 
@@ -46,7 +46,7 @@ export default function LifeOnPreferencesProvider({
   const [currentUser, setCurrentUser] = useState<AuthUser>(getActiveUser());
   const [preferences, setPreferences] = useState<OrganizationPreferences>(() => {
     const user = getActiveUser();
-    return user.orgId === "org_luis" ? EMPTY_ORGANIZATION_PREFERENCES : DEFAULT_ORGANIZATION_PREFERENCES;
+    return user.orgId === "org_demo" ? DEFAULT_ORGANIZATION_PREFERENCES : EMPTY_ORGANIZATION_PREFERENCES;
   });
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -54,18 +54,19 @@ export default function LifeOnPreferencesProvider({
     return getScopedStorageKey(PREFERENCES_STORAGE_KEY, currentUser.orgId);
   }, [currentUser.orgId]);
 
-  // Cargar estado inicial desde localStorage según la organización activa
-  useEffect(() => {
-    const user = getActiveUser();
+  // Cargar estado desde localStorage y Supabase según la organización activa
+  const loadPreferencesForUser = useCallback(async (user: AuthUser) => {
+    setIsLoaded(false);
     setCurrentUser(user);
     const orgStorageKey = getScopedStorageKey(PREFERENCES_STORAGE_KEY, user.orgId);
-    const defaultPrefs = user.orgId === "org_luis" ? EMPTY_ORGANIZATION_PREFERENCES : DEFAULT_ORGANIZATION_PREFERENCES;
+    const defaultPrefs = user.orgId === "org_demo" ? DEFAULT_ORGANIZATION_PREFERENCES : EMPTY_ORGANIZATION_PREFERENCES;
 
+    let basePrefs = defaultPrefs;
     try {
-      const stored = window.localStorage.getItem(orgStorageKey);
+      const stored = typeof window !== "undefined" ? window.localStorage.getItem(orgStorageKey) : null;
       if (stored) {
         const parsed = JSON.parse(stored);
-        setPreferences({
+        basePrefs = {
           ...defaultPrefs,
           ...parsed,
           modules: {
@@ -82,45 +83,107 @@ export default function LifeOnPreferencesProvider({
               ...(parsed.moduleConfigurations?.preventivePlanning || {}),
             },
           },
-        });
-      } else {
-        setPreferences(defaultPrefs);
-      }
-
-      // Si Supabase está disponible y es la org demo, hidratar en segundo plano
-      if (user.orgId === "org_demo") {
-        fetchPreferencesFromSupabase().then((cloudPrefs) => {
-          if (cloudPrefs) {
-            setPreferences((prev) => ({
-              ...prev,
-              ...cloudPrefs,
-              modules: {
-                ...prev.modules,
-                ...(cloudPrefs.modules || {}),
-              },
-            }));
-          }
-        });
+        };
       }
     } catch (e) {
       console.warn("No se pudo cargar preferencias desde localStorage:", e);
+    }
+
+    // Establecer base temporal mientras concluye la llamada remota
+    setPreferences(basePrefs);
+
+    try {
+      // Hidratar desde Supabase como fuente de verdad obligatoria
+      const cloudPrefs = await fetchPreferencesFromSupabase(user.orgId);
+      if (cloudPrefs) {
+        const baseMiper = basePrefs.moduleConfigurations?.miper || defaultPrefs.moduleConfigurations?.miper || DEFAULT_MODULE_CONFIGURATIONS.miper;
+        const basePrev = basePrefs.moduleConfigurations?.preventivePlanning || defaultPrefs.moduleConfigurations?.preventivePlanning || DEFAULT_MODULE_CONFIGURATIONS.preventivePlanning;
+        const cloudMiper = cloudPrefs.moduleConfigurations?.miper;
+        const cloudPrev = cloudPrefs.moduleConfigurations?.preventivePlanning;
+
+        const merged: OrganizationPreferences = {
+          ...basePrefs,
+          ...cloudPrefs,
+          onboardingCompleted: cloudPrefs.onboardingCompleted ?? basePrefs.onboardingCompleted,
+          tourCompleted: cloudPrefs.tourCompleted ?? basePrefs.tourCompleted,
+          organizationLogo: cloudPrefs.organizationLogo ?? basePrefs.organizationLogo ?? null,
+          profilePhoto: cloudPrefs.profilePhoto ?? basePrefs.profilePhoto ?? null,
+          preventiveActivities: cloudPrefs.preventiveActivities ?? basePrefs.preventiveActivities,
+          modules: {
+            ...basePrefs.modules,
+            ...(cloudPrefs.modules || {}),
+          },
+          moduleConfigurations: {
+            miper: {
+              ...baseMiper,
+              ...(cloudMiper || {}),
+              configured: cloudMiper?.configured ?? baseMiper.configured,
+              methodology: cloudMiper?.methodology ?? baseMiper.methodology,
+              confirmed: cloudMiper?.confirmed ?? baseMiper.confirmed,
+            },
+            preventivePlanning: {
+              ...basePrev,
+              ...(cloudPrev || {}),
+              configured: cloudPrev?.configured ?? basePrev.configured,
+              hasExistingProgram: cloudPrev?.hasExistingProgram ?? basePrev.hasExistingProgram,
+              setupMode: cloudPrev?.setupMode ?? basePrev.setupMode,
+            },
+          },
+        };
+
+        setPreferences(merged);
+
+        // Actualizar caché de localStorage para que coincida con Supabase
+        if (typeof window !== "undefined") {
+          try {
+            window.localStorage.setItem(orgStorageKey, JSON.stringify(merged));
+          } catch (_) {}
+        }
+      }
+    } catch (err) {
+      console.warn("Error hidratando preferencias desde Supabase:", err);
     } finally {
       setIsLoaded(true);
     }
   }, []);
 
-  // Guardar en localStorage ante cada modificación
+  // Carga inicial y escucha activa ante cambios de sesión (Login / Logout / Reset)
+  useEffect(() => {
+    const user = getActiveUser();
+    loadPreferencesForUser(user);
+
+    const handleSessionChange = (e: any) => {
+      const newUser = e?.detail || getActiveUser();
+      loadPreferencesForUser(newUser);
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener(SESSION_CHANGE_EVENT, handleSessionChange);
+      window.addEventListener("storage", handleSessionChange);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener(SESSION_CHANGE_EVENT, handleSessionChange);
+        window.removeEventListener("storage", handleSessionChange);
+      }
+    };
+  }, [loadPreferencesForUser]);
+
+  // Guardar en localStorage y Supabase ante cada modificación
   const persistPreferences = useCallback((newPrefs: OrganizationPreferences) => {
     try {
       const orgKey = getScopedStorageKey(PREFERENCES_STORAGE_KEY, currentUser.orgId);
-      window.localStorage.setItem(orgKey, JSON.stringify(newPrefs));
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(orgKey, JSON.stringify(newPrefs));
+      }
     } catch (e) {
       console.warn("No se pudo persistir preferencias en localStorage:", e);
     }
 
-    if (currentUser.orgId === "org_demo") {
-      savePreferencesToSupabase(newPrefs);
-    }
+    savePreferencesToSupabase(newPrefs, currentUser.orgId).catch((err) => {
+      console.warn("No se pudo sincronizar preferencias con Supabase:", err);
+    });
   }, [currentUser.orgId]);
 
   const updatePreferences = useCallback(

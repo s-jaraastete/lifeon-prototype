@@ -68,7 +68,7 @@ export default function InitialOnboardingWizard({
   });
 
   // Detectar cuenta limpia para no precargar datos demo
-  const isCleanAccount = currentUser?.orgId === "org_luis";
+  const isCleanAccount = currentUser?.orgId !== "org_demo" && Boolean(currentUser?.orgId);
 
   const [orgName, setOrgName] = useState<string>(() => {
     if (isCleanAccount) return preferences.organizationName || "";
@@ -123,7 +123,7 @@ export default function InitialOnboardingWizard({
 
   const handleFinishAndEnter = () => {
     completeOnboarding({
-      organizationName: orgName.trim() || (currentUser?.orgId === "org_luis" ? "Mi Empresa SpA" : "Constructora y Servicios Santiago SpA"),
+      organizationName: orgName.trim() || (isCleanAccount ? "Mi Empresa SpA" : "Constructora y Servicios Santiago SpA"),
       organizationSize: orgSize,
       organizationSector: orgSector,
       experienceLevel,

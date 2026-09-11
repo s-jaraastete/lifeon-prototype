@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -41,20 +41,22 @@ import InteractivePlatformTour from "./components/onboarding/InteractivePlatform
 import SupabaseSyncModal from "./components/SupabaseSyncModal";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import { useOrgStructure } from "@/hooks/useOrgStructure";
-import { logoutActiveUser, resetLuisGodoyAccount } from "@/lib/auth/authService";
+import { useIperMatrices } from "@/hooks/useIperMatrices";
+import { usePreventiveProgram } from "@/hooks/usePreventiveProgram";
+import { logoutActiveUser, resetTestAccount, isResetAllowedForUser, getScopedStorageKey } from "@/lib/auth/authService";
 import { isSupabaseConfigured } from "@/lib/supabaseClient";
 import {
   NotificationsDropdown,
   AlertsDropdown,
   UserProfileDropdown,
+  GlobalSearchDropdown,
   HelpModal,
   FilterWorkplaceModal,
-  GlobalSearchDropdown,
   AccountModal,
   SettingsModal,
   SubscriptionUpgradeModal,
-  NotificationItem,
   ResetAccountConfirmModal,
+  NotificationItem,
 } from "./components/TopBarModals";
 
 export default function DashboardPage() {
@@ -94,19 +96,52 @@ export default function DashboardPage() {
   const [activeMenu, setActiveMenu] = useState<"dashboard" | "org" | "iper" | "docs" | "apr">("dashboard");
 
   const { workCenters } = useOrgStructure();
+  const wpStorageKey = useMemo(
+    () => getScopedStorageKey("lifeon_active_workplace", currentUser?.orgId),
+    [currentUser?.orgId]
+  );
   const [activeWorkplace, setActiveWorkplace] = useState<string>("");
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = window.localStorage.getItem(wpStorageKey);
+      if (saved && (saved === "Todos los Centros de Trabajo" || workCenters.some((wc) => wc.name === saved))) {
+        setActiveWorkplace(saved);
+        return;
+      }
+    }
+
     if (workCenters.length === 0) {
       setActiveWorkplace("");
     } else if (workCenters.length === 1) {
       setActiveWorkplace(workCenters[0].name);
     } else {
-      if (!activeWorkplace || (activeWorkplace !== "Todos los Centros de Trabajo" && !workCenters.some((wc) => wc.name === activeWorkplace))) {
-        setActiveWorkplace("Todos los Centros de Trabajo");
-      }
+      setActiveWorkplace("Todos los Centros de Trabajo");
     }
-  }, [workCenters, activeWorkplace]);
+  }, [workCenters, wpStorageKey]);
+
+  const handleSelectWorkplace = (wp: string) => {
+    setActiveWorkplace(wp);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(wpStorageKey, wp);
+    }
+  };
+
+  const {
+    totalMatricesCount,
+    vigentesCount,
+    borradoresCount,
+    enRevisionCount,
+    totalRisksCount,
+    riskDistribution,
+    topEvaluatedRisks,
+  } = useIperMatrices(activeWorkplace);
+
+  const { activities, metrics: programMetrics } = usePreventiveProgram();
+  const isProgramConfigured =
+    Boolean(preferences.moduleConfigurations?.preventivePlanning?.configured) ||
+    activities.length > 0 ||
+    programMetrics.totalActivities > 0;
 
   // Top Bar Dropdown & Modal States
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -425,7 +460,7 @@ export default function DashboardPage() {
               <GlobalSearchDropdown
                 query={searchQuery}
                 onClose={() => setIsSearchDropdownOpen(false)}
-                onNavigateTab={(tab) => {
+                onNavigateTab={(tab: string) => {
                   setActiveMenu(tab as any);
                   setIsSearchDropdownOpen(false);
                 }}
@@ -662,7 +697,7 @@ export default function DashboardPage() {
 
               {/* Fila de 5 Tarjetas de Métricas KPI */}
               <div id="tour-kpis" className="w-full">
-                <DashboardKpis onSelectMetric={(tab) => setActiveMenu(tab as any)} />
+                <DashboardKpis onSelectMetric={(tab) => setActiveMenu(tab as any)} activeWorkplace={activeWorkplace} />
               </div>
             </section>
 
@@ -680,7 +715,11 @@ export default function DashboardPage() {
                         <h3 className="text-sm font-bold text-gray-900">
                           Matriz de Riesgos y Procesos Críticos
                         </h3>
-                        <p className="text-[11px] text-gray-400">Jerarquía de control según DS 44</p>
+                        <p className="text-[11px] text-gray-400">
+                          {activeWorkplace && activeWorkplace !== "Todos los Centros de Trabajo"
+                            ? activeWorkplace
+                            : "Jerarquía de control según DS 44"}
+                        </p>
                       </div>
                     </div>
 
@@ -693,14 +732,14 @@ export default function DashboardPage() {
                     </button>
                   </div>
 
-                  {currentUser?.orgId === "org_luis" ? (
+                  {totalMatricesCount === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 my-4">
                       <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
                         <LuShieldAlert className="w-6 h-6" />
                       </div>
-                      <h4 className="text-sm font-bold text-gray-900 mb-1">Aún no hay información disponible</h4>
+                      <h4 className="text-sm font-bold text-gray-900 mb-1">Aún no hay matrices registradas</h4>
                       <p className="text-xs text-gray-500 max-w-sm mb-4">
-                        Los datos aparecerán a medida que comiences a utilizar LifeOn y registres tus primeras matrices IPER.
+                        Los indicadores de riesgos aparecerán automáticamente a medida que registres o importes tus matrices IPER.
                       </p>
                       <button
                         onClick={() => setActiveMenu("iper")}
@@ -716,74 +755,100 @@ export default function DashboardPage() {
                       <div className="mt-4 flex flex-col gap-2">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-600 font-medium">Distribución de Riesgos Evaluados</span>
-                          <span className="text-gray-400 font-mono text-[11px]">24 Evaluaciones Totales</span>
+                          <span className="text-gray-400 font-mono text-[11px]">
+                            {riskDistribution.total || totalRisksCount} Evaluaciones Totales
+                          </span>
                         </div>
 
                         <div className="w-full h-3 bg-gray-100 rounded-full flex overflow-hidden">
-                          <div className="bg-emerald-500 h-full" style={{ width: "45%" }} title="Bajo: 45%" />
-                          <div className="bg-yellow-400 h-full" style={{ width: "30%" }} title="Medio: 30%" />
-                          <div className="bg-amber-500 h-full" style={{ width: "20%" }} title="Alto: 20%" />
-                          <div className="bg-red-500 h-full" style={{ width: "5%" }} title="Crítico: 5%" />
+                          <div
+                            className="bg-emerald-500 h-full transition-all duration-300"
+                            style={{ width: `${riskDistribution.pctBajo}%` }}
+                            title={`Bajo: ${riskDistribution.pctBajo}% (${riskDistribution.bajo})`}
+                          />
+                          <div
+                            className="bg-yellow-400 h-full transition-all duration-300"
+                            style={{ width: `${riskDistribution.pctMedio}%` }}
+                            title={`Medio: ${riskDistribution.pctMedio}% (${riskDistribution.medio})`}
+                          />
+                          <div
+                            className="bg-amber-500 h-full transition-all duration-300"
+                            style={{ width: `${riskDistribution.pctAlto}%` }}
+                            title={`Alto: ${riskDistribution.pctAlto}% (${riskDistribution.alto})`}
+                          />
+                          <div
+                            className="bg-red-500 h-full transition-all duration-300"
+                            style={{ width: `${riskDistribution.pctCritico}%` }}
+                            title={`Crítico: ${riskDistribution.pctCritico}% (${riskDistribution.critico})`}
+                          />
                         </div>
 
                         <div className="grid grid-cols-4 gap-2 pt-1 text-[11px]">
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <span className="text-gray-600">Bajo (45%)</span>
+                            <span className="text-gray-600">Bajo ({riskDistribution.pctBajo}%)</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-yellow-400" />
-                            <span className="text-gray-600">Medio (30%)</span>
+                            <span className="text-gray-600">Medio ({riskDistribution.pctMedio}%)</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-amber-500" />
-                            <span className="text-gray-600">Alto (20%)</span>
+                            <span className="text-gray-600">Alto ({riskDistribution.pctAlto}%)</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-red-500" />
-                            <span className="text-gray-600">Crítico (5%)</span>
+                            <span className="text-gray-600">Crítico ({riskDistribution.pctCritico}%)</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Lista de Procesos Principales */}
+                      {/* Lista de Procesos y Riesgos Principales */}
                       <div className="mt-4 flex flex-col gap-2">
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between text-xs">
-                          <div>
-                            <p className="font-semibold text-gray-900">Montaje Estructural a &gt; 1.8m</p>
-                            <p className="text-[11px] text-gray-500">Peligro: Caída de altura • SPDC Activo</p>
+                        {topEvaluatedRisks.length > 0 ? (
+                          topEvaluatedRisks.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between text-xs"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <p className="font-semibold text-gray-900 truncate">{item.task}</p>
+                                <p className="text-[11px] text-gray-500 truncate">
+                                  Peligro: {item.hazard}
+                                </p>
+                              </div>
+                              <span
+                                className={clsx(
+                                  "text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap flex-shrink-0",
+                                  item.level === "Crítico"
+                                    ? "bg-red-100 text-red-800"
+                                    : item.level === "Alto"
+                                    ? "bg-amber-100 text-amber-800"
+                                    : item.level === "Medio"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-emerald-100 text-emerald-800"
+                                )}
+                              >
+                                {item.status || item.level}
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-3 text-center text-gray-400 text-xs bg-gray-50 rounded-xl border border-gray-100">
+                            Sin evaluaciones de riesgos detalladas registradas en la matriz.
                           </div>
-                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                            Controlado
-                          </span>
-                        </div>
-
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between text-xs">
-                          <div>
-                            <p className="font-semibold text-gray-900">Apertura de Zanjas &gt; 1.5m</p>
-                            <p className="text-[11px] text-gray-500">Peligro: Derrumbe • Entibación NCh 349</p>
-                          </div>
-                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                            Controlado
-                          </span>
-                        </div>
-
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between text-xs">
-                          <div>
-                            <p className="font-semibold text-gray-900">Intervención en Tableros TDF 380V</p>
-                            <p className="text-[11px] text-gray-500">Peligro: Contacto eléctrico • Bloqueo LOTO</p>
-                          </div>
-                          <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                            En Revisión
-                          </span>
-                        </div>
+                        )}
                       </div>
                     </>
                   )}
                 </div>
 
                 <div className="pt-3 mt-3 border-t border-gray-100 flex justify-between items-center text-[11px] text-gray-400">
-                  <span>{currentUser?.orgId === "org_luis" ? "0 matrices vigentes" : "Actualizado hoy según DS 44"}</span>
+                  <span>
+                    {totalMatricesCount === 0
+                      ? "0 matrices registradas"
+                      : `${vigentesCount} ${vigentesCount === 1 ? "vigente" : "vigentes"} • ${enRevisionCount} en revisión • ${borradoresCount} ${borradoresCount === 1 ? "borrador" : "borradores"} (${totalMatricesCount} ${totalMatricesCount === 1 ? "total" : "totales"})`}
+                  </span>
                   <button
                     onClick={() => setActiveMenu("iper")}
                     className="text-teal-600 hover:underline font-medium cursor-pointer"
@@ -806,7 +871,9 @@ export default function DashboardPage() {
                           Programa Anual SST & Documentación
                         </h3>
                         <p className="text-[11px] text-gray-400">
-                          {currentUser?.orgId === "org_luis" ? "Planificación de Gestión de Riesgos" : "94,2% de cumplimiento al día"}
+                          {isProgramConfigured
+                            ? `${programMetrics.compliancePercentage}% de cumplimiento al día`
+                            : "Planificación de Gestión de Riesgos"}
                         </p>
                       </div>
                     </div>
@@ -820,12 +887,12 @@ export default function DashboardPage() {
                     </button>
                   </div>
 
-                  {currentUser?.orgId === "org_luis" ? (
+                  {!isProgramConfigured || activities.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 my-4">
                       <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 mb-3">
                         <LuFileCheck className="w-6 h-6" />
                       </div>
-                      <h4 className="text-sm font-bold text-gray-900 mb-1">Aún no hay información disponible</h4>
+                      <h4 className="text-sm font-bold text-gray-900 mb-1">Programa de Trabajo no configurado</h4>
                       <p className="text-xs text-gray-500 max-w-sm mb-4">
                         Configura tu Programa de Trabajo para comenzar la planificación y seguimiento preventivo de tu organización.
                       </p>
@@ -867,34 +934,63 @@ export default function DashboardPage() {
                       {/* Próximas Actividades Programadas */}
                       <div className="mt-4 flex flex-col gap-2">
                         <p className="text-xs font-semibold text-gray-700">
-                          Próximas Actividades del Programa 2026:
+                          Próximas Actividades del Programa:
                         </p>
 
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2.5">
-                            <span className="w-2 h-2 rounded-full bg-teal-500" />
-                            <div>
-                              <p className="font-semibold text-gray-900">
-                                Capacitación Práctica: Uso y Revisión de SPDC
-                              </p>
-                              <p className="text-[11px] text-gray-500">22 de Febrero • 28 trabajadores</p>
+                        {(() => {
+                          const pending = activities.filter(
+                            (a) => a.status === "En curso" || a.status === "Pendiente"
+                          );
+                          const list = (pending.length > 0 ? pending : activities).slice(0, 2);
+                          if (list.length === 0) {
+                            return (
+                              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-xs text-gray-500">
+                                No hay actividades pendientes.
+                              </div>
+                            );
+                          }
+                          return list.map((act) => (
+                            <div
+                              key={act.id}
+                              className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between text-xs"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                <span
+                                  className={clsx(
+                                    "w-2 h-2 rounded-full flex-shrink-0",
+                                    act.status === "Cumplida"
+                                      ? "bg-emerald-500"
+                                      : act.status === "En curso"
+                                      ? "bg-amber-500"
+                                      : act.status === "Atrasada"
+                                      ? "bg-red-500"
+                                      : "bg-teal-500"
+                                  )}
+                                />
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-gray-900 truncate">{act.name}</p>
+                                  <p className="text-[11px] text-gray-500 truncate">
+                                    {act.endDate ? `Vence: ${act.endDate}` : "Sin fecha"} • {act.category}
+                                  </p>
+                                </div>
+                              </div>
+                              <span
+                                className={clsx(
+                                  "text-[11px] font-semibold whitespace-nowrap flex-shrink-0",
+                                  act.status === "Cumplida"
+                                    ? "text-emerald-700"
+                                    : act.status === "En curso"
+                                    ? "text-amber-700"
+                                    : act.status === "Atrasada"
+                                    ? "text-red-700"
+                                    : "text-teal-700"
+                                )}
+                              >
+                                {act.status}
+                              </span>
                             </div>
-                          </div>
-                          <span className="text-[11px] font-semibold text-teal-700">En 4 días</span>
-                        </div>
-
-                        <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2.5">
-                            <span className="w-2 h-2 rounded-full bg-blue-500" />
-                            <div>
-                              <p className="font-semibold text-gray-900">
-                                Auditoría Interna de Cumplimiento DS 44
-                              </p>
-                              <p className="text-[11px] text-gray-500">15 de Marzo • Toda la Faena</p>
-                            </div>
-                          </div>
-                          <span className="text-[11px] font-semibold text-blue-700">Programada</span>
-                        </div>
+                          ));
+                        })()}
                       </div>
                     </>
                   )}
@@ -941,7 +1037,7 @@ export default function DashboardPage() {
       <FilterWorkplaceModal
         isOpen={isFilterModalOpen}
         activeWorkplace={activeWorkplace}
-        setActiveWorkplace={setActiveWorkplace}
+        setActiveWorkplace={handleSelectWorkplace}
         workCenters={workCenters}
         onClose={() => setIsFilterModalOpen(false)}
       />
@@ -971,13 +1067,19 @@ export default function DashboardPage() {
       <ResetAccountConfirmModal
         isOpen={isResetConfirmOpen}
         onClose={() => setIsResetConfirmOpen(false)}
-        onConfirm={() => {
-          if (userEmail.toLowerCase().trim() === "luis.godoy@safetyclub.cl") {
-            const ok = resetLuisGodoyAccount(userEmail);
-            if (ok) {
-              router.push("/login");
-            }
+        onConfirm={async () => {
+          if (!isResetAllowedForUser(userEmail)) {
+            return false;
           }
+          const ok = await resetTestAccount(userEmail);
+          if (ok) {
+            setTimeout(() => {
+              setIsResetConfirmOpen(false);
+              router.push("/login");
+            }, 1400);
+            return true;
+          }
+          return false;
         }}
       />
 

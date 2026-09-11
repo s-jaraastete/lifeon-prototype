@@ -31,9 +31,16 @@ export interface ThemeColumnDefinition {
   notes?: string;             // Nota o descripción para comentarios
 }
 
+export interface SheetMetadataField {
+  label: string;
+  value: string;
+  mandatory?: boolean;
+}
+
 export interface SheetConfig {
   sheetTitle: string;
   sheetSubtitle?: string;
+  metadata?: SheetMetadataField[];
   columns: ThemeColumnDefinition[];
   data: Record<string, any>[];
   includeSubheader?: boolean;  // Fila 2 explícita "OBLIGATORIO" / "OPCIONAL"
@@ -58,15 +65,29 @@ export function formatHeaderLabel(col: ThemeColumnDefinition): string {
  * Crea una hoja de datos formateada con el sistema visual LifeOn
  */
 export function createThemedDataSheet(config: SheetConfig): XLSX.WorkSheet {
-  const { columns, data, includeSubheader = true } = config;
+  const { columns, data, metadata, includeSubheader = true } = config;
 
-  // 1. Fila de encabezados principales
+  const allAoa: any[][] = [];
+  let tableHeaderRowIndex = 0;
+
+  // 1. Zona superior de Metadatos de la Matriz (si existe)
+  if (metadata && metadata.length > 0) {
+    allAoa.push(["METADATOS DE LA MATRIZ IPER", ""]);
+    metadata.forEach((m) => {
+      const label = m.mandatory ? `${m.label} * [OBLIGATORIO]` : `${m.label} [OPCIONAL]`;
+      allAoa.push([label, m.value ?? ""]);
+    });
+    allAoa.push(["", ""]); // Fila vacía de separación visual limpia
+    tableHeaderRowIndex = allAoa.length;
+  }
+
+  // 2. Fila de encabezados principales de la tabla
   const headerRow = columns.map((col) => formatHeaderLabel(col));
 
-  // 2. Fila secundaria de tipos (OBLIGATORIO / OPCIONAL)
+  // 3. Fila secundaria de tipos (OBLIGATORIO / OPCIONAL)
   const subheaderRow = columns.map((col) => (col.mandatory ? "OBLIGATORIO" : "OPCIONAL"));
 
-  // 3. Filas de datos
+  // 4. Filas de datos
   const dataRows = data.map((row) => {
     return columns.map((col) => {
       const val = row[col.key] ?? row[col.header] ?? "";
@@ -74,7 +95,6 @@ export function createThemedDataSheet(config: SheetConfig): XLSX.WorkSheet {
     });
   });
 
-  const allAoa: any[][] = [];
   allAoa.push(headerRow);
   if (includeSubheader) {
     allAoa.push(subheaderRow);
@@ -83,23 +103,33 @@ export function createThemedDataSheet(config: SheetConfig): XLSX.WorkSheet {
 
   const ws = XLSX.utils.aoa_to_sheet(allAoa);
 
-  // 4. Anchos de columnas configurados
+  // 5. Anchos de columnas configurados
   ws["!cols"] = columns.map((col) => ({
     wch: col.width || Math.max(col.header.length + 12, 16),
   }));
 
-  // 5. Congelar encabezados
-  const freezeRow = includeSubheader ? 2 : 1;
+  // 6. Congelar paneles
+  const freezeRow = tableHeaderRowIndex + (includeSubheader ? 2 : 1);
   ws["!views"] = [{ state: "frozen", ySplit: freezeRow }];
 
-  // 6. Rango de autofiltro en la fila de encabezados
+  // 7. Rango de autofiltro en la fila de encabezados de la tabla
   const lastColLetter = XLSX.utils.encode_col(columns.length - 1);
   const totalRows = allAoa.length;
-  ws["!autofilter"] = { ref: `A1:${lastColLetter}${totalRows}` };
+  ws["!autofilter"] = { ref: `A${tableHeaderRowIndex + 1}:${lastColLetter}${totalRows}` };
 
-  // 7. Aplicar estilos en celdas (compatible con motores compatibles de SheetJS)
+  // 8. Aplicar estilos en celdas de metadatos y encabezados
+  if (metadata && metadata.length > 0) {
+    // Título de metadatos
+    const metaTitleCell = XLSX.utils.encode_cell({ r: 0, c: 0 });
+    if (ws[metaTitleCell]) {
+      ws[metaTitleCell].s = {
+        font: { name: "Segoe UI", sz: 11, bold: true, color: { rgb: LIFEON_XLSX_COLORS.darkTeal } },
+      };
+    }
+  }
+
   columns.forEach((col, cIdx) => {
-    const headerCellAddress = XLSX.utils.encode_cell({ r: 0, c: cIdx });
+    const headerCellAddress = XLSX.utils.encode_cell({ r: tableHeaderRowIndex, c: cIdx });
     if (ws[headerCellAddress]) {
       ws[headerCellAddress].s = {
         fill: {
@@ -126,7 +156,7 @@ export function createThemedDataSheet(config: SheetConfig): XLSX.WorkSheet {
     }
 
     if (includeSubheader) {
-      const subCellAddress = XLSX.utils.encode_cell({ r: 1, c: cIdx });
+      const subCellAddress = XLSX.utils.encode_cell({ r: tableHeaderRowIndex + 1, c: cIdx });
       if (ws[subCellAddress]) {
         ws[subCellAddress].s = {
           fill: {
@@ -272,3 +302,131 @@ export function normalizeImportedRows<T = any>(
 
   return normalizedResults;
 }
+
+export interface ParsedIperMatrixResult {
+  matrixName: string | null;
+  matrixType?: string | null;
+  workCenter?: string | null;
+  area?: string | null;
+  process?: string | null;
+  code?: string | null;
+  description?: string | null;
+  rows: any[];
+}
+
+/**
+ * Parsea una hoja de cálculo XLSX de Matriz IPER extrayendo la zona superior
+ * de metadatos (Nombre de la Matriz, Centro, Área, etc.) y la tabla tabular de datos.
+ */
+export function parseIperWorkbookWithMetadata(worksheet: XLSX.WorkSheet): ParsedIperMatrixResult {
+  const cleanStr = (val: any) => (val !== null && val !== undefined ? String(val).trim() : "");
+  const cleanHeader = (key: string): string => {
+    return key
+      .toLowerCase()
+      .replace(/\*/g, "")
+      .replace(/\[obligatorio\]/gi, "")
+      .replace(/\[opcional\]/gi, "")
+      .replace(/\(obligatorio\)/gi, "")
+      .replace(/\(opcional\)/gi, "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  };
+
+  const rawAoa: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+  let matrixName: string | null = null;
+  let matrixType: string | null = null;
+  let workCenter: string | null = null;
+  let area: string | null = null;
+  let process: string | null = null;
+  let code: string | null = null;
+  let description: string | null = null;
+
+  let tableHeaderRowIdx = -1;
+
+  for (let r = 0; r < rawAoa.length; r++) {
+    const row = rawAoa[r] || [];
+    const firstCell = cleanHeader(cleanStr(row[0]));
+    const secondCell = cleanStr(row[1]);
+
+    if (firstCell.includes("nombre") && (firstCell.includes("matriz") || firstCell.includes("nombre de la matriz"))) {
+      if (secondCell) matrixName = secondCell;
+    } else if (firstCell.includes("tipo") && firstCell.includes("matriz")) {
+      if (secondCell) matrixType = secondCell;
+    } else if (firstCell.includes("centro") && (firstCell.includes("trabajo") || firstCell.includes("centro"))) {
+      if (secondCell) workCenter = secondCell;
+    } else if (firstCell.startsWith("area") || firstCell === "area") {
+      if (secondCell) area = secondCell;
+    } else if (firstCell.startsWith("proceso") || firstCell === "proceso") {
+      if (secondCell) process = secondCell;
+    } else if (firstCell.startsWith("codigo") || firstCell === "codigo") {
+      if (secondCell) code = secondCell;
+    } else if (firstCell.includes("descripcion")) {
+      if (secondCell) description = secondCell;
+    }
+
+    // Identificar fila donde comienzan los encabezados de la tabla IPER
+    const rowHeaders = row.map((c) => cleanHeader(cleanStr(c)));
+    const hasTaskCol = rowHeaders.some((h) => h.includes("tarea") || h.includes("task"));
+    const hasHazardOrCargo = rowHeaders.some((h) => h.includes("peligro") || h.includes("hazard") || h.includes("cargo"));
+    if (hasTaskCol && hasHazardOrCargo) {
+      tableHeaderRowIdx = r;
+      break;
+    }
+  }
+
+  let rows: any[] = [];
+  if (tableHeaderRowIdx >= 0) {
+    const headerRow = rawAoa[tableHeaderRowIdx].map((c) => cleanHeader(cleanStr(c)));
+    const dataAoa = rawAoa.slice(tableHeaderRowIdx + 1);
+
+    for (let i = 0; i < dataAoa.length; i++) {
+      const row = dataAoa[i] || [];
+      const rowVals = row.map((v) => cleanStr(v).toUpperCase());
+      const isSub = rowVals.some((v) => v === "OBLIGATORIO" || v === "OPCIONAL") && !rowVals.some((v) => v.length > 25);
+      if (isSub && i === 0) continue;
+
+      const hasValue = row.some((v) => cleanStr(v) !== "");
+      if (!hasValue) continue;
+
+      const rowObj: Record<string, any> = {};
+      headerRow.forEach((colKey, colIdx) => {
+        if (!colKey) return;
+        const val = row[colIdx];
+        rowObj[colKey] = val !== undefined && val !== null ? val : "";
+      });
+
+      // Si la columna contiene el nombre de la matriz y no lo teníamos arriba
+      if (!matrixName) {
+        const colMatrixName = rowObj["nombre de la matriz"] || rowObj["nombre matriz"] || rowObj["matriz"];
+        if (colMatrixName && cleanStr(colMatrixName)) {
+          matrixName = cleanStr(colMatrixName);
+        }
+      }
+
+      rows.push(rowObj);
+    }
+  } else {
+    // Si no se detectó cabecera con metadatos superior, usar normalizer
+    rows = normalizeImportedRows(worksheet);
+    if (rows.length > 0 && !matrixName) {
+      const first = rows[0];
+      const colName = first["nombre de la matriz"] || first["nombre matriz"] || first["matriz"];
+      if (colName && cleanStr(colName)) {
+        matrixName = cleanStr(colName);
+      }
+    }
+  }
+
+  return {
+    matrixName,
+    matrixType,
+    workCenter,
+    area,
+    process,
+    code,
+    description,
+    rows,
+  };
+}
+

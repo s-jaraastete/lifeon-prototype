@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import clsx from "clsx";
+import { isResetAllowedForUser } from "@/lib/auth/authService";
 import {
   LuX,
   LuCheck,
@@ -42,6 +43,7 @@ import {
   LuLock,
   LuKey,
   LuCamera,
+  LuLoader,
 } from "react-icons/lu";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import {
@@ -52,6 +54,7 @@ import {
 } from "@/types/preferences";
 import { OrgWorkCenter } from "@/types/orgStructure";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabaseClient";
+import { uploadFileToSupabaseStorage } from "@/lib/services/supabaseService";
 
 export interface NotificationItem {
   id: string;
@@ -349,8 +352,8 @@ export function UserProfileDropdown({
         )}
       </div>
 
-      {/* Botón Restablecer Cuenta (Exclusivo cuenta de prueba luis.godoy@safetyclub.cl) */}
-      {userEmail.toLowerCase().trim() === "luis.godoy@safetyclub.cl" && onResetTestAccount && (
+      {/* Botón Restablecer Cuenta (Exclusivo cuentas de prueba autorizadas: Luis Godoy y Sergio Jara) */}
+      {isResetAllowedForUser(userEmail) && onResetTestAccount && (
         <div className="pt-2 border-t border-amber-100">
           <button
             type="button"
@@ -400,7 +403,7 @@ export function AccountModal({
   userEmail: string;
   organizationName?: string;
 }) {
-  const { preferences, updatePreferences } = useLifeOnPreferences();
+  const { preferences, updatePreferences, currentUser } = useLifeOnPreferences();
   const [name, setName] = useState(userDisplayName || "Sergio A. Jara Astete");
   const [rut, setRut] = useState("15.842.190-K");
   const [seremiCode, setSeremiCode] = useState("REG-SEREMI-45291 (DS 40)");
@@ -432,7 +435,7 @@ export function AccountModal({
 
   if (!isOpen) return null;
 
-  const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.match(/^image\/(png|jpeg|jpg|webp)$/i)) {
@@ -444,10 +447,26 @@ export function AccountModal({
       return;
     }
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       const dataUrl = evt.target?.result as string;
       setProfilePhoto(dataUrl);
-      updatePreferences({ profilePhoto: dataUrl });
+
+      const userId = currentUser?.id || "user_demo";
+      const ext = file.name.split(".").pop() || "png";
+      const storageUrl = await uploadFileToSupabaseStorage("avatars", `${userId}/avatar.${ext}`, file);
+      const finalUrl = storageUrl || dataUrl;
+
+      setProfilePhoto(finalUrl);
+      updatePreferences({ profilePhoto: finalUrl });
+      try {
+        localStorage.setItem(`lifeon_user_photo_${userId}`, finalUrl);
+        const rawUser = localStorage.getItem("lifeon_active_user");
+        if (rawUser) {
+          const u = JSON.parse(rawUser);
+          u.avatarUrl = finalUrl;
+          localStorage.setItem("lifeon_active_user", JSON.stringify(u));
+        }
+      } catch (err) {}
     };
     reader.readAsDataURL(file);
   };
@@ -455,9 +474,19 @@ export function AccountModal({
   const handleDeleteProfilePhoto = () => {
     setProfilePhoto(null);
     updatePreferences({ profilePhoto: null });
+    try {
+      const userId = currentUser?.id || "user_demo";
+      localStorage.removeItem(`lifeon_user_photo_${userId}`);
+      const rawUser = localStorage.getItem("lifeon_active_user");
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        u.avatarUrl = null;
+        localStorage.setItem("lifeon_active_user", JSON.stringify(u));
+      }
+    } catch (err) {}
   };
 
-  const handleOrgLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleOrgLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.match(/^image\/(png|jpeg|jpg|webp|svg\+xml)$/i)) {
@@ -469,10 +498,17 @@ export function AccountModal({
       return;
     }
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       const dataUrl = evt.target?.result as string;
       setOrgLogo(dataUrl);
-      updatePreferences({ organizationLogo: dataUrl });
+
+      const orgId = currentUser?.orgId || "org_demo";
+      const ext = file.name.split(".").pop() || "png";
+      const storageUrl = await uploadFileToSupabaseStorage("organization-logos", `${orgId}/logo.${ext}`, file);
+      const finalUrl = storageUrl || dataUrl;
+
+      setOrgLogo(finalUrl);
+      updatePreferences({ organizationLogo: finalUrl });
     };
     reader.readAsDataURL(file);
   };
@@ -1735,45 +1771,133 @@ export function ResetAccountConfirmModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<boolean> | void;
 }) {
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setStatus("idle");
+      setErrorMessage(null);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const handleExecuteReset = async () => {
+    if (status === "loading") return;
+    setStatus("loading");
+    setErrorMessage(null);
+
+    try {
+      const res = await onConfirm();
+      // If onConfirm returned boolean false explicitly, handle error
+      if (res === false) {
+        setStatus("error");
+        setErrorMessage("No fue posible restablecer la información de la cuenta.");
+      } else {
+        setStatus("success");
+      }
+    } catch (err: unknown) {
+      console.error("Error en reset de cuenta:", err);
+      setStatus("error");
+      const message = err instanceof Error ? err.message : "Ocurrió un error inesperado al restablecer la cuenta.";
+      setErrorMessage(message);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-red-100 p-6 relative">
-        <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">
-          <LuTriangleAlert className="w-6 h-6" />
-        </div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">¿Restablecer cuenta?</h3>
-        <p className="text-sm text-gray-600 mb-3">
-          Esta acción eliminará toda la configuración y datos creados en esta cuenta de prueba y la dejará como una cuenta nueva.
-        </p>
-        <div className="p-3 bg-red-50/80 border border-red-200 rounded-xl mb-6">
-          <p className="text-xs font-semibold text-red-700 flex items-center gap-1.5">
-            <LuTriangleAlert className="w-4 h-4 shrink-0 text-red-600" />
-            Esta acción no se puede deshacer.
-          </p>
-        </div>
-        <div className="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onConfirm();
-              onClose();
-            }}
-            className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition cursor-pointer"
-          >
-            Restablecer cuenta
-          </button>
-        </div>
+        {status === "idle" && (
+          <>
+            <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">
+              <LuTriangleAlert className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">¿Restablecer cuenta de prueba?</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              Esta acción eliminará toda la información creada para esta cuenta de prueba y la dejará como una cuenta nueva.
+            </p>
+            <div className="p-3 bg-red-50/80 border border-red-200 rounded-xl mb-6">
+              <p className="text-xs font-semibold text-red-700 flex items-center gap-1.5">
+                <LuTriangleAlert className="w-4 h-4 shrink-0 text-red-600" />
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteReset}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition cursor-pointer"
+              >
+                Restablecer cuenta
+              </button>
+            </div>
+          </>
+        )}
+
+        {status === "loading" && (
+          <div className="flex flex-col items-center text-center py-4">
+            <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">
+              <LuLoader className="w-7 h-7 animate-spin text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Restableciendo cuenta...</h3>
+            <p className="text-sm text-gray-600 mb-4 max-w-sm">
+              Estamos eliminando la información de prueba. Esto puede tomar unos segundos.
+            </p>
+            <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-500">
+              Por favor, no cierre esta ventana mientras se completa el restablecimiento.
+            </div>
+          </div>
+        )}
+
+        {status === "success" && (
+          <div className="flex flex-col items-center text-center py-4">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 animate-in zoom-in-50 duration-300">
+              <LuCircleCheck className="w-8 h-8 text-emerald-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Cuenta restablecida correctamente</h3>
+            <p className="text-sm text-gray-600 max-w-sm">
+              Tu cuenta ha quedado completamente limpia como una cuenta nueva. Redirigiendo al inicio de sesión...
+            </p>
+          </div>
+        )}
+
+        {status === "error" && (
+          <>
+            <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+              <LuTriangleAlert className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">No fue posible restablecer la cuenta</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              {errorMessage || "Ocurrió un error al intentar eliminar los datos de prueba. Por favor intente nuevamente."}
+            </p>
+            <div className="flex items-center justify-end gap-3 mt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteReset}
+                className="px-4 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-sm transition cursor-pointer"
+              >
+                Intentar nuevamente
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -497,9 +497,155 @@ export const SECTOR_RISK_PROFILES: Record<string, SectorRiskProfile> = {
         recommendedControls: [
           { type: "Controles de Ingeniería", description: "Encapsulamiento acústico de compresores y soportes antivibratorios en bancadas de motores", isCritical: true },
           { type: "Controles Administrativos", description: "Programa de vigilancia PREXOR con audiometrías periódicas y mapa de ruido actualizado" },
-          { type: "Elementos de Protección Personal (EPP)", description: "Protector auditivo tipo fono o tapones endoaurales con NRR superior a 25 dB" },
         ],
-        tags: ["PREXOR", "Ruido", "Higiénico"],
+        tags: ["Ruido", "PREXOR", "Salud"],
+      },
+    ],
+  },
+  "Servicios e Ingeniería": {
+    sector: "Servicios e Ingeniería",
+    sectorDisplayName: "Servicios Profesionales, Ingeniería y Consultoría Técnica",
+    suggestedMatrixTitles: [
+      "Matriz de Gestión de Riesgos en Oficina Técnica e Ingeniería",
+      "Inspección Técnica de Obras (ITO) y Supervisión de Terreno",
+      "Trabajos de Levantamiento Topográfico y Ensayos de Campo",
+      "Operación de Laboratorio de Calidad y Ensayos de Materiales",
+    ],
+    recommendedProcesses: [
+      {
+        name: "Diseño y Cálculo de Ingeniería",
+        workArea: "Oficina Central / Técnica",
+        subprocesses: [
+          "Modelamiento BIM y diseño asistido por computador (CAD)",
+          "Cálculo y revisión estructural de proyectos",
+          "Revisión de planos, especificaciones técnicas y memorias",
+        ],
+      },
+      {
+        name: "Inspección Técnica y Asesoría en Terreno",
+        workArea: "Faena / Terreno de Obras",
+        subprocesses: [
+          "Recorrido visual e inspección de frentes activos",
+          "Toma de muestras y ensayos de materiales",
+          "Control de calidad y verificación de especificaciones técnicas",
+          "Reuniones de coordinación y comités de obra",
+        ],
+      },
+      {
+        name: "Gestión de Proyectos y Administración",
+        workArea: "Oficinas y Soporte",
+        subprocesses: [
+          "Planificación y control de avance físico-financiero",
+          "Gestión documental y contractual",
+          "Atención de clientes y reuniones técnicas",
+        ],
+      },
+    ],
+    recommendedTasks: [
+      {
+        processName: "Diseño y Cálculo de Ingeniería",
+        taskName: "Modelamiento y cálculo estructural en estación de trabajo PVD",
+        taskType: "Rutinaria",
+        location: "Oficina Técnica",
+        defaultPositions: [{ name: "Ingeniero de Proyectos", headcountMen: 2, headcountWomen: 1 }],
+      },
+      {
+        processName: "Diseño y Cálculo de Ingeniería",
+        taskName: "Revisión técnica de planos, memorias de cálculo y cubicaciones",
+        taskType: "Rutinaria",
+        location: "Oficina Central",
+        defaultPositions: [{ name: "Proyectista / Diseñador CAD", headcountMen: 1, headcountWomen: 1 }],
+      },
+      {
+        processName: "Inspección Técnica y Asesoría en Terreno",
+        taskName: "Inspección visual de avances constructivos y estructuras en faena",
+        taskType: "Rutinaria",
+        location: "Frentes de Obra en Terreno",
+        defaultPositions: [{ name: "Inspector Técnico de Obras (ITO)", headcountMen: 2, headcountWomen: 0 }],
+      },
+      {
+        processName: "Inspección Técnica y Asesoría en Terreno",
+        taskName: "Toma de muestras de testigos de hormigón y ensayos de compactación",
+        taskType: "No rutinaria",
+        location: "Frente de fundaciones y losas",
+        defaultPositions: [{ name: "Técnico de Laboratorio", headcountMen: 1, headcountWomen: 0 }],
+      },
+      {
+        processName: "Gestión de Proyectos y Administración",
+        taskName: "Reuniones de coordinación con mandante y contratistas en faena",
+        taskType: "Rutinaria",
+        location: "Sala de reuniones de obra",
+        defaultPositions: [{ name: "Jefe de Proyecto", headcountMen: 1, headcountWomen: 1 }],
+      },
+    ],
+    suggestedHazards: [
+      {
+        id: "ing-1",
+        hazardDescription: "Exposición continua a pantallas de visualización de datos (PVD) y posturas sedentes prolongadas",
+        specificRiskCode: "ME2",
+        specificRiskName: "Trastornos Musculoesqueléticos de Extremidad Superior (TMERT)",
+        riskFamily: "Posturas forzadas y sedentes",
+        riskClassification: "Músculo-esquelético",
+        defaultProb: 4,
+        defaultSev: 2,
+        prob5x5: 3,
+        sev5x5: 2,
+        recommendedControls: [
+          { type: "Controles de Ingeniería", description: "Puestos de trabajo ergonómicos: sillas con regulación lumbar, brazos ajustables y soporte para monitor a la altura de los ojos", isCritical: true },
+          { type: "Controles Administrativos", description: "Programa de pausas activas programadas cada 2 horas de trabajo continuado en pantalla" },
+        ],
+        tags: ["Ergonomía", "Oficina", "PVD"],
+      },
+      {
+        id: "ing-2",
+        hazardDescription: "Tránsito peatonal en frentes de obra activos con presencia de maquinaria pesada, excavaciones y desniveles",
+        specificRiskCode: "B4",
+        specificRiskName: "Atropello por vehículo o maquinaria en movimiento",
+        riskFamily: "Atropello o colisión con maquinaria",
+        riskClassification: "Seguridad",
+        defaultProb: 2,
+        defaultSev: 4,
+        prob5x5: 2,
+        sev5x5: 4,
+        recommendedControls: [
+          { type: "Controles Administrativos", description: "Uso de sendas peatonales segregadas y autorización previa de ingreso con señalero rigger", isCritical: true },
+          { type: "Elementos de Protección Personal (EPP)", description: "Casco de seguridad con barbiquejo, calzado de seguridad con plantilla anticlavo y chaleco reflectante clase 2", isCritical: true },
+        ],
+        tags: ["Terreno", "ITO", "Inspección"],
+      },
+      {
+        id: "ing-3",
+        hazardDescription: "Exposición a radiación ultravioleta de origen solar en visitas prolongadas de inspección técnica en terreno",
+        specificRiskCode: "H3",
+        specificRiskName: "Radiación Ultravioleta de Origen Solar (Guía UV)",
+        riskFamily: "Agentes físicos (Ruido, Vibraciones, Radiación)",
+        riskClassification: "Higiénicos",
+        defaultProb: 4,
+        defaultSev: 2,
+        prob5x5: 3,
+        sev5x5: 3,
+        recommendedControls: [
+          { type: "Controles Administrativos", description: "Publicación diaria del índice de radiación UV y planificación de inspecciones en horarios de menor radiación" },
+          { type: "Elementos de Protección Personal (EPP)", description: "Bloqueador solar FPS 50+, cubre nuca tipo legionario para casco y lentes con filtro UV certificadas" },
+        ],
+        tags: ["Guía UV", "Terreno", "Salud"],
+      },
+      {
+        id: "ing-4",
+        hazardDescription: "Sobrecarga de trabajo cuantitativa y plazos perentorios de entrega de proyectos y cálculos",
+        specificRiskCode: "PS1",
+        specificRiskName: "Carga de trabajo y exigencias cuantitativas elevadas",
+        riskFamily: "Organización y condiciones del trabajo",
+        riskClassification: "Psicosociales",
+        defaultProb: 3,
+        defaultSev: 2,
+        prob5x5: 3,
+        sev5x5: 3,
+        recommendedControls: [
+          { type: "Controles Administrativos", description: "Planificación balanceada de entregas y dotación adecuada por proyecto según cronograma" },
+          { type: "Controles Administrativos", description: "Vigilancia del protocolo de riesgos psicosociales CEAL-SM / SUSESO" },
+        ],
+        tags: ["Psicosocial", "Oficina", "Plazos"],
       },
     ],
   },
@@ -507,16 +653,33 @@ export const SECTOR_RISK_PROFILES: Record<string, SectorRiskProfile> = {
 
 // Obtener el perfil del sector o el predeterminado si no coincide exactamente
 export function getSectorRiskProfile(sectorName?: string): SectorRiskProfile {
-  if (!sectorName) return SECTOR_RISK_PROFILES["Minería"];
+  if (!sectorName) return SECTOR_RISK_PROFILES["Construcción"];
+
+  const sLower = sectorName.toLowerCase().trim();
+  if (sLower.includes("servicio") || sLower.includes("ingenier") || sLower.includes("consultor")) {
+    return SECTOR_RISK_PROFILES["Servicios e Ingeniería"];
+  }
+  if (sLower.includes("miner")) {
+    return SECTOR_RISK_PROFILES["Minería"];
+  }
+  if (sLower.includes("transp") || sLower.includes("logíst")) {
+    return SECTOR_RISK_PROFILES["Transporte y Logística"];
+  }
+  if (sLower.includes("manuf") || sLower.includes("industr")) {
+    return SECTOR_RISK_PROFILES["Manufactura / Industrial"];
+  }
+  if (sLower.includes("construc") || sLower.includes("obra") || sLower.includes("edific")) {
+    return SECTOR_RISK_PROFILES["Construcción"];
+  }
 
   // Búsqueda aproximada
   const key = Object.keys(SECTOR_RISK_PROFILES).find(
     (k) =>
-      k.toLowerCase().includes(sectorName.toLowerCase()) ||
-      sectorName.toLowerCase().includes(k.toLowerCase())
+      k.toLowerCase().includes(sLower) ||
+      sLower.includes(k.toLowerCase())
   );
 
-  return key ? SECTOR_RISK_PROFILES[key] : SECTOR_RISK_PROFILES["Minería"];
+  return key ? SECTOR_RISK_PROFILES[key] : SECTOR_RISK_PROFILES["Construcción"];
 }
 
 /**
@@ -612,6 +775,35 @@ export function getContextualTasksForProcess(
       "Montaje y desmolde de placas metálicas de moldaje",
       "Vaciado y vibrado de hormigón fresco con sonda mecánica",
       "Curado de losas de hormigón con agua y membrana química",
+    ];
+  }
+
+  // 3. Procesos de Servicios, Ingeniería, Consultoría e Inspección
+  if (pLower.includes("diseño") || pLower.includes("cálculo") || pLower.includes("bim") || pLower.includes("cad") || pLower.includes("plano") || pLower.includes("ingenier")) {
+    return [
+      "Modelamiento y cálculo estructural en estación de trabajo",
+      "Revisión técnica de planos de especialidades y arquitectura",
+      "Elaboración de especificaciones técnicas y memorias de cálculo",
+      "Detección y resolución de interferencias geométricas en modelo BIM",
+      "Cubicación y estimación técnica de cantidades de obra",
+    ];
+  }
+  if (pLower.includes("inspección") || pLower.includes("ito") || pLower.includes("supervis") || pLower.includes("terreno") || pLower.includes("campo")) {
+    return [
+      "Inspección visual de avances constructivos y estructuras en faena",
+      "Control de calidad y verificación de especificaciones técnicas en terreno",
+      "Toma de muestras de testigos de hormigón y ensayos de compactación",
+      "Levantamiento de no conformidades y observaciones técnicas en obra",
+      "Supervisión del cumplimiento de protocolos de seguridad y EPP",
+    ];
+  }
+  if (pLower.includes("gestión") || pLower.includes("proyecto") || pLower.includes("administra") || pLower.includes("asesor") || pLower.includes("consultor")) {
+    return [
+      "Planificación y control de avance físico-financiero del proyecto",
+      "Gestión documental, archivo técnico y control de versiones",
+      "Reuniones de coordinación técnica con mandante y contratistas",
+      "Atención y asesoría técnica especializada a clientes",
+      "Elaboración de informes periódicos de estado y avance del proyecto",
     ];
   }
 
