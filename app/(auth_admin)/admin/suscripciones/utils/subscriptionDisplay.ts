@@ -64,7 +64,7 @@ export const getDisplayValue = (value: string | null | undefined): string =>
 
 export const getMrrDisplay = (value: number | null | undefined): string => {
   const formatted = formatApiAmount(value);
-  return formatted ? `$${formatted} CLP` : DISPLAY_FALLBACK;
+  return formatted ? `CLP $${formatted}` : DISPLAY_FALLBACK;
 };
 
 export const getPlanWithClientTypeLabel = (
