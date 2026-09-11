@@ -3,13 +3,14 @@
 import {
   LuBadgeCheck,
   LuBan,
-  LuBox,
   LuEllipsis,
   LuRocket,
+  LuBox,
 } from "react-icons/lu";
 import Image from "next/image";
 import clsx from "clsx";
 import SlideOver from "@/app/components/ui/SlideOver";
+import { AprIcon, DocumentacionIcon, MiperIcon } from "@/app/components/shared/baseModules";
 import { Subscription } from "@/types/admin";
 import {
   DISPLAY_FALLBACK,
@@ -43,6 +44,23 @@ const PanelTitle = (
     Detalles de la suscripción
   </div>
 );
+
+const getModuleIcon = (displayName: string): React.ReactNode => {
+  switch (displayName) {
+    case "Matriz IPER":
+      return <MiperIcon box="size-5" iconSize={12} />;
+
+    case "Programa y Documentación Preventiva":
+      return <DocumentacionIcon box="size-5" iconSize={12} />;
+
+    case "APR Virtual":
+      return <AprIcon box="size-5" iconSize={10} />;
+
+    default:
+      return <LuBox className="h-4 w-4 text-secondary mx-0.5" />;
+  }
+};
+
 
 export default function SubscriptionDetailPanel({
   open,
@@ -161,7 +179,7 @@ export default function SubscriptionDetailPanel({
                     className="flex items-center justify-between text-sm text-neutral-primary"
                   >
                     <div className="flex items-center gap-3">
-                      <LuBox className="h-4 w-4 text-secondary" />
+                      {getModuleIcon(item.display_name)}
                       <span>{item.display_name}</span>
                     </div>
                   </li>

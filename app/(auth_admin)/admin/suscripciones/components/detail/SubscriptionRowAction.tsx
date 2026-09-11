@@ -6,14 +6,17 @@ import axios from "axios";
 import { Subscription } from "@/types/admin";
 import GenericMenu, { MenuItem } from "@/components/reusable/GenericMenu";
 import { useSubscriptionDetail } from "./SubscriptionDetailProvider";
+import { useSubscriptionPaymentRetry } from "../SubscriptionPaymentRetryProvider";
 import SubscriptionPlanChangeModal from "./SubscriptionPlanChangeModal";
 import { LuBox, LuBuilding2, LuCircleCheck, LuCircleDollarSign, LuCircleOff, LuCircleX, LuCreditCard, LuList, LuMailWarning, LuRefreshCw, LuRocket, LuTrash2, LuUserRound } from "react-icons/lu";
 import SubscriptionActionModal from "../SubscriptionActionModal";
 import Alert from "@/components/reusable/Alert";
 import {
   archiveSubscription,
+  cancelScheduledSubscriptionPlanChange,
   cancelSubscription,
   reactivateSubscription,
+  revokeScheduledSubscriptionCancellation,
   retrySubscriptionPayment,
   sendPaymentReminder,
   suspendSubscription,
@@ -21,6 +24,10 @@ import {
 
 const SubscriptionRowAction = ({ subscription }: { subscription: Subscription }) => {
   const detail = useSubscriptionDetail();
+  const {
+    isPaymentRetryProcessing,
+    startPaymentRetryPolling,
+  } = useSubscriptionPaymentRetry();
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState("");
   const [suspensionError, setSuspensionError] = useState("");
@@ -33,6 +40,10 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
   const [cancellationReason, setCancellationReason] = useState("");
   const [cancellationError, setCancellationError] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isRevokeCancellationModalOpen, setIsRevokeCancellationModalOpen] = useState(false);
+  const [revokeCancellationReason, setRevokeCancellationReason] = useState("");
+  const [revokeCancellationError, setRevokeCancellationError] = useState("");
+  const [isRevokingCancellation, setIsRevokingCancellation] = useState(false);
   const [isArchiveWarningModalOpen, setIsArchiveWarningModalOpen] = useState(false);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [archiveReason, setArchiveReason] = useState("");
@@ -46,16 +57,27 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
   const [isRetryingPayment, setIsRetryingPayment] = useState(false);
   const [retryPaymentError, setRetryPaymentError] = useState("");
   const [isPlanChangeModalOpen, setIsPlanChangeModalOpen] = useState(false);
+  const [isCancelPlanChangeModalOpen, setIsCancelPlanChangeModalOpen] = useState(false);
+  const [isCancellingPlanChange, setIsCancellingPlanChange] = useState(false);
+  const [cancelPlanChangeError, setCancelPlanChangeError] = useState("");
   const [isSuccessAlertOpen, setIsSuccessAlertOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
   const canSuspend = subscription.available_actions.includes("suspend");
   const canReactivate = subscription.available_actions.includes("reactivate");
   const canCancel = subscription.available_actions.includes("cancel");
+  const canRevokeCancellation = subscription.available_actions.includes("revoke_cancellation");
   const canArchive = subscription.available_actions.includes("archive");
   const canSendPaymentReminder = subscription.available_actions.includes("payment_reminder");
-  const canRetryPayment = subscription.available_actions.includes("retry_payment");
+  const canRetryPayment = (
+    subscription.available_actions.includes("retry_payment")
+    && !isPaymentRetryProcessing(subscription.public_id)
+  );
   const canChangePlan = subscription.available_actions.includes("plan_change");
+  const canCancelPlanChange = Boolean(
+    subscription.pending_plan_change
+    && !subscription.pending_plan_change.is_locked_by_payment,
+  );
 
   const closeSuspendModal = () => {
     if (isSuspending) {
@@ -110,6 +132,16 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
     setIsCancelModalOpen(false);
     setCancellationReason("");
     setCancellationError("");
+  };
+
+  const closeRevokeCancellationModal = () => {
+    if (isRevokingCancellation) {
+      return;
+    }
+
+    setIsRevokeCancellationModalOpen(false);
+    setRevokeCancellationReason("");
+    setRevokeCancellationError("");
   };
 
   const closeArchiveModal = () => {
@@ -171,15 +203,49 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
     setRetryPaymentError("");
   };
 
+  const closeCancelPlanChangeModal = () => {
+    if (isCancellingPlanChange) {
+      return;
+    }
+
+    setIsCancelPlanChangeModalOpen(false);
+    setCancelPlanChangeError("");
+  };
+
+  const handleCancelPlanChange = async () => {
+    setIsCancellingPlanChange(true);
+    setCancelPlanChangeError("");
+
+    try {
+      await cancelScheduledSubscriptionPlanChange(subscription.public_id);
+      setIsCancelPlanChangeModalOpen(false);
+      setSuccessMessage("Cambio de plan programado cancelado con éxito");
+      setIsSuccessAlertOpen(true);
+    } catch (error) {
+      setCancelPlanChangeError(
+        getErrorMessage(
+          error,
+          "No fue posible cancelar el cambio de plan. Intenta nuevamente.",
+        ),
+      );
+    } finally {
+      setIsCancellingPlanChange(false);
+    }
+  };
+
   const handleRetryPayment = async () => {
     setIsRetryingPayment(true);
     setRetryPaymentError("");
 
     try {
-      await retrySubscriptionPayment(subscription.public_id);
+      const retryRequest = await retrySubscriptionPayment(
+        subscription.public_id,
+      );
       setIsRetryPaymentModalOpen(false);
-      setSuccessMessage("Reintento de cobro enviado a procesamiento");
-      setIsSuccessAlertOpen(true);
+      startPaymentRetryPolling(
+        subscription.public_id,
+        retryRequest.previous_payment_attempt_id,
+      );
     } catch (error) {
       setRetryPaymentError(
         getErrorMessage(
@@ -265,7 +331,7 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
       await cancelSubscription(subscription.public_id, reason);
       setIsCancelModalOpen(false);
       setCancellationReason("");
-      setSuccessMessage("Cuenta cancelada con éxito");
+      setSuccessMessage("Cancelación programada con éxito");
       setIsSuccessAlertOpen(true);
     } catch (error) {
       setCancellationError(
@@ -276,6 +342,35 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
       );
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handleRevokeCancellation = async () => {
+    const reason = revokeCancellationReason.trim();
+
+    if (!reason) {
+      setRevokeCancellationError("Debes indicar el motivo de la reversión.");
+      return;
+    }
+
+    setIsRevokingCancellation(true);
+    setRevokeCancellationError("");
+
+    try {
+      await revokeScheduledSubscriptionCancellation(subscription.public_id, reason);
+      setIsRevokeCancellationModalOpen(false);
+      setRevokeCancellationReason("");
+      setSuccessMessage("Cancelación programada revertida con éxito");
+      setIsSuccessAlertOpen(true);
+    } catch (error) {
+      setRevokeCancellationError(
+        getErrorMessage(
+          error,
+          "No fue posible revertir la cancelación. Intenta nuevamente.",
+        ),
+      );
+    } finally {
+      setIsRevokingCancellation(false);
     }
   };
 
@@ -327,24 +422,32 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
           >
             Ver detalle de suscripción
           </MenuItem>
-          {/* <MenuItem
+          <MenuItem
             icon={<LuBuilding2 />}
-            onClick={() => {}}
+            onClick={() => detail?.openOrganizationDetail(subscription)}
           >
             Ver organización
-          </MenuItem> */}
-          {/* <MenuItem
+          </MenuItem>
+          <MenuItem
             icon={<LuUserRound />}
-            onClick={() => {}}
+            onClick={() => detail?.openUserDetail(subscription)}
           >
             Ver usuario
-          </MenuItem> */}
+          </MenuItem>
           {canChangePlan && (
             <MenuItem
               icon={<LuRocket />}
               onClick={() => setIsPlanChangeModalOpen(true)}
             >
               Cambiar plan de suscripción
+            </MenuItem>
+          )}
+          {canCancelPlanChange && (
+            <MenuItem
+              icon={<LuCircleX />}
+              onClick={() => setIsCancelPlanChangeModalOpen(true)}
+            >
+              Cancelar cambio de plan programado
             </MenuItem>
           )}
           {/* <MenuItem
@@ -412,6 +515,14 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
               Cancelar suscripción
             </MenuItem>
           )}
+          {canRevokeCancellation && (
+            <MenuItem
+              icon={<LuCircleCheck />}
+              onClick={() => setIsRevokeCancellationModalOpen(true)}
+            >
+              Revertir cancelación programada
+            </MenuItem>
+          )}
           {canArchive && (
             <MenuItem
               icon={<LuTrash2 />}
@@ -460,6 +571,28 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
           setIsSuccessAlertOpen(true);
         }}
       />
+
+      {/* Cancel Plan Change Subscription */}
+      <SubscriptionActionModal
+        open={isCancelPlanChangeModalOpen}
+        title="¿Cancelar cambio de plan programado?"
+        description={
+          <>
+            La suscripción <span className="font-medium">{subscription.subscription_id}</span> conservará su plan actual. No se modificará el acceso, el ciclo de cobro ni la próxima renovación.
+          </>
+        }
+        confirmLabel="Confirmar cancelación"
+        variant="primary"
+        onClose={closeCancelPlanChangeModal}
+        onConfirm={handleCancelPlanChange}
+        isSubmitting={isCancellingPlanChange}
+      >
+        {cancelPlanChangeError && (
+          <p className="text-sm text-primary">
+            {cancelPlanChangeError}
+          </p>
+        )}
+      </SubscriptionActionModal>
 
       {/* Retry Payment */}
       <SubscriptionActionModal
@@ -600,6 +733,47 @@ const SubscriptionRowAction = ({ subscription }: { subscription: Subscription })
           {cancellationError && (
             <p className="mt-2 text-sm text-primary">
               {cancellationError}
+            </p>
+          )}
+        </div>
+      </SubscriptionActionModal>
+
+      {/* Revoke Cancellation Subscription */}
+      <SubscriptionActionModal
+        open={isRevokeCancellationModalOpen}
+        title="¿Revertir la cancelación programada?"
+        description={
+          <>La suscripción <span className="font-medium">{subscription.subscription_id}</span> continuará activa y podrá renovarse normalmente. Indica el motivo de la reversión para dejar trazabilidad.</>
+        }
+        confirmLabel="Revertir cancelación"
+        variant="secondary"
+        onClose={closeRevokeCancellationModal}
+        onConfirm={handleRevokeCancellation}
+        isSubmitting={isRevokingCancellation}
+        confirmDisabled={!revokeCancellationReason.trim()}
+      >
+        <div>
+          <label
+            htmlFor={`revoke-cancellation-reason-${subscription.public_id}`}
+            className="mb-2 block text-sm font-medium text-neutral-primary"
+          >
+            Motivo de la reversión
+          </label>
+          <textarea
+            id={`revoke-cancellation-reason-${subscription.public_id}`}
+            value={revokeCancellationReason}
+            onChange={(event) => {
+              setRevokeCancellationReason(event.target.value);
+              setRevokeCancellationError("");
+            }}
+            placeholder="Escribe el motivo..."
+            disabled={isRevokingCancellation}
+            rows={3}
+            className="w-full resize-none rounded-lg border border-stroke-primary px-3 py-2 text-sm text-neutral-primary outline-none placeholder:text-neutral-400 focus:border-secondary disabled:cursor-not-allowed disabled:bg-neutral-100"
+          />
+          {revokeCancellationError && (
+            <p className="mt-2 text-sm text-primary">
+              {revokeCancellationError}
             </p>
           )}
         </div>

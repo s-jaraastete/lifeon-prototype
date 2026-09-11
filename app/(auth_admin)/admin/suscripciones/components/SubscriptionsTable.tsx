@@ -1,17 +1,17 @@
 import clsx from "clsx";
-import ServerTableWrapper from "./table/ServerTableWrapper";
+import ServerTableWrapper from "../../components/shared/table/ServerTableWrapper";
 import { Subscription } from "@/types/admin";
 import SubscriptionRowAction from "./detail/SubscriptionRowAction";
+import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
 import {
   DISPLAY_FALLBACK,
-  SUBSCRIPTION_STATUS_LABELS,
-  SUBSCRIPTION_STATUS_STYLES,
   formatPaymentMethod,
   formatSubscriptionDate,
   getBillingPeriodLabel,
   getClientTypeLabel,
   getMrrDisplay,
 } from "../utils/subscriptionDisplay";
+import { LuInfo } from "react-icons/lu";
 
 type SubscriptionsTableProps = {
   params: { [key: string]: string };
@@ -37,14 +37,38 @@ const headers = [
 // 2. Verificar si es correcto que suscripciones sin cobro muestren MRR o ciclo
 const RowContent = (sub: Subscription) => (
   <>
-    <td className="text-neutral-secondary">{sub.subscription_id}</td>
+    <td className="text-neutral-secondary">
+      <div className="flex items-center gap-2">
+        <span>{sub.subscription_id}</span>
+        {sub.cancel_at_period_end && (
+          <div className="group relative inline-block rounded-lg bg-info-subtle px-2 py-1 text-xs font-medium text-info">
+            <LuInfo />
+            <span className="absolute bottom-full left-30 z-20 mb-2 -translate-x-1/2 scale-0 whitespace-nowrap rounded bg-gray-800 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 group-hover:scale-100">
+              Cancelación programada: el acceso finalizará el {formatSubscriptionDate(sub.current_period_end)}.
+            </span>
+          </div>
+        )}
+      </div>
+    </td>
     <td className="text-neutral-secondary">
       {sub.client_name || DISPLAY_FALLBACK}
       <span className="block text-sm text-neutral-tertiary">
         {getClientTypeLabel(sub.client_type)}
       </span>
     </td>
-    <td className="text-neutral-secondary">{sub.pack_name_snapshot}</td>
+    <td>
+      <div className="flex items-center">
+        <p className="text-neutral-secondary">{sub.pack_name_snapshot}</p>
+        {sub.pending_plan_change && (
+          <div className="group relative inline-block rounded-lg px-2 py-1 text-xs font-medium bg-info-subtle text-info ml-2">
+            <LuInfo />
+            <span className="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 scale-0 rounded bg-gray-800 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 group-hover:scale-100 whitespace-nowrap">
+              Cambio programado: {sub.pending_plan_change.target_pack_name} {getBillingPeriodLabel(sub.pending_plan_change.target_billing_period).toLowerCase()}
+            </span>
+          </div>
+        )}
+      </div>
+    </td>
     <td className="text-neutral-secondary">
       {getBillingPeriodLabel(sub.billing_period)}
     </td>
@@ -61,14 +85,7 @@ const RowContent = (sub: Subscription) => (
       {formatPaymentMethod(sub)}
     </td>
     <td>
-      <span
-        className={clsx(
-          "inline-block rounded-lg px-2 py-0.75 text-xs font-medium",
-          SUBSCRIPTION_STATUS_STYLES[sub.status]
-        )}
-      >
-        {SUBSCRIPTION_STATUS_LABELS[sub.status]}
-      </span>
+      <SubscriptionStatusBadge subscription={sub} />
     </td>
     <td>
       <SubscriptionRowAction subscription={sub} />
@@ -84,9 +101,9 @@ const SubscriptionsTable = ({ params }: SubscriptionsTableProps) => {
       endpoint="/admin-overview/subscriptions"
       params={params}
       pageSize={PAGE_SIZE}
-      serverTag={["admin-subscriptions"]}
+      fetchCache="no-store"
       noDataMessage="No se encontraron suscripciones"
-      stickyLastColumn
+      stickyLastColumns={2}
     />
   );
 };

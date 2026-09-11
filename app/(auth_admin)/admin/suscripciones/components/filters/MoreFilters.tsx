@@ -6,7 +6,6 @@ import FilterDropdown, {
 } from "@/app/(auth_admin)/admin/components/shared/FilterDropdown";
 
 const planOptions = [
-  { value: "", label: "Todos" },
   { value: "Starter", label: "Starter" },
   { value: "Business", label: "Business" },
   { value: "Free", label: "Free" },
@@ -30,14 +29,6 @@ const orderingFieldOptions = [
 const orderingConfig: OrderingConfig = {
   options: orderingFieldOptions,
   defaultDescFields: ["created", "next_billing_at", "mrr_clp"],
-  legacyMap: {
-    client_name: "company__name",
-    pack_name_snapshot: "",
-    pack_name: "",
-    billing_period: "",
-    status: "",
-    id: "",
-  },
 };
 
 const groups: FilterGroup[] = [
@@ -45,8 +36,8 @@ const groups: FilterGroup[] = [
     type: "select",
     label: "Plan",
     param: "pack_name_snapshot",
-    legacyParams: ["plan"],
     options: planOptions,
+    multiple: true,
   },
   {
     type: "select",

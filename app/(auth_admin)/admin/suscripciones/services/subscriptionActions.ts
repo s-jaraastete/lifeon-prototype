@@ -1,9 +1,7 @@
 "use server";
 
-import { updateTag } from "next/cache";
+import { refresh } from "next/cache";
 import { getServerData, postServerData } from "@/lib/requests";
-
-const SUBSCRIPTIONS_TABLE_TAG = "admin-subscriptions";
 
 type PlanPrice = {
   amount: string;
@@ -44,16 +42,34 @@ export type SubscriptionPlanChangeOptions = {
     target_price_uf_snapshot: string;
     target_currency_snapshot: string;
     is_locked_by_payment: boolean;
+    renewal_payment_status: "pending" | "processing" | "paid" | "failed" | "requires_review" | null;
   } | null;
   can_schedule_plan_change: boolean;
+  plan_change_unavailable_reason: string | null;
+};
+
+export type SubscriptionPaymentRetryRequest = {
+  subscription_public_id: string;
+  queued: true;
+  previous_payment_attempt_id: number | null;
+  message: string;
+};
+
+export type SubscriptionPaymentRetryStatus = {
+  subscription_public_id: string;
+  subscription_status: string;
+  retry_status: "waiting" | "processing" | "approved" | "rejected" | "error" | "requires_review";
+  payment_status: "pending" | "processing" | "paid" | "failed" | "requires_review" | "cancelled" | null;
+  payment_attempt_id: number | null;
+  payment_attempt_status: "created" | "processing" | "approved" | "rejected" | "error" | null;
 };
 
 export const refreshSubscriptionsTable = async () => {
-  updateTag(SUBSCRIPTIONS_TABLE_TAG);
+  refresh();
 };
 
 const executeSubscriptionAction = async (
-  action: "suspend" | "reactivate" | "cancel" | "archive" | "payment-reminder" | "retry-payment" | "plan-change",
+  action: "suspend" | "reactivate" | "cancel" | "cancel/revoke" | "archive" | "payment-reminder" | "plan-change",
   subscriptionPublicId: string,
   payload: Record<string, unknown> = {},
 ) => {
@@ -66,7 +82,7 @@ const executeSubscriptionAction = async (
     },
   );
 
-  updateTag(SUBSCRIPTIONS_TABLE_TAG);
+  refresh();
 };
 
 export const suspendSubscription = async (
@@ -106,7 +122,40 @@ export const sendPaymentReminder = async (
 export const retrySubscriptionPayment = async (
   subscriptionPublicId: string,
 ) => {
-  await executeSubscriptionAction("retry-payment", subscriptionPublicId);
+  const response = await postServerData(
+    `/subscriptions/${subscriptionPublicId}/actions/retry-payment/`,
+    {},
+    {
+      useAccessToken: true,
+      cache: "no-store",
+    },
+  );
+
+  return response.data as SubscriptionPaymentRetryRequest;
+};
+
+export const getSubscriptionPaymentRetryStatus = async (
+  subscriptionPublicId: string,
+  previousPaymentAttemptId: number | null,
+) => {
+  const params = new URLSearchParams();
+
+  if (previousPaymentAttemptId !== null) {
+    params.set(
+      "previous_payment_attempt_id",
+      previousPaymentAttemptId.toString(),
+    );
+  }
+
+  const response = await getServerData(
+    `/subscriptions/${subscriptionPublicId}/actions/retry-payment/status/?${params.toString()}`,
+    {
+      useAccessToken: true,
+      cache: "no-store",
+    },
+  );
+
+  return response.data as SubscriptionPaymentRetryStatus;
 };
 
 export const getSubscriptionPlanChangeOptions = async (
@@ -132,4 +181,26 @@ export const scheduleSubscriptionPlanChange = async (
     target_pack_public_id: targetPackPublicId,
     target_billing_period: targetBillingPeriod,
   });
+};
+
+export const revokeScheduledSubscriptionCancellation = async (
+  subscriptionPublicId: string,
+  reason: string,
+) => {
+  await executeSubscriptionAction("cancel/revoke", subscriptionPublicId, { reason });
+};
+
+export const cancelScheduledSubscriptionPlanChange = async (
+  subscriptionPublicId: string,
+) => {
+  await postServerData(
+    `/subscriptions/${subscriptionPublicId}/actions/plan-change/cancel/`,
+    {},
+    {
+      useAccessToken: true,
+      cache: "no-store",
+    },
+  );
+
+  refresh();
 };

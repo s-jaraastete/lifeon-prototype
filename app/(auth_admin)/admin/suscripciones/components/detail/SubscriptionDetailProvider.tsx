@@ -1,30 +1,83 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useState,
+} from "react";
 import { Subscription } from "@/types/admin";
 import SubscriptionDetailPanel from "./SubscriptionDetailPanel";
+import UserDetailPanel from "./UserDetailPanel";
+import OrganizationDetailPanel from "./OrganizationDetailPanel";
 
-const DetailContext = createContext<{
+type DetailView = "subscription" | "user" | "organization";
+
+type SelectedDetail = {
+  view: DetailView;
+  subscription: Subscription;
+} | null;
+
+type DetailContextValue = {
   openDetail: (subscription: Subscription) => void;
-} | undefined>(undefined);
+  openUserDetail: (subscription: Subscription) => void;
+  openOrganizationDetail: (subscription: Subscription) => void;
+};
+
+type SubscriptionDetailProviderProps = {
+  children: ReactNode;
+};
+
+const DetailContext = createContext<DetailContextValue | undefined>(undefined);
 
 export const useSubscriptionDetail = () => useContext(DetailContext);
 
-export default function SubscriptionDetailProvider({
+const SubscriptionDetailProvider = ({
   children,
-}: {
-  children: ReactNode;
-}) {
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+}: SubscriptionDetailProviderProps) => {
+  const [selectedDetail, setSelectedDetail] = useState<SelectedDetail>(null);
+
+  const closeDetail = () => setSelectedDetail(null);
 
   return (
-    <DetailContext.Provider value={{ openDetail: setSubscription }}>
+    <DetailContext.Provider
+      value={{
+        openDetail: (subscription) =>
+          setSelectedDetail({ view: "subscription", subscription }),
+        openUserDetail: (subscription) =>
+          setSelectedDetail({ view: "user", subscription }),
+        openOrganizationDetail: (subscription) =>
+          setSelectedDetail({ view: "organization", subscription }),
+      }}
+    >
       {children}
       <SubscriptionDetailPanel
-        open={!!subscription}
-        subscription={subscription}
-        onClose={() => setSubscription(null)}
+        open={selectedDetail?.view === "subscription"}
+        subscription={
+          selectedDetail?.view === "subscription"
+            ? selectedDetail.subscription
+            : null
+        }
+        onClose={closeDetail}
+      />
+      <UserDetailPanel
+        open={selectedDetail?.view === "user"}
+        subscription={
+          selectedDetail?.view === "user" ? selectedDetail.subscription : null
+        }
+        onClose={closeDetail}
+      />
+      <OrganizationDetailPanel
+        open={selectedDetail?.view === "organization"}
+        subscription={
+          selectedDetail?.view === "organization"
+            ? selectedDetail.subscription
+            : null
+        }
+        onClose={closeDetail}
       />
     </DetailContext.Provider>
   );
-}
+};
+
+export default SubscriptionDetailProvider;

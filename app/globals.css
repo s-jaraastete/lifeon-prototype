@@ -543,16 +543,16 @@ body {
   outline-color: var(--color-secondary);
 }
 
-@utility sticky-last-column {
-  & th:last-child,
-  & td:last-child {
+@utility sticky-right {
+  & th[data-sticky],
+  & td[data-sticky] {
     position: sticky;
-    right: 0;
+    right: var(--sticky-right, 0);
     z-index: 10;
     background-color: var(--color-white);
   }
-  & th:last-child::before,
-  & td:last-child::before {
+  & th[data-sticky-edge]::before,
+  & td[data-sticky-edge]::before {
     content: '';
     position: absolute;
     inset-block: 0;
@@ -561,11 +561,61 @@ body {
     background-image: linear-gradient(to right, transparent, var(--color-white));
     pointer-events: none;
   }
+  & tr:hover td[data-sticky] {
+    background-color: var(--color-gray-100);
+  }
+  & tr:hover td[data-sticky-edge]::before {
+    background-image: linear-gradient(to right, transparent, var(--color-gray-100));
+  }
+}
+
+@utility sticky-last-column {
+  & th:last-child,
+  & td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 10;
+    background-color: var(--color-white);
+  }
   & tr:hover td:last-child {
     background-color: var(--color-gray-100);
   }
-  & tr:hover td:last-child::before {
-    background-image: linear-gradient(to right, transparent, var(--color-gray-100));
+}
+
+@utility sticky-last-two-columns {
+  & th:last-child,
+  & td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 10;
+    width: 104px;
+    min-width: 104px;
+    background-color: var(--color-white);
+  }
+  & th:nth-last-child(2),
+  & td:nth-last-child(2) {
+    position: sticky;
+    right: 104px;
+    z-index: 10;
+    background-color: var(--color-white);
+    box-shadow: -10px 0 14px -12px rgba(15, 23, 42, 0.45);
+  }
+  & th:nth-last-child(2)::before,
+  & td:nth-last-child(2)::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    left: calc(var(--spacing) * -6);
+    width: calc(var(--spacing) * 6);
+    background-image: linear-gradient(to right, transparent, var(--color-white) 85%);
+    pointer-events: none;
+  }
+  & tr:hover td:last-child,
+  & tr:hover td:nth-last-child(2) {
+    background-color: var(--color-gray-100);
+  }
+  & tr:hover td:nth-last-child(2)::before {
+    background-image: linear-gradient(to right, transparent, var(--color-gray-100) 85%);
   }
 }
 

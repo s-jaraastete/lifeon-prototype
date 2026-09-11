@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, cloneElement } from "react";
 import clsx from "clsx";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -98,11 +98,9 @@ const MobileMenu = ({ isOpen, onClose }: {
                               pathname.startsWith("/modulos") && "text-primary",
                             )}
                           >
-                            <div
-                              className={clsx("p-1.5 rounded-lg", item.bgColor)}
-                            >
-                              {item.icon(18)}
-                            </div>
+                            {cloneElement(item.icon, {
+                              box: "p-1.5 rounded-lg",
+                            })}
                             {item.title}
                             {item.chipText && (
                               <span className="text-[10px] font-medium bg-[#DBEAFE] text-blue-600 px-1.5 py-0.5 rounded-lg">

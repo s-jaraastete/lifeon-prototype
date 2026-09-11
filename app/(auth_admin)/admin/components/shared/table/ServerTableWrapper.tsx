@@ -6,7 +6,8 @@ import ServerPageTableControls from './ServerPageTableControls'
 type GetServerTableDataArgs = {
   endpoint: string,
   params: string,
-  serverTag?: string[]
+  serverTag?: string[],
+  fetchCache?: "no-store" | "no-cache"
 }
 
 type DjangoGenericPaginationResponse<T> = {
@@ -19,7 +20,12 @@ type DjangoGenericPaginationResponse<T> = {
 export const getServerTableData = async <T, >(args: GetServerTableDataArgs): Promise<DjangoGenericPaginationResponse<T>> => {
   const response = await getServerData(
     `${args.endpoint}?${args.params}`, 
-    {useAccessToken: true, ...args.serverTag !== undefined ? {next: {tags: args.serverTag}} : {cache: 'no-cache'}}
+    {
+      useAccessToken: true,
+      ...args.serverTag !== undefined
+        ? {next: {tags: args.serverTag}}
+        : {cache: args.fetchCache ?? 'no-cache'},
+    }
   )
   return response.data
 }
@@ -30,7 +36,8 @@ type ServerPaginationProps = {
   params?: {
     [key: string]: string
   },
-  serverTag?: string[]
+  serverTag?: string[],
+  fetchCache?: "no-store" | "no-cache"
 }
 
 const ServerPagination = async (props: ServerPaginationProps) => {
@@ -40,7 +47,8 @@ const ServerPagination = async (props: ServerPaginationProps) => {
   const data = await getServerTableData({
     endpoint: props.endpoint,
     params,
-    serverTag: props.serverTag
+    serverTag: props.serverTag,
+    fetchCache: props.fetchCache,
   })
   
   return (
@@ -75,8 +83,9 @@ type ServerTableDataProps<T> = {
     [key: string]: string
   },
   serverTag?: string[],
+  fetchCache?: "no-store" | "no-cache",
   noDataMessage?: ReactNode,
-  stickyLastColumn?: boolean
+  stickyLastColumns?: 1 | 2
 }
 
 const ServerTableData = async <T, >(props: ServerTableDataProps<T>) => {
@@ -86,7 +95,8 @@ const ServerTableData = async <T, >(props: ServerTableDataProps<T>) => {
   const data = await getServerTableData<T>({
     endpoint: props.endpoint,
     params,
-    serverTag: props.serverTag
+    serverTag: props.serverTag,
+    fetchCache: props.fetchCache,
   })
   
   return (
@@ -97,7 +107,7 @@ const ServerTableData = async <T, >(props: ServerTableDataProps<T>) => {
         data={data.results}
         isLoading={false}
         noDataMessage={props.noDataMessage}
-        stickyLastColumn={props.stickyLastColumn}
+        stickyLastColumns={props.stickyLastColumns}
       />
     </>
   )
@@ -116,8 +126,9 @@ type ServerTableWrapperProps<T> = {
     [key: string]: string
   },
   serverTag?: string[],
+  fetchCache?: "no-store" | "no-cache",
   noDataMessage?: ReactNode,
-  stickyLastColumn?: boolean
+  stickyLastColumns?: 1 | 2
 }
 
 const ServerTableWrapper = <T, >(props: ServerTableWrapperProps<T>) => {
@@ -144,6 +155,7 @@ const ServerTableWrapper = <T, >(props: ServerTableWrapperProps<T>) => {
           pageSize={props.pageSize}
           params={props.params}
           serverTag={props.serverTag}
+          fetchCache={props.fetchCache}
         />
       </Suspense>      
     </>

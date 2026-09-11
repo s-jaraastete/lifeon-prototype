@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { useState, type ReactNode } from 'react';
 
 import type { CartCouponPreview, CartItem } from '@/providers/CartProvider';
@@ -14,16 +13,12 @@ import {
 } from '@/utils/pricingHelpers';
 import { PAYMENT_METHODS } from './form/PaymentMethod';
 import DiscountCoupon from './DiscountCoupon';
-
-// Icons
-import { LuFileSearch2, LuTable } from 'react-icons/lu';
+import { AprIcon, DocumentacionIcon, MiperIcon } from '@/app/components/shared/baseModules';
 
 
 type CheckoutModule = {
   icon: ReactNode;
-  bgIcon: string;
   text: string;
-  hasAiBadge?: boolean;
 };
 
 type CheckoutTotalsProps = {
@@ -33,28 +28,29 @@ type CheckoutTotalsProps = {
   ufValue: number;
 };
 
-const IPERModule = {
-  icon: <LuTable size={10} className="text-black" />,
-  bgIcon: "bg-purple-300",
-  text: 'Matriz IPER ',
-};
+const getCheckoutModule = (name: string): CheckoutModule | undefined => {
+  switch (name) {
+    case "MIPER":
+      return {
+        icon: <MiperIcon box="h-5 w-5" iconSize={10} />,
+        text: 'Matriz IPER ',
+      };
 
-const DocumentationModule = {
-  icon: <LuFileSearch2 size={10} className="text-black" />,
-  bgIcon: "bg-[#7dd3fc]",
-  text: 'Programa y Documentación preventiva ',
-};
+    case "Programa y Documentación Preventiva":
+      return {
+        icon: <DocumentacionIcon box="h-5 w-5" iconSize={10} />,
+        text: 'Programa y Documentación preventiva ',
+      };
 
-const APRVirtualModule = {
-  icon: <Image src="/svg/apr-icon.svg" width={10} height={10} alt="APR" />,
-  bgIcon: "bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
-  text: 'APR Virtual',
-};
+    case "APR Virtual":
+      return {
+        icon: <AprIcon box="h-5 w-5" iconSize={10} />,
+        text: 'APR Virtual',
+      };
 
-const modulesByName: Record<string, CheckoutModule> = {
-  MIPER: IPERModule,
-  "Programa y Documentación Preventiva": DocumentationModule,
-  "APR Virtual": APRVirtualModule,
+    default:
+      return undefined;
+  }
 };
 
 const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: CheckoutTotalsProps) => {
@@ -135,15 +131,11 @@ const CheckoutTotals = ({ plan, paymentMethodId, couponPreview, ufValue }: Check
             Plataforma base
             <div className='pt-2 flex flex-col gap-2'>
               {plan?.packModules.map((module) => {
-                const moduleInfo = modulesByName[module.name];
+                const moduleInfo = getCheckoutModule(module.name);
 
                 return (
                 <div key={module.name} className='flex items-center gap-2'>
-                  {moduleInfo && (
-                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${moduleInfo.bgIcon}`}>
-                      {moduleInfo.icon}
-                    </span>
-                  )}
+                  {moduleInfo?.icon}
                   <p className='text-sm text-primary-text font-normal'>
                     {moduleInfo?.text ?? module.name}
                   </p>

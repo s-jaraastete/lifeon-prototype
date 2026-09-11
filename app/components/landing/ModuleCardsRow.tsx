@@ -1,50 +1,44 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import ModuleCard from '../ui/ModuleCard'
+import { AprIcon, DocumentacionIcon, MiperIcon, ModuleBox } from '../shared/baseModules';
 
 // Icons
-import { LuBookCheck, LuCircleCheck, LuFileSearch2, LuSearch, LuTable } from 'react-icons/lu'
+import { LuBookCheck, LuCircleCheck, LuSearch } from 'react-icons/lu'
+
+const cardBox = "w-12 h-12 border-2 border-gray-200";
 
 const cards = [
   {
-    icon: <LuTable size={24} className="text-black" />,
-    bgIcon: "bg-purple-300",
-    border: "border-2",
-    borderColor: "border-gray-200",
+    icon: <MiperIcon box={cardBox} iconSize={24} />,
   },
   {
-    icon: <LuFileSearch2 size={24} className="text-black" />,
-    bgIcon: "bg-[#7dd3fc]",
-    border: "border-2",
-    borderColor: "border-gray-200",
+    icon: <DocumentacionIcon box={cardBox} iconSize={24} />,
+  },
+  {
+    icon: <AprIcon box={cardBox} iconSize={22} />,
   },
   {
     icon: (
-      <Image src="/svg/apr-icon.svg" width={22} height={22} alt="APR Virtual" />
+      <ModuleBox bg="bg-gray-300" box={cardBox}>
+        <LuCircleCheck size={24} className="text-gray-700" />
+      </ModuleBox>
     ),
-    bgIcon: "bg-linear-to-b from-azure-100 to-emerald-200",
-    border: "border-2",
-    borderColor: "border-gray-200",
   },
   {
-    icon: <LuCircleCheck size={24} className="text-gray-700" />,
-    bgIcon: "bg-gray-300",
-    border: "border-2",
-    borderColor: "border-gray-200",
+    icon: (
+      <ModuleBox bg="bg-gray-300" box={cardBox}>
+        <LuBookCheck size={24} className="text-gray-700" />
+      </ModuleBox>
+    ),
   },
   {
-    icon: <LuBookCheck size={24} className="text-gray-700" />,
-    bgIcon: "bg-gray-300",
-    border: "border-2",
-    borderColor: "border-gray-200",
-  },
-  {
-    icon: <LuSearch size={24} className="text-gray-700" />,
-    bgIcon: "bg-gray-300",
-    border: "border-2",
-    borderColor: "border-gray-200",
+    icon: (
+      <ModuleBox bg="bg-gray-300" box={cardBox}>
+        <LuSearch size={24} className="text-gray-700" />
+      </ModuleBox>
+    ),
   },
 ];
 
@@ -76,10 +70,6 @@ const ModuleCardsRow = ({ isActive }: { isActive: boolean }) => {
         <ModuleCard
           key={index}
           icon={card.icon}
-          bgIcon={card.bgIcon}
-          border={card.border}
-          borderColor={card.borderColor}
-          size="md"
         />
       ))}
     </div>

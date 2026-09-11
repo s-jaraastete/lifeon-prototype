@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { LuCheck, LuCircleAlert, LuRocket } from "react-icons/lu";
 import { Subscription } from "@/types/admin";
 import LoadingDots from "@/components/reusable/LoadingDots";
@@ -38,6 +39,29 @@ const formatPrice = (
 ) => (
   `${Number(amount).toLocaleString("es-CL", { maximumFractionDigits: 2 })} ${currency} / ${billingPeriod === "yearly" ? "año" : "mes"}`
 );
+
+type PendingPlanChangePaymentStatus = NonNullable<
+  SubscriptionPlanChangeOptions["pending_plan_change"]
+>["renewal_payment_status"];
+
+const getPendingPlanChangeMessage = (
+  targetPackName: string,
+  paymentStatus: PendingPlanChangePaymentStatus,
+) => {
+  switch (paymentStatus) {
+    case "pending":
+    case "processing":
+      return `El cobro de renovación para cambiar a ${targetPackName} está en proceso. La selección ya no puede modificarse.`;
+    case "failed":
+      return `El cambio a ${targetPackName} sigue programado, pero el cobro está pendiente de regularización. Se aplicará sólo cuando el pago sea aprobado.`;
+    case "requires_review":
+      return `El cobro de renovación para cambiar a ${targetPackName} requiere revisión. La selección permanecerá bloqueada hasta resolverlo.`;
+    case "paid":
+      return `El cobro para cambiar a ${targetPackName} fue aprobado y el cambio se está finalizando.`;
+    default:
+      return `Cambio programado a ${targetPackName}. Puedes reemplazarlo mientras no se cree el cobro de renovación.`;
+  }
+};
 
 const SubscriptionPlanChangeModal = ({ open, subscription, onClose, onSuccess }: SubscriptionPlanChangeModalProps) => {
   const [options, setOptions] = useState<SubscriptionPlanChangeOptions | null>(null);
@@ -178,10 +202,15 @@ const SubscriptionPlanChangeModal = ({ open, subscription, onClose, onSuccess }:
 
   return (
     <>
-      {open && isLoading && (
-        <div className="fixed inset-0 z-120 flex items-center justify-center bg-black/10">
+      {open && isLoading && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-120 flex items-center justify-center bg-black/40"
+          role="status"
+          aria-label="Cargando opciones de cambio de plan"
+        >
           <LoadingDots color="secondary" />
-        </div>
+        </div>,
+        document.body,
       )}
 
       <SubscriptionActionModal
@@ -367,9 +396,16 @@ const SubscriptionPlanChangeModal = ({ open, subscription, onClose, onSuccess }:
 
           {options.pending_plan_change && (
             <div className="rounded-lg border border-secondary/30 bg-secondary/5 p-3 text-xs text-neutral-secondary">
-              {options.pending_plan_change.is_locked_by_payment
-                ? "Existe un cobro de renovación asociado al cambio pendiente. Ya no puede modificarse."
-                : `Existe un cambio pendiente a ${options.pending_plan_change.target_pack_name}. Al confirmar, será reemplazado por tu nueva selección.`}
+              {getPendingPlanChangeMessage(
+                options.pending_plan_change.target_pack_name,
+                options.pending_plan_change.renewal_payment_status,
+              )}
+            </div>
+          )}
+
+          {!options.pending_plan_change && isChangeLocked && options.plan_change_unavailable_reason && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-neutral-secondary">
+              {options.plan_change_unavailable_reason}
             </div>
           )}
         </div>

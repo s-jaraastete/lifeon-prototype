@@ -5,7 +5,7 @@ import Link from "next/link";
 import Modal from "../ui/Modal";
 
 // Icons
-import { LuLock, LuChevronRight } from "react-icons/lu";
+import { LuChevronRight } from "react-icons/lu";
 import { ecosystemItems } from "../ModulesEcosystem";
 
 interface EcosystemProps {
@@ -54,23 +54,9 @@ const ModulesModal = ({ open, onClose, isHome }: EcosystemProps) => {
                   ${item.available ? "hover:bg-gray-200 cursor-pointer" : "cursor-not-allowed"}`}
               >
                 <div className="flex items-start justify-center gap-4">
-                  <div
-                    className={`flex items-center gap-2.5 p-4 mt-1 rounded-2xl justify-center ${item.bgColor}`}
-                  >
-                    {item.available ? (
-                      item.icon()
-                    ) : (
-                      <>
-                        <span className="block group-hover:hidden">
-                          {item.icon()}
-                        </span>
-                        <LuLock
-                          size={24}
-                          className="hidden group-hover:block text-gray-700"
-                        />
-                      </>
-                    )}
-                  </div>
+                  {React.cloneElement(item.icon, {
+                    box: "p-4 mt-1 rounded-2xl",
+                  })}
                   <div>
                     {!item.available && (
                       <span className="text-xs text-secondary bg-teal-50 px-3 rounded-full">

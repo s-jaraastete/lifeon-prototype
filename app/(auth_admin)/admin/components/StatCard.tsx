@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type StatTone = "default" | "success" | "danger";
+export type StatTone = "default" | "success" | "danger";
 
 type StatCardProps = {
   label: string;
@@ -12,7 +12,7 @@ type StatCardProps = {
 const toneClasses: Record<StatTone, string> = {
   default: "text-neutral-secondary",
   success: "text-green-500",
-  danger: "text-red-500",
+  danger: "text-red-error-600",
 };
 
 export default function StatCard({ label, value, note, tone = "default" }: StatCardProps) {
@@ -22,7 +22,7 @@ export default function StatCard({ label, value, note, tone = "default" }: StatC
       <p className="mt-2 text-[32px] font-semibold tracking-tight text-neutral-primary">
         {value}
       </p>
-      <p className={`mt-2 text-xs font-medium ${toneClasses[tone]}`}>{note}</p>
+      {note ? <p className={`mt-2 text-xs font-medium ${toneClasses[tone]}`}>{note}</p> : null}
     </article>
   );
 }

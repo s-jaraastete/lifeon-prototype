@@ -8,6 +8,7 @@ const statusTabs: { label: string; value: string | null }[] = [
   { label: "Activas", value: "active" },
   { label: "Suspendidas", value: "suspended" },
   { label: "Canceladas", value: "cancelled" },
+  { label: "Vencidas", value: "past_due" },
   // { label: "Pendientes", value: "pending_payment_method" },
 ];
 
