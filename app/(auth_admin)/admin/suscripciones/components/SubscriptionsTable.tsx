@@ -34,14 +34,26 @@ const headers = [
 
 type InfoTooltipProps = {
   message: string;
+  position?: "center" | "end";
+  singleLine?: boolean;
 };
 
-const InfoTooltip = ({ message }: InfoTooltipProps) => (
+const InfoTooltip = ({
+  message,
+  position = "center",
+  singleLine = false,
+}: InfoTooltipProps) => (
   <div className="group relative inline-flex rounded-lg bg-info-subtle px-2 py-1 text-xs font-medium text-info">
     <LuInfo aria-hidden="true" />
     <span
       role="tooltip"
-      className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max max-w-50 -translate-x-1/2 whitespace-normal rounded-lg bg-gray-300 px-3 py-2 text-center text-xs leading-5 text-neutral-primary opacity-0 transition-opacity duration-150 group-hover:delay-500 group-hover:opacity-100 after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-x-[6px] after:border-x-transparent after:border-t-[6px] after:border-t-gray-300"
+      className={clsx(
+        "pointer-events-none absolute bottom-full z-20 mb-2 w-max rounded-lg bg-gray-300 px-3 py-2 text-center text-xs leading-5 text-neutral-primary opacity-0 transition-opacity duration-150 group-hover:delay-500 group-hover:opacity-100 after:absolute after:top-full after:border-x-[6px] after:border-x-transparent after:border-t-[6px] after:border-t-gray-300",
+        singleLine ? "whitespace-nowrap" : "max-w-50 whitespace-normal",
+        position === "end"
+          ? "right-0 after:right-2"
+          : "left-1/2 -translate-x-1/2 after:left-1/2 after:-translate-x-1/2",
+      )}
     >
       {message}
     </span>
@@ -56,11 +68,6 @@ const RowContent = (sub: Subscription) => (
     <td className="text-neutral-secondary">
       <div className="flex items-center gap-2">
         <span>{sub.subscription_id}</span>
-        {sub.cancel_at_period_end && (
-          <InfoTooltip
-            message={`Cancelación programada: el acceso finalizará el ${formatSubscriptionDate(sub.current_period_end)}.`}
-          />
-        )}
       </div>
     </td>
     <td className="text-neutral-secondary">
@@ -75,7 +82,8 @@ const RowContent = (sub: Subscription) => (
         {sub.pending_plan_change && (
           <div className="ml-2">
             <InfoTooltip
-              message={`Cambio programado: ${sub.pending_plan_change.target_pack_name} ${getBillingPeriodLabel(sub.pending_plan_change.target_billing_period).toLowerCase()}`}
+              message={`Cambio programado: ${sub.pending_plan_change.target_pack_name} ${getBillingPeriodLabel(sub.pending_plan_change.target_billing_period).toLowerCase()} - ${formatSubscriptionDate(sub.next_billing_at)}`}
+              singleLine
             />
           </div>
         )}
@@ -97,7 +105,15 @@ const RowContent = (sub: Subscription) => (
       {formatPaymentMethod(sub)}
     </td>
     <td>
-      <SubscriptionStatusBadge subscription={sub} />
+      <div className="flex items-start gap-2">
+        <SubscriptionStatusBadge subscription={sub} />
+        {sub.cancel_at_period_end && (
+          <InfoTooltip
+            message={`Cancelación programada: el acceso finalizará el ${formatSubscriptionDate(sub.current_period_end)}.`}
+            position="end"
+          />
+        )}
+      </div>
     </td>
     <td>
       <SubscriptionRowAction subscription={sub} />
