@@ -172,7 +172,7 @@ const FilterDropdown = ({
     if (value) params.set(key, value);
     else params.delete(key);
     params.delete("page");
-    router.replace(`?${params.toString()}`);
+    router.replace(`?${params.toString()}`, { scroll: false });
   };
 
   const setMultiParam = (param: string, values: string[]) => {
@@ -186,7 +186,7 @@ const FilterDropdown = ({
       params.set(aiKey, values.join(","));
     }
     params.delete("page");
-    router.replace(`?${params.toString()}`);
+    router.replace(`?${params.toString()}`, { scroll: false });
   };
 
   const getSingleValue = (group: SelectGroup): string => {
@@ -259,7 +259,7 @@ const FilterDropdown = ({
     const remaining = Object.fromEntries(
       [...params.entries()].filter(([k]) => !keysToRemove.includes(k))
     );
-    router.replace(`?${new URLSearchParams(remaining).toString()}`);
+    router.replace(`?${new URLSearchParams(remaining).toString()}`, { scroll: false });
   };
 
   return (
