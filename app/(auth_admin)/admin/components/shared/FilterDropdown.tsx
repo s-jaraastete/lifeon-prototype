@@ -1,11 +1,12 @@
 "use client";
 
 import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
-import { useRouter, useSearchParams, type ReadonlyURLSearchParams } from "next/navigation";
+import { type ReadonlyURLSearchParams } from "next/navigation";
 import { LuArrowDown, LuArrowUp, LuChevronDown, LuEraser, LuListFilter, LuFilter, LuX } from "react-icons/lu";
 import clsx from "clsx";
 import Select from "./Select";
 import useDebouncedUrlParam from "../hooks/useDebouncedUrlParam";
+import useUrlParams from "../hooks/useUrlParams";
 
 export type FilterOption = { value: string; label: string };
 
@@ -65,7 +66,11 @@ const NumberRangeInput = ({
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
       aria-label={ariaLabel}
-      className="input-base input-ring input-focus rounded-lg ring-stroke-primary w-full min-w-0 bg-white py-2.5 ps-7 pe-3 text-xs leading-4 text-neutral-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      className={clsx(
+        "input-base input-ring input-focus rounded-lg ring-stroke-primary w-full min-w-0 bg-white py-2.5 ps-7 pe-3",
+        "text-xs leading-4 text-neutral-primary [appearance:textfield]",
+        "[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      )}
     />
   </div>
 );
@@ -129,7 +134,11 @@ const DateRangeField = ({
           value={fromValue}
           onChange={(e) => setFromValue(e.target.value)}
           aria-label={group.ariaLabels?.[0] ?? `${group.label} desde`}
-          className="input-base input-ring input-focus rounded-lg ring-stroke-primary w-full min-w-0 bg-white px-3 py-2.5 text-xs leading-4 text-neutral-primary [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:grayscale"
+          className={clsx(
+            "input-base input-ring input-focus rounded-lg ring-stroke-primary w-full min-w-0 bg-white px-3 py-2.5",
+            "text-xs leading-4 text-neutral-primary",
+            "[&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:grayscale"
+          )}
         />
         <span className="px-0.5 text-xs text-neutral-secondary">a</span>
         <input
@@ -137,7 +146,11 @@ const DateRangeField = ({
           value={toValue}
           onChange={(e) => setToValue(e.target.value)}
           aria-label={group.ariaLabels?.[1] ?? `${group.label} hasta`}
-          className="input-base input-ring input-focus rounded-lg ring-stroke-primary w-full min-w-0 bg-white px-3 py-2.5 text-xs leading-4 text-neutral-primary [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:grayscale"
+          className={clsx(
+            "input-base input-ring input-focus rounded-lg ring-stroke-primary w-full min-w-0 bg-white px-3 py-2.5",
+            "text-xs leading-4 text-neutral-primary",
+            "[&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:grayscale"
+          )}
         />
       </div>
     </div>
@@ -164,30 +177,13 @@ const FilterDropdown = ({
   groups,
   title = "Filtros",
 }: FilterDropdownProps) => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const setParam = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set(key, value);
-    else params.delete(key);
-    params.delete("page");
-    router.replace(`?${params.toString()}`, { scroll: false });
-  };
-
-  const setMultiParam = (param: string, values: string[]) => {
-    const params = new URLSearchParams(searchParams.toString());
-    const aiKey = `ai__${param}`;
-    params.delete(aiKey);
-    params.delete(param);
-    if (values.length === 1) {
-      params.set(param, values[0]);
-    } else if (values.length > 1) {
-      params.set(aiKey, values.join(","));
-    }
-    params.delete("page");
-    router.replace(`?${params.toString()}`, { scroll: false });
-  };
+  const {
+    searchParams,
+    buildParams,
+    push,
+    setParam,
+    setMultiParam
+  } = useUrlParams();
 
   const getSingleValue = (group: SelectGroup): string => {
     return searchParams.get(group.param) ?? "";
@@ -250,7 +246,7 @@ const FilterDropdown = ({
       : [`${g.base}__gte`, `${g.base}__lte`];
 
   const clearAll = () => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = buildParams();
     const keysToRemove = [
       ...groups.flatMap(groupKeys),
       ...(orderingConfig ? [orderingParam] : []),
@@ -259,7 +255,7 @@ const FilterDropdown = ({
     const remaining = Object.fromEntries(
       [...params.entries()].filter(([k]) => !keysToRemove.includes(k))
     );
-    router.replace(`?${new URLSearchParams(remaining).toString()}`, { scroll: false });
+    push(new URLSearchParams(remaining));
   };
 
   return (
@@ -298,7 +294,10 @@ const FilterDropdown = ({
                   }
                 }}
                 aria-label="Limpiar filtros"
-                className="inline-flex items-center justify-center rounded-full p-0.5 text-gray-700 hover:bg-gray-100 hover:text-secondary cursor-pointer"
+                className={clsx(
+                  "inline-flex items-center justify-center rounded-full p-0.5 text-gray-700 cursor-pointer",
+                  "hover:bg-gray-100 hover:text-secondary"
+                )}
               >
                 <LuX className="h-4 w-4" />
               </span>
@@ -316,7 +315,8 @@ const FilterDropdown = ({
             transition
             modal
             className={clsx(
-              "z-50 flex max-h-[80vh] w-84 flex-col overflow-hidden overscroll-contain rounded-xl border border-gray-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)]",
+              "z-50 flex max-h-[80vh] w-84 flex-col overflow-hidden overscroll-contain rounded-xl",
+              "border border-gray-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)]",
               "origin-top transition duration-150 ease-out data-closed:scale-95 data-closed:opacity-0"
             )}
           >

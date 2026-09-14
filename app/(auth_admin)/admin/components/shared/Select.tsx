@@ -103,7 +103,8 @@ const Select = <T extends IDRequiredObjectInterface>(
                   <span
                     key={`multiple-item-${String(props.label ?? "id")}-${item.id}`}
                     className={clsx(
-                      "items-center gap-1 rounded-lg bg-secondary-100 px-1.5 py-0.5 text-[10px] font-medium leading-4.5 text-secondary-500",
+                      "items-center gap-1 rounded-lg bg-secondary-100 px-1.5 py-0.5",
+                      "text-[10px] font-medium leading-4.5 text-secondary-500",
                       index < 2 ? "inline-flex" : "hidden group-data-open:inline-flex"
                     )}
                     onMouseDown={(event) => event.preventDefault()}
@@ -126,7 +127,10 @@ const Select = <T extends IDRequiredObjectInterface>(
                   </span>
                 ))}
                 {props.selected.length > 2 && (
-                  <span className="inline-flex items-center rounded-lg bg-secondary-100 px-1.5 py-0.5 text-[10px] font-medium leading-[18px] text-secondary-500 group-data-open:hidden">
+                  <span className={clsx(
+                      "inline-flex items-center rounded-lg bg-secondary-100 px-1.5 py-0.5",
+                      "text-[10px] font-medium leading-4.5 text-secondary-500 group-data-open:hidden"
+                )}>
                     +{props.selected.length - 2}
                   </span>
                 )}
@@ -162,7 +166,10 @@ const Select = <T extends IDRequiredObjectInterface>(
           <span className="size-5 shrink-0" aria-hidden="true" />
         )}
         <LuChevronDown
-          className="size-4 shrink-0 text-gray-700 transition-transform group-data-open:rotate-180 group-data-disabled:text-neutral-disabled"
+          className={clsx(
+            "size-4 shrink-0 text-gray-700 transition-transform",
+            "group-data-open:rotate-180 group-data-disabled:text-neutral-disabled"
+          )}
           aria-hidden="true"
         />
       </ListboxButton>
@@ -181,13 +188,17 @@ const Select = <T extends IDRequiredObjectInterface>(
             key={`listbox-option-${item.id}`}
             value={item}
             className={clsx(
-              "group flex w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm leading-4 text-neutral-primary select-none",
+              "group flex w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5",
+              "text-sm leading-4 text-neutral-primary select-none",
               "data-focus:bg-gray-100 data-selected:bg-secondary-50 data-selected:text-secondary-600"
             )}
           >
             {props.multiple && (
               <span
-                className="flex size-4 shrink-0 items-center justify-center rounded border border-gray-400 bg-white transition-colors group-data-selected:border-secondary group-data-selected:bg-secondary"
+                className={clsx(
+                  "flex size-4 shrink-0 items-center justify-center rounded border border-gray-400 bg-white transition-colors",
+                  "group-data-selected:border-secondary group-data-selected:bg-secondary"
+                )}
                 aria-hidden="true"
               >
                 <LuCheck className="invisible size-5 text-white group-data-selected:visible" />
