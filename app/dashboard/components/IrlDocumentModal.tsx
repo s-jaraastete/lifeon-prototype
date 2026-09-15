@@ -335,8 +335,8 @@ export default function IrlDocumentModal({
                               {ev.initialLevel === "Crítico"
                                 ? "Muerte, invalidez total, traumatismo severo, atrapamiento."
                                 : ev.initialLevel === "Alto"
-                                ? "Fracturas, quemaduras graves, daño musculoesquelético o auditivo."
-                                : "Contusiones, cortes menores, fatiga o irritación temporal."}
+                                  ? "Fracturas, quemaduras graves, daño musculoesquelético o auditivo."
+                                  : "Contusiones, cortes menores, fatiga o irritación temporal."}
                             </td>
                             <td className="p-2.5 align-top text-gray-800">
                               <p className="leading-snug">{ev.controls}</p>

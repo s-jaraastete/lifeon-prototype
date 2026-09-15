@@ -139,6 +139,44 @@ export default function LifeOnPreferencesProvider({
             window.localStorage.setItem(orgStorageKey, JSON.stringify(merged));
           } catch (_) {}
         }
+      } else if (user.orgId === "org_sergio") {
+        // Auto-seed: si Sergio no tiene datos en Supabase, sembrar el dataset completo
+        try {
+          const { seedSergioConstructionDemo } = await import("@/lib/seeds/sergioConstructionDataset");
+          await seedSergioConstructionDemo();
+          // Reintentar la carga de preferencias recién sembradas
+          const seededPrefs = await fetchPreferencesFromSupabase(user.orgId);
+          if (seededPrefs) {
+            setPreferences({
+              ...defaultPrefs,
+              ...seededPrefs,
+              modules: { ...defaultPrefs.modules, ...(seededPrefs.modules || {}) },
+              moduleConfigurations: {
+                miper: {
+                  ...DEFAULT_MODULE_CONFIGURATIONS.miper,
+                  ...(seededPrefs.moduleConfigurations?.miper || {}),
+                },
+                preventivePlanning: {
+                  ...DEFAULT_MODULE_CONFIGURATIONS.preventivePlanning,
+                  ...(seededPrefs.moduleConfigurations?.preventivePlanning || {}),
+                },
+              },
+            });
+            if (typeof window !== "undefined") {
+              try {
+                window.localStorage.setItem(orgStorageKey, JSON.stringify(seededPrefs));
+              } catch (_) {}
+            }
+            // Notificar a otros módulos del cambio de datos
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("lifeon-org-structure-change", { detail: { orgId: user.orgId } }));
+              window.dispatchEvent(new CustomEvent("lifeon-iper-matrices-change", { detail: { orgId: user.orgId } }));
+              window.dispatchEvent(new CustomEvent("lifeon-preventive-program-change", { detail: { orgId: user.orgId } }));
+            }
+          }
+        } catch (seedErr) {
+          console.warn("Error auto-seeding Sergio dataset:", seedErr);
+        }
       }
     } catch (err) {
       console.warn("Error hidratando preferencias desde Supabase:", err);
@@ -268,7 +306,7 @@ export default function LifeOnPreferencesProvider({
   );
 
   const resetOnboarding = useCallback(() => {
-    const basePrefs = currentUser.orgId === "org_luis" ? EMPTY_ORGANIZATION_PREFERENCES : DEFAULT_ORGANIZATION_PREFERENCES;
+    const basePrefs = currentUser.orgId !== "org_demo" ? EMPTY_ORGANIZATION_PREFERENCES : DEFAULT_ORGANIZATION_PREFERENCES;
     const next: OrganizationPreferences = {
       ...basePrefs,
       onboardingCompleted: false,
