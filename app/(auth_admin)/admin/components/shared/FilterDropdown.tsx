@@ -314,8 +314,9 @@ const FilterDropdown = ({
           <PopoverPanel
             anchor="bottom end"
             transition
+            modal
             className={clsx(
-              "z-50 flex max-h-[80vh] w-84 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)]",
+              "z-50 flex max-h-[80vh] w-84 flex-col overflow-hidden overscroll-contain rounded-xl border border-gray-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)]",
               "origin-top transition duration-150 ease-out data-closed:scale-95 data-closed:opacity-0"
             )}
           >
