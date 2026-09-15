@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LuSearch, LuX } from "react-icons/lu";
+import clsx from "clsx";
 import TextInput from "@/app/components/ui/TextInput";
 import useDebounce from "@/hooks/useDebounce";
 import useUrlParams from "../hooks/useUrlParams";
@@ -9,9 +10,10 @@ import useUrlParams from "../hooks/useUrlParams";
 type SearchInputProps = {
   paramName?: string;
   placeholder?: string;
+  size?: "sm" | "md" | "lg" | "xl";
 };
 
-const SearchInput = ({ paramName = "search", placeholder }: SearchInputProps) => {
+const SearchInput = ({ paramName = "search", placeholder, size = "sm" }: SearchInputProps) => {
   const { searchParams, buildParams, push } = useUrlParams();
 
   const currentSearch = searchParams.get(paramName) ?? "";
@@ -38,7 +40,13 @@ const SearchInput = ({ paramName = "search", placeholder }: SearchInputProps) =>
   );
 
   return (
-    <div className="relative max-w-sm w-full">
+    <div className={clsx(
+      "relative w-full",
+      size === "sm" && "max-w-sm",
+      size === "md" && "max-w-md",
+      size === "lg" && "max-w-lg",
+      size === "xl" && "max-w-xl",
+    )}>
       <LuSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-tertiary" />
       <TextInput
         type="search"
