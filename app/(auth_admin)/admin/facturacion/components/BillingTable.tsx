@@ -1,7 +1,7 @@
-import { LuEllipsis } from "react-icons/lu";
 import ServerTableWrapper from "../../components/shared/table/ServerTableWrapper";
 import { Subscription } from "@/types/admin";
 import BillingStatusBadge from "./BillingStatusBadge";
+import BillingRowAction from "./detail/BillingRowAction";
 import {
   DISPLAY_FALLBACK,
   formatBillingAmount,
@@ -29,17 +29,6 @@ const headers = [
   "Acciones",
 ];
 
-// TODO: Reemplazar botón por menú de acciones
-const RowActionsButton = () => (
-  <button
-    type="button"
-    aria-label="Acciones"
-    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition-colors hover:bg-gray-100"
-  >
-    <LuEllipsis className="size-4" />
-  </button>
-);
-
 const RowContent = (sub: Subscription) => (
   <>
     <td className="text-neutral-secondary">{getBillingId(sub)}</td>
@@ -60,7 +49,7 @@ const RowContent = (sub: Subscription) => (
       <BillingStatusBadge subscription={sub} />
     </td>
     <td>
-      <RowActionsButton />
+      <BillingRowAction subscription={sub} />
     </td>
   </>
 );

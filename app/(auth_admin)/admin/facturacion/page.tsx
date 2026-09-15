@@ -1,5 +1,6 @@
 import BillingDashboard from "./components/BillingDashboard";
 import BillingTable from "./components/BillingTable";
+import BillingDetailProvider from "./components/detail/BillingDetailProvider";
 import TableFilters from "./components/TableFilters";
 
 type PageProps = {
@@ -21,20 +22,22 @@ const BillingPage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
 
   return (
-    <div className="w-full mx-auto flex flex-col gap-4">
-      <BillingDashboard />
-      <div className="rounded-2xl bg-surface-primary p-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-semibold text-neutral-primary">
-              Todas las facturas
-            </h2>
+    <BillingDetailProvider>
+      <div className="w-full mx-auto flex flex-col gap-4">
+        <BillingDashboard />
+        <div className="rounded-2xl bg-surface-primary p-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-semibold text-neutral-primary">
+                Todas las facturas
+              </h2>
+            </div>
+            <TableFilters />
+            <BillingTable params={params} />
           </div>
-          <TableFilters />
-          <BillingTable params={params} />
         </div>
       </div>
-    </div>
+    </BillingDetailProvider>
   );
 };
 

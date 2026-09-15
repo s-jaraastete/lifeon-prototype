@@ -69,3 +69,20 @@ export const formatBillingPaymentMethod = (subscription: Subscription): string =
   if (method && card) return `${method} - ${card}`;
   return method || card || "Sin cobro";
 };
+
+export const formatBillingPaymentDetail = (
+  cardType: string | null,
+  cardLastFour: string | null
+): string => {
+  if (!cardType || !cardLastFour) return DISPLAY_FALLBACK;
+  return `Tarjeta ${cardType} •••• ${cardLastFour}`;
+};
+
+// TODO: Desglose derivado matemáticamente del total (IVA 19%) mientras la API
+// de facturación no entregue el desglose real.
+export const getChargeBreakdown = (total: number | null | undefined) => {
+  if (!total) return null;
+  const subtotal = Math.round(total / 1.19);
+  const iva = total - subtotal;
+  return { subtotal, iva, total };
+};
