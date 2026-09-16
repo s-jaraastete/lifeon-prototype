@@ -437,6 +437,7 @@ export async function saveIperMatricesToSupabase(matrices: any[], orgId?: string
         last_review: m.lastReview || m.lastReviewDate || null,
         next_review: m.nextReview || m.expiryText || null,
         hazards: m.evaluations || m.hazards || [],
+        acknowledgements: m.acknowledgements || [],
       };
     });
 
@@ -481,6 +482,7 @@ export async function saveIperMatrixToSupabase(matrix: any, orgId?: string): Pro
     last_review: matrix.lastReview || matrix.lastReviewDate || null,
     next_review: matrix.nextReview || matrix.expiryText || null,
     hazards: matrix.evaluations || matrix.hazards || [],
+    acknowledgements: matrix.acknowledgements || [],
   };
 
   try {
@@ -540,6 +542,7 @@ export async function fetchIperMatricesFromSupabase(orgId?: string): Promise<any
       expiryText: row.next_review || "Vencimiento: 1 año",
       hazards: row.hazards,
       evaluations: row.hazards,
+      acknowledgements: row.acknowledgements || [],
     }));
   } catch (e) {
     console.warn("Error al recuperar matrices IPER de Supabase:", e);

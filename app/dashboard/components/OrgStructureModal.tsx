@@ -22,7 +22,7 @@ import {
 } from "react-icons/lu";
 import { useOrgStructure } from "@/hooks/useOrgStructure";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
-import { SECTOR_RISK_PROFILES } from "@/data/sectorRiskTemplates";
+import { SECTOR_RISK_PROFILES, SECTOR_TEMPLATE_KEYS } from "@/data/sectorRiskTemplates";
 import { OrgArea, OrgProcess } from "@/types/orgStructure";
 
 interface OrgStructureModalProps {
@@ -505,7 +505,7 @@ export default function OrgStructureModal({ isOpen, onClose }: OrgStructureModal
                     onChange={(e) => setSelectedSectorToLoad(e.target.value)}
                     className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   >
-                    {Object.keys(SECTOR_RISK_PROFILES).map((sectorKey) => (
+                    {SECTOR_TEMPLATE_KEYS.map((sectorKey) => (
                       <option key={sectorKey} value={sectorKey}>
                         {SECTOR_RISK_PROFILES[sectorKey].sectorDisplayName || sectorKey}
                       </option>

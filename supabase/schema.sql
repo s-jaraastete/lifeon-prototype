@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS iper_matrices (
     last_review TEXT,
     next_review TEXT,
     hazards JSONB DEFAULT '[]'::jsonb,
+    acknowledgements JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

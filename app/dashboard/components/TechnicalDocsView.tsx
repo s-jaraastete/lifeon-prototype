@@ -15,8 +15,11 @@ import {
   LuShieldCheck,
   LuOctagonAlert,
   LuScrollText,
+  LuSparkles,
+  LuAtom,
 } from "react-icons/lu";
 import { useTechnicalDocs, DOCUMENT_TYPE_DEFINITIONS } from "@/hooks/useTechnicalDocs";
+import { postGenerateTechnicalDocument } from "@/lib/ai/aprVirtualClient";
 import {
   DocumentType,
   DocumentStatus,
@@ -85,6 +88,12 @@ export default function TechnicalDocsView() {
   const [editorStatus, setEditorStatus] = useState<DocumentStatus>("Borrador");
   const [isDeleteConfirmId, setIsDeleteConfirmId] = useState<string | null>(null);
   const [openSectionKey, setOpenSectionKey] = useState<string | null>(null);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiPreviewOpen, setAiPreviewOpen] = useState(false);
+  const [aiPreviewContent, setAiPreviewContent] = useState<Record<string, string>>({});
+  const [aiPreviewDisclaimer, setAiPreviewDisclaimer] = useState("");
+  const [aiMergeOnlyEmpty, setAiMergeOnlyEmpty] = useState(true);
 
   const filteredDocs = useMemo(() => {
     if (activeType === "all") return documents;
@@ -129,6 +138,50 @@ export default function TechnicalDocsView() {
     }
     setIsEditorOpen(false);
     setEditingDoc(null);
+    setAiPreviewOpen(false);
+    setAiPreviewContent({});
+    setAiError(null);
+  };
+
+  const handleGenerateWithAi = async () => {
+    if (!editingDoc || !typeDef) return;
+    setIsGeneratingAi(true);
+    setAiError(null);
+    try {
+      const result = await postGenerateTechnicalDocument({
+        documentType: editingDoc.documentType,
+        documentName: editingDoc.name,
+        sections: typeDef.sections.map((s) => ({
+          key: s.key,
+          label: s.label,
+          required: s.required,
+          placeholder: s.placeholder,
+        })),
+      });
+      setAiPreviewContent(result.sections);
+      setAiPreviewDisclaimer(result.disclaimer);
+      setAiPreviewOpen(true);
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "No se pudo generar el borrador.");
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
+  const handleApplyAiPreview = () => {
+    setEditorContent((prev) => {
+      const next = { ...prev };
+      for (const [key, value] of Object.entries(aiPreviewContent)) {
+        if (aiMergeOnlyEmpty && prev[key]?.trim()) continue;
+        next[key] = value;
+      }
+      return next;
+    });
+    if (editorStatus === "Borrador") {
+      setEditorStatus("En Revisión");
+    }
+    setAiPreviewOpen(false);
+    setAiPreviewContent({});
   };
 
   const typeDef = editingDoc ? getTypeDefinition(editingDoc.documentType) : null;
@@ -506,7 +559,40 @@ export default function TechnicalDocsView() {
             </div>
 
             {/* Sections */}
-            <div className="p-6 flex flex-col gap-3">
+            <div className="px-6 pt-4 flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-2xl border border-violet-200 bg-violet-50/60">
+                <div className="flex items-start gap-2">
+                  <LuAtom className="w-4 h-4 text-violet-700 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-violet-950">APR Virtual IA</p>
+                    <p className="text-[11px] text-violet-900/80">
+                      Genera un borrador por secciones. Tú revisas, editas y guardas cuando esté listo.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={isGeneratingAi}
+                  onClick={() => void handleGenerateWithAi()}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                >
+                  <LuSparkles className="w-3.5 h-3.5" />
+                  {isGeneratingAi ? "Generando borrador…" : "Generar contenido con IA"}
+                </button>
+              </div>
+              {aiError && (
+                <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                  {aiError}
+                </p>
+              )}
+              {isGeneratingAi && (
+                <p className="text-[11px] text-violet-700 animate-pulse">
+                  APR Virtual está preparando el borrador del documento…
+                </p>
+              )}
+            </div>
+
+            <div className="p-6 pt-2 flex flex-col gap-3">
               {typeDef.sections.map((section) => {
                 const isOpen = openSectionKey === section.key;
                 const hasContent = !!editorContent[section.key]?.trim();
@@ -590,6 +676,75 @@ export default function TechnicalDocsView() {
                   className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs"
                 >
                   Guardar Documento
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI PREVIEW MODAL */}
+      {aiPreviewOpen && editingDoc && typeDef && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-violet-200">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <LuSparkles className="w-4 h-4 text-violet-600" />
+                  Revisar borrador — APR Virtual IA
+                </h3>
+                <p className="text-[11px] text-gray-500 mt-0.5">{editingDoc.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiPreviewOpen(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg cursor-pointer"
+              >
+                <LuX className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="px-6 py-2 text-[11px] text-amber-900 bg-amber-50 border-b border-amber-100">
+              {aiPreviewDisclaimer ||
+                "Borrador sugerido para revisión profesional. No constituye aprobación legal."}
+            </p>
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-3">
+              {typeDef.sections.map((section) => {
+                const text = aiPreviewContent[section.key];
+                if (!text?.trim()) return null;
+                return (
+                  <div key={section.key} className="border border-gray-200 rounded-xl p-3">
+                    <p className="text-xs font-bold text-gray-800 mb-2">{section.label}</p>
+                    <p className="text-[11px] text-gray-700 whitespace-pre-line leading-relaxed">
+                      {text}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <label className="flex items-center gap-2 text-[11px] text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={aiMergeOnlyEmpty}
+                  onChange={(e) => setAiMergeOnlyEmpty(e.target.checked)}
+                  className="accent-violet-600"
+                />
+                Aplicar solo en secciones vacías
+              </label>
+              <div className="flex items-center gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setAiPreviewOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-100 rounded-xl cursor-pointer"
+                >
+                  Descartar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyAiPreview}
+                  className="px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Aplicar al editor
                 </button>
               </div>
             </div>

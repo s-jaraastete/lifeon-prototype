@@ -48,6 +48,7 @@ import {
   ActivityStatus,
 } from "@/types/preventiveProgram";
 import PreventivePlanningOnboardingModal from "./PreventivePlanningOnboardingModal";
+import SCurveChart from "./SCurveChart";
 
 const CATEGORIES: ActivityCategory[] = [
   "Planificación y Gestión",
@@ -117,6 +118,7 @@ export default function PreventiveDocsView() {
   const [selectedResponsibleFilter, setSelectedResponsibleFilter] = useState("Todos");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("Todos");
   const [activeTab, setActiveTab] = useState<"dashboard" | "tabla">("dashboard");
+  const [sCurveCategory, setSCurveCategory] = useState<ActivityCategory | "Todas">("Todas");
 
   // Modales operativos
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
@@ -642,6 +644,33 @@ export default function PreventiveDocsView() {
 
           {/* VISTA 1: DASHBOARD DE SEGUIMIENTO (GRÁFICOS Y DISTRIBUCIONES REALES) */}
           {activeTab === "dashboard" && (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <p className="text-xs text-gray-500">
+                  Avance planificado vs. real acumulado del programa
+                </p>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-semibold text-gray-700 whitespace-nowrap">
+                    Categoría:
+                  </label>
+                  <select
+                    value={sCurveCategory}
+                    onChange={(e) =>
+                      setSCurveCategory(e.target.value as ActivityCategory | "Todas")
+                    }
+                    className="text-xs border border-gray-200 rounded-xl px-3 py-1.5 bg-white focus:outline-none cursor-pointer"
+                  >
+                    <option value="Todas">Todas</option>
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <SCurveChart activities={activities} categoryFilter={sCurveCategory} />
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Panel Izquierdo: Cumplimiento General y Distribución de Estados */}
               <div className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between">
@@ -886,6 +915,7 @@ export default function PreventiveDocsView() {
                   </button>
                 </div>
               </div>
+            </div>
             </div>
           )}
 

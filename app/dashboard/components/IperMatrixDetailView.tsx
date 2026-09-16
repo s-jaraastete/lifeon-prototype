@@ -1195,6 +1195,10 @@ export default function IperMatrixDetailView({
         <IrlDocumentModal
           matrix={matrix}
           evaluations={evaluations}
+          acknowledgements={matrix.acknowledgements || []}
+          onAcknowledgementsChange={(acks) =>
+            onUpdateMatrix({ ...matrix, acknowledgements: acks })
+          }
           onClose={() => setIsIrlModalOpen(false)}
         />
       )}

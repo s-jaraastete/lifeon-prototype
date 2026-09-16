@@ -15,27 +15,30 @@ import {
 } from "react-icons/lu";
 import { IperMatrixItem } from "./IperMatrixView";
 import { IperEvaluationRow } from "./IperMatrixDetailView";
+import { useUsers } from "@/hooks/useUsers";
+import {
+  IrlAcknowledgement,
+  IrlAcknowledgementStatus,
+} from "@/types/irlAcknowledgements";
 
 interface IrlDocumentModalProps {
   matrix: IperMatrixItem;
   evaluations: IperEvaluationRow[];
   onClose: () => void;
-}
-
-interface WorkerSignatureRecord {
-  id: string;
-  name: string;
-  rut: string;
-  position: string;
-  deliveryDate: string;
-  status: "Firmado" | "Pendiente";
+  initialPosition?: string;
+  acknowledgements?: IrlAcknowledgement[];
+  onAcknowledgementsChange?: (acks: IrlAcknowledgement[]) => void;
 }
 
 export default function IrlDocumentModal({
   matrix,
   evaluations,
   onClose,
+  initialPosition,
+  acknowledgements = [],
+  onAcknowledgementsChange,
 }: IrlDocumentModalProps) {
+  const { users } = useUsers();
   // Extraer cargos disponibles EXCLUSIVAMENTE de las evaluaciones reales de la matriz (Reqs 3, 4, 7)
   const availablePositions = useMemo(() => {
     const uniquePositions = new Set<string>();
@@ -52,7 +55,7 @@ export default function IrlDocumentModal({
   }, [evaluations]);
 
   const [selectedPosition, setSelectedPosition] = useState<string>(
-    () => availablePositions[0] || ""
+    () => initialPosition || availablePositions[0] || ""
   );
 
   // Sincronizar posición seleccionada si cambian las evaluaciones
@@ -65,48 +68,78 @@ export default function IrlDocumentModal({
   const [activeTab, setActiveTab] = useState<"document" | "signatures">("document");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Lista de trabajadores del cargo para control de firmas
-  const [workerSignatures, setWorkerSignatures] = useState<WorkerSignatureRecord[]>([
-    {
-      id: "w-1",
-      name: "Juan Ignacio Morales Castro",
-      rut: "15.423.891-K",
-      position: availablePositions[0] || "Trabajador",
-      deliveryDate: "2026-08-15",
-      status: "Firmado",
-    },
-    {
-      id: "w-2",
-      name: "Rodrigo Esteban Tapia Silva",
-      rut: "16.890.342-3",
-      position: availablePositions[0] || "Trabajador",
-      deliveryDate: "2026-08-18",
-      status: "Pendiente",
-    },
-    {
-      id: "w-3",
-      name: "Valentina Andrea Muñoz Lagos",
-      rut: "18.234.567-8",
-      position: availablePositions[1] || availablePositions[0] || "Trabajador",
-      deliveryDate: "2026-08-10",
-      status: "Firmado",
-    },
-    {
-      id: "w-4",
-      name: "Cristóbal Andrés Vergara Soto",
-      rut: "14.789.012-4",
-      position: availablePositions[0] || "Trabajador",
-      deliveryDate: "2026-08-20",
-      status: "Firmado",
-    },
-  ]);
-
-  const handleToggleWorkerStatus = (id: string) => {
-    setWorkerSignatures((prev) =>
-      prev.map((w) =>
-        w.id === id ? { ...w, status: w.status === "Firmado" ? "Pendiente" : "Firmado" } : w
-      )
+  const workersForCargo = useMemo(() => {
+    if (!selectedPosition) return [];
+    const target = selectedPosition.trim().toLowerCase();
+    return users.filter(
+      (u) =>
+        u.status === "Activo" &&
+        (u.cargoName?.trim().toLowerCase() === target ||
+          u.cargoName?.toLowerCase().includes(target))
     );
+  }, [users, selectedPosition]);
+
+  const getAckForUser = (userId: string): IrlAcknowledgement | undefined =>
+    acknowledgements.find(
+      (a) => a.userId === userId && a.cargoName === selectedPosition && a.matrixId === matrix.id
+    );
+
+  const upsertAck = (partial: Omit<IrlAcknowledgement, "updatedAt">) => {
+    const now = new Date().toISOString();
+    const existing = acknowledgements.find((a) => a.id === partial.id);
+    const next: IrlAcknowledgement = {
+      ...(existing || partial),
+      ...partial,
+      updatedAt: now,
+    };
+    const list = existing
+      ? acknowledgements.map((a) => (a.id === partial.id ? next : a))
+      : [...acknowledgements, next];
+    onAcknowledgementsChange?.(list);
+  };
+
+  const handleSendIrlForUser = (userId: string, userName: string, rut?: string) => {
+    const id = getAckForUser(userId)?.id || `ack-${matrix.id}-${userId}-${Date.now()}`;
+    upsertAck({
+      id,
+      matrixId: matrix.id,
+      cargoName: selectedPosition,
+      userId,
+      userName,
+      identificationNumber: rut,
+      status: "Enviado",
+      sentAt: new Date().toISOString(),
+      acknowledgedAt: null,
+    });
+  };
+
+  const handleRegisterKnowledge = (userId: string, userName: string, rut?: string) => {
+    const existing = getAckForUser(userId);
+    const id = existing?.id || `ack-${matrix.id}-${userId}-${Date.now()}`;
+    upsertAck({
+      id,
+      matrixId: matrix.id,
+      cargoName: selectedPosition,
+      userId,
+      userName,
+      identificationNumber: rut,
+      status: "Firmado",
+      sentAt: existing?.sentAt || new Date().toISOString(),
+      acknowledgedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleSendAllPending = () => {
+    workersForCargo.forEach((u) => {
+      const ack = getAckForUser(u.id);
+      if (!ack || ack.status === "Pendiente") {
+        handleSendIrlForUser(
+          u.id,
+          `${u.firstName} ${u.lastName}`.trim(),
+          u.identificationNumber
+        );
+      }
+    });
   };
 
   const handlePrint = () => {
@@ -124,15 +157,31 @@ export default function IrlDocumentModal({
     });
   }, [evaluations, selectedPosition]);
 
-  const filteredSignatures = workerSignatures.filter(
+  const workerRows = useMemo(() => {
+    return workersForCargo.map((u) => {
+      const ack = getAckForUser(u.id);
+      const status: IrlAcknowledgementStatus = ack?.status ?? "Pendiente";
+      return {
+        id: u.id,
+        name: `${u.firstName} ${u.lastName}`.trim(),
+        rut: u.identificationNumber || "—",
+        position: u.cargoName || selectedPosition,
+        sentAt: ack?.sentAt,
+        acknowledgedAt: ack?.acknowledgedAt,
+        status,
+      };
+    });
+  }, [workersForCargo, acknowledgements, selectedPosition, matrix.id]);
+
+  const filteredSignatures = workerRows.filter(
     (w) =>
       w.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       w.rut.toLowerCase().includes(searchTerm.toLowerCase()) ||
       w.position.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const signedCount = workerSignatures.filter((w) => w.status === "Firmado").length;
-  const signatureProgress = Math.round((signedCount / (workerSignatures.length || 1)) * 100);
+  const signedCount = workerRows.filter((w) => w.status === "Firmado").length;
+  const signatureProgress = Math.round((signedCount / (workerRows.length || 1)) * 100);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-hidden font-[family-name:var(--font-poppins)] animate-in fade-in duration-200">
@@ -225,7 +274,7 @@ export default function IrlDocumentModal({
                 )}
               >
                 <LuUserCheck className="w-3.5 h-3.5 text-teal-600" />
-                Control de Entrega y Firmas ({signedCount}/{workerSignatures.length})
+                Toma de Conocimiento ({signedCount}/{workerRows.length})
               </button>
             </div>
           </div>
@@ -409,19 +458,27 @@ export default function IrlDocumentModal({
                     {signatureProgress}%
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-gray-900">Cumplimiento Legal de Entrega IRL</h4>
+                    <h4 className="text-sm font-bold text-gray-900">Toma de Conocimiento del IRL</h4>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {signedCount} de {workerSignatures.length} trabajadores de la dotación con documento IRL firmado.
+                      Trabajadores del cargo <strong>{selectedPosition}</strong> según módulo Usuarios.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleSendAllPending}
+                    disabled={workersForCargo.length === 0}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-40 cursor-pointer"
+                  >
+                    Enviar IRL para firma
+                  </button>
                   <span className="px-3 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                     {signedCount} Firmados
                   </span>
                   <span className="px-3 py-1 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                    {workerSignatures.length - signedCount} Pendientes
+                    {workerRows.length - signedCount} Pendientes
                   </span>
                 </div>
               </div>
@@ -451,12 +508,19 @@ export default function IrlDocumentModal({
                       <tr className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200 text-[11px]">
                         <th className="p-3">Trabajador / RUT</th>
                         <th className="p-3">Cargo Asignado</th>
-                        <th className="p-3">Fecha Entrega</th>
-                        <th className="p-3">Estado de Firma</th>
+                        <th className="p-3">Envío / Toma</th>
+                        <th className="p-3">Estado</th>
                         <th className="p-3 text-right">Acción</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
+                      {filteredSignatures.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="p-6 text-center text-xs text-gray-500">
+                            No hay usuarios activos con el cargo &quot;{selectedPosition}&quot; en el módulo Usuarios.
+                          </td>
+                        </tr>
+                      )}
                       {filteredSignatures.map((w) => (
                         <tr key={w.id} className="hover:bg-gray-50/60">
                           <td className="p-3">
@@ -467,7 +531,11 @@ export default function IrlDocumentModal({
                             <span className="font-medium text-gray-800">{w.position}</span>
                           </td>
                           <td className="p-3 text-gray-600 font-mono text-[11px]">
-                            {w.deliveryDate}
+                            {w.acknowledgedAt
+                              ? new Date(w.acknowledgedAt).toLocaleDateString("es-CL")
+                              : w.sentAt
+                              ? new Date(w.sentAt).toLocaleDateString("es-CL")
+                              : "—"}
                           </td>
                           <td className="p-3">
                             <span
@@ -475,12 +543,18 @@ export default function IrlDocumentModal({
                                 "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border",
                                 w.status === "Firmado"
                                   ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                  : w.status === "Enviado"
+                                  ? "bg-blue-50 text-blue-800 border-blue-200"
                                   : "bg-amber-50 text-amber-800 border-amber-200"
                               )}
                             >
                               {w.status === "Firmado" ? (
                                 <>
                                   <LuCircleCheck className="w-3 h-3" /> Firmado
+                                </>
+                              ) : w.status === "Enviado" ? (
+                                <>
+                                  <LuClock className="w-3 h-3" /> Enviado
                                 </>
                               ) : (
                                 <>
@@ -489,14 +563,25 @@ export default function IrlDocumentModal({
                               )}
                             </span>
                           </td>
-                          <td className="p-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleWorkerStatus(w.id)}
-                              className="px-3 py-1 text-[11px] font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition cursor-pointer"
-                            >
-                              {w.status === "Firmado" ? "Marcar Pendiente" : "Registrar Firma"}
-                            </button>
+                          <td className="p-3 text-right flex flex-col gap-1 items-end">
+                            {w.status !== "Firmado" && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendIrlForUser(w.id, w.name, w.rut)}
+                                  className="px-3 py-1 text-[11px] font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition cursor-pointer"
+                                >
+                                  Enviar IRL
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRegisterKnowledge(w.id, w.name, w.rut)}
+                                  className="px-3 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition cursor-pointer"
+                                >
+                                  Registrar toma
+                                </button>
+                              </>
+                            )}
                           </td>
                         </tr>
                       ))}

@@ -31,200 +31,28 @@ import {
 const ROLES: UserRole[] = ["Lector", "Editor", "Administrador"];
 const ID_TYPES: UserIdentificationType[] = ["RUT", "Pasaporte", "DNI"];
 
-function RoleBadge({ role }: { role: UserRole }) {
+type UserFormState = {
+  firstName: string;
+  lastName: string;
+  identificationType: UserIdentificationType;
+  identificationNumber: string;
+  email: string;
+  phone: string;
+  role: UserRole;
+  status: UserStatus;
+  cargoId: string;
+  areaId: string;
+};
+
+type UserFormFieldsProps = {
+  form: UserFormState;
+  setForm: React.Dispatch<React.SetStateAction<UserFormState>>;
+  positions: { id: string; name: string }[];
+  areas: { id: string; name: string }[];
+};
+
+function UserFormFields({ form, setForm, positions, areas }: UserFormFieldsProps) {
   return (
-    <span
-      className={clsx(
-        "px-2 py-0.5 rounded-full text-[10px] font-bold border",
-        role === "Administrador"
-          ? "bg-purple-50 text-purple-700 border-purple-200"
-          : role === "Lector"
-          ? "bg-slate-100 text-slate-700 border-slate-200"
-          : "bg-teal-50 text-teal-700 border-teal-200"
-      )}
-    >
-      {role}
-    </span>
-  );
-}
-
-export default function UsersView() {
-  const {
-    users,
-    addUser,
-    updateUser,
-    toggleUserStatus,
-    deleteUser,
-    downloadTemplateXlsx,
-    validateImportFile,
-    applyImport,
-    totalUsersCount,
-    totalActiveUsersCount,
-    totalInactiveUsersCount,
-  } = useUsers();
-
-  const { positions, areas } = useOrgStructure();
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterRole, setFilterRole] = useState<UserRole | "all">("all");
-
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<PlatformUser | null>(null);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isDeleteConfirmId, setIsDeleteConfirmId] = useState<string | null>(null);
-
-  const [importReport, setImportReport] = useState<UserImportReport | null>(null);
-  const [importFeedback, setImportFeedback] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    identificationType: "RUT" as UserIdentificationType,
-    identificationNumber: "",
-    email: "",
-    phone: "",
-    role: "Editor" as UserRole,
-    status: "Activo" as UserStatus,
-    cargoId: "",
-    areaId: "",
-  });
-
-  const resetForm = () => {
-    setForm({
-      firstName: "",
-      lastName: "",
-      identificationType: "RUT",
-      identificationNumber: "",
-      email: "",
-      phone: "",
-      role: "Editor",
-      status: "Activo",
-      cargoId: "",
-      areaId: "",
-    });
-  };
-
-  const handleOpenAdd = () => {
-    resetForm();
-    setIsAddModalOpen(true);
-  };
-
-  const handleOpenEdit = (user: PlatformUser) => {
-    setEditingUser(user);
-    setForm({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      identificationType: user.identificationType,
-      identificationNumber: user.identificationNumber,
-      email: user.email,
-      phone: user.phone || "",
-      role: user.role,
-      status: user.status,
-      cargoId: user.cargoId || "",
-      areaId: user.areaId || "",
-    });
-    setIsEditModalOpen(true);
-  };
-
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    const emailExists = users.some((u) => u.email.toLowerCase() === form.email.toLowerCase());
-    if (emailExists) {
-      alert("Ya existe un usuario con ese email.");
-      return;
-    }
-    const cargo = positions.find((p) => p.id === form.cargoId);
-    const area = areas.find((a) => a.id === form.areaId);
-    addUser({
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      identificationType: form.identificationType,
-      identificationNumber: form.identificationNumber.trim(),
-      email: form.email.trim().toLowerCase(),
-      phone: form.phone.trim() || undefined,
-      role: form.role,
-      status: form.status,
-      cargoId: form.cargoId || undefined,
-      cargoName: cargo?.name || undefined,
-      areaId: form.areaId || undefined,
-      areaName: area?.name || undefined,
-    });
-    setIsAddModalOpen(false);
-    resetForm();
-  };
-
-  const handleUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingUser) return;
-    const emailExists = users.some(
-      (u) => u.email.toLowerCase() === form.email.toLowerCase() && u.id !== editingUser.id
-    );
-    if (emailExists) {
-      alert("Ya existe otro usuario con ese email.");
-      return;
-    }
-    const cargo = positions.find((p) => p.id === form.cargoId);
-    const area = areas.find((a) => a.id === form.areaId);
-    updateUser(editingUser.id, {
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      identificationType: form.identificationType,
-      identificationNumber: form.identificationNumber.trim(),
-      email: form.email.trim().toLowerCase(),
-      phone: form.phone.trim() || undefined,
-      role: form.role,
-      status: form.status,
-      cargoId: form.cargoId || undefined,
-      cargoName: cargo?.name || undefined,
-      areaId: form.areaId || undefined,
-      areaName: area?.name || undefined,
-    });
-    setIsEditModalOpen(false);
-    setEditingUser(null);
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const report = await validateImportFile(file);
-      setImportReport(report);
-    } catch {
-      setImportFeedback("Error al leer el archivo. Verifica que sea un XLSX válido.");
-    }
-  };
-
-  const handleConfirmImport = () => {
-    if (!importReport || importReport.validRecords === 0) return;
-    applyImport(importReport.parsedData);
-    setImportFeedback(`¡Se importaron ${importReport.validRecords} usuarios correctamente!`);
-    setTimeout(() => {
-      setImportFeedback(null);
-      setIsImportModalOpen(false);
-      setImportReport(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }, 2200);
-  };
-
-  const filteredUsers = useMemo(() => {
-    let list = users;
-    if (filterRole !== "all") list = list.filter((u) => u.role === filterRole);
-    if (!searchQuery.trim()) return list;
-    const q = searchQuery.toLowerCase();
-    return list.filter(
-      (u) =>
-        u.firstName.toLowerCase().includes(q) ||
-        u.lastName.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        (u.cargoName && u.cargoName.toLowerCase().includes(q)) ||
-        (u.areaName && u.areaName.toLowerCase().includes(q)) ||
-        u.identificationNumber.toLowerCase().includes(q)
-    );
-  }, [users, searchQuery, filterRole]);
-
-  const UserFormFields = () => (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -388,6 +216,200 @@ export default function UsersView() {
       )}
     </div>
   );
+}
+
+function RoleBadge({ role }: { role: UserRole }) {
+  return (
+    <span
+      className={clsx(
+        "px-2 py-0.5 rounded-full text-[10px] font-bold border",
+        role === "Administrador"
+          ? "bg-purple-50 text-purple-700 border-purple-200"
+          : role === "Lector"
+          ? "bg-slate-100 text-slate-700 border-slate-200"
+          : "bg-teal-50 text-teal-700 border-teal-200"
+      )}
+    >
+      {role}
+    </span>
+  );
+}
+
+export default function UsersView() {
+  const {
+    users,
+    addUser,
+    updateUser,
+    toggleUserStatus,
+    deleteUser,
+    downloadTemplateXlsx,
+    validateImportFile,
+    applyImport,
+    totalUsersCount,
+    totalActiveUsersCount,
+    totalInactiveUsersCount,
+  } = useUsers();
+
+  const { positions, areas } = useOrgStructure();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterRole, setFilterRole] = useState<UserRole | "all">("all");
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<PlatformUser | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isDeleteConfirmId, setIsDeleteConfirmId] = useState<string | null>(null);
+
+  const [importReport, setImportReport] = useState<UserImportReport | null>(null);
+  const [importFeedback, setImportFeedback] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [form, setForm] = useState<UserFormState>({
+    firstName: "",
+    lastName: "",
+    identificationType: "RUT",
+    identificationNumber: "",
+    email: "",
+    phone: "",
+    role: "Editor",
+    status: "Activo",
+    cargoId: "",
+    areaId: "",
+  });
+
+  const resetForm = () => {
+    setForm({
+      firstName: "",
+      lastName: "",
+      identificationType: "RUT",
+      identificationNumber: "",
+      email: "",
+      phone: "",
+      role: "Editor",
+      status: "Activo",
+      cargoId: "",
+      areaId: "",
+    });
+  };
+
+  const handleOpenAdd = () => {
+    resetForm();
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenEdit = (user: PlatformUser) => {
+    setEditingUser(user);
+    setForm({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      identificationType: user.identificationType,
+      identificationNumber: user.identificationNumber,
+      email: user.email,
+      phone: user.phone || "",
+      role: user.role,
+      status: user.status,
+      cargoId: user.cargoId || "",
+      areaId: user.areaId || "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailExists = users.some((u) => u.email.toLowerCase() === form.email.toLowerCase());
+    if (emailExists) {
+      alert("Ya existe un usuario con ese email.");
+      return;
+    }
+    const cargo = positions.find((p) => p.id === form.cargoId);
+    const area = areas.find((a) => a.id === form.areaId);
+    addUser({
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      identificationType: form.identificationType,
+      identificationNumber: form.identificationNumber.trim(),
+      email: form.email.trim().toLowerCase(),
+      phone: form.phone.trim() || undefined,
+      role: form.role,
+      status: form.status,
+      cargoId: form.cargoId || undefined,
+      cargoName: cargo?.name || undefined,
+      areaId: form.areaId || undefined,
+      areaName: area?.name || undefined,
+    });
+    setIsAddModalOpen(false);
+    resetForm();
+  };
+
+  const handleUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    const emailExists = users.some(
+      (u) => u.email.toLowerCase() === form.email.toLowerCase() && u.id !== editingUser.id
+    );
+    if (emailExists) {
+      alert("Ya existe otro usuario con ese email.");
+      return;
+    }
+    const cargo = positions.find((p) => p.id === form.cargoId);
+    const area = areas.find((a) => a.id === form.areaId);
+    updateUser(editingUser.id, {
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      identificationType: form.identificationType,
+      identificationNumber: form.identificationNumber.trim(),
+      email: form.email.trim().toLowerCase(),
+      phone: form.phone.trim() || undefined,
+      role: form.role,
+      status: form.status,
+      cargoId: form.cargoId || undefined,
+      cargoName: cargo?.name || undefined,
+      areaId: form.areaId || undefined,
+      areaName: area?.name || undefined,
+    });
+    setIsEditModalOpen(false);
+    setEditingUser(null);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const report = await validateImportFile(file);
+      setImportReport(report);
+    } catch {
+      setImportFeedback("Error al leer el archivo. Verifica que sea un XLSX válido.");
+    }
+  };
+
+  const handleConfirmImport = () => {
+    if (!importReport || importReport.validRecords === 0) return;
+    applyImport(importReport.parsedData);
+    setImportFeedback(`¡Se importaron ${importReport.validRecords} usuarios correctamente!`);
+    setTimeout(() => {
+      setImportFeedback(null);
+      setIsImportModalOpen(false);
+      setImportReport(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }, 2200);
+  };
+
+  const filteredUsers = useMemo(() => {
+    let list = users;
+    if (filterRole !== "all") list = list.filter((u) => u.role === filterRole);
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter(
+      (u) =>
+        u.firstName.toLowerCase().includes(q) ||
+        u.lastName.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.cargoName && u.cargoName.toLowerCase().includes(q)) ||
+        (u.areaName && u.areaName.toLowerCase().includes(q)) ||
+        u.identificationNumber.toLowerCase().includes(q)
+    );
+  }, [users, searchQuery, filterRole]);
 
   return (
     <div className="flex flex-col gap-4 font-[family-name:var(--font-poppins)] select-none">
@@ -691,7 +713,12 @@ export default function UsersView() {
               </button>
             </div>
             <form onSubmit={handleCreate}>
-              <UserFormFields />
+              <UserFormFields
+                form={form}
+                setForm={setForm}
+                positions={positions}
+                areas={areas}
+              />
               <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 mt-4">
                 <button
                   type="button"
@@ -736,7 +763,12 @@ export default function UsersView() {
               </button>
             </div>
             <form onSubmit={handleUpdate}>
-              <UserFormFields />
+              <UserFormFields
+                form={form}
+                setForm={setForm}
+                positions={positions}
+                areas={areas}
+              />
               <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 mt-4">
                 <button
                   type="button"

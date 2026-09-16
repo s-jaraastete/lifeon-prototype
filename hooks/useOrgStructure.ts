@@ -30,7 +30,7 @@ import {
   XlsxValidationReport,
 } from "@/types/orgStructure";
 import { useLifeOnPreferences } from "./useLifeOnPreferences";
-import { SECTOR_RISK_PROFILES } from "@/data/sectorRiskTemplates";
+import { getSectorRiskProfile } from "@/data/sectorRiskTemplates";
 import {
   fetchOrgStructureFromSupabase,
   saveOrgStructureToSupabase,
@@ -184,7 +184,7 @@ export const DEMO_USERS: OrgUser[] = [
 ];
 
 export function getDefaultOrgStructure(sectorName?: string): OrgArea[] {
-  const profile = SECTOR_RISK_PROFILES[sectorName || "Construcción"] || SECTOR_RISK_PROFILES["Construcción"];
+  const profile = getSectorRiskProfile(sectorName);
   const areaMap = new Map<string, OrgProcess[]>();
 
   if (profile && profile.recommendedProcesses) {

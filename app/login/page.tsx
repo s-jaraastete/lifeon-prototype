@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { LuArrowLeft, LuEye, LuEyeOff } from "react-icons/lu";
 import { authenticateUser, setActiveUser, DEMO_USER } from "@/lib/auth/authService";
+import { syncLifeOnSessionCookie } from "@/lib/auth/lifeonSessionClient";
 
 const PROFESSION_IMAGES = [
   "/images/login/prof-1.jpg",
@@ -39,20 +40,22 @@ export default function LoginPage() {
     setStep("password");
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
 
     const result = authenticateUser(email, password);
     if (result.success) {
+      await syncLifeOnSessionCookie(email, password);
       router.push("/dashboard");
     } else {
       setErrorMessage(result.message || "Credenciales incorrectas.");
     }
   };
 
-  const handleSocialLogin = () => {
+  const handleSocialLogin = async () => {
     setActiveUser(DEMO_USER);
+    await syncLifeOnSessionCookie(DEMO_USER.email, "serg");
     router.push("/dashboard");
   };
 

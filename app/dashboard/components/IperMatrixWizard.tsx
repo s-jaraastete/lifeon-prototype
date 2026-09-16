@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import clsx from "clsx";
 import {
   LuX,
@@ -41,35 +41,24 @@ import {
   getContextualHazardsForTask,
 } from "@/data/sectorRiskTemplates";
 import { calculate5x5Level } from "@/lib/riskEngine/riskEquivalence";
+import {
+  PROB_5X5,
+  SEV_5X5,
+  PROB_VEP3X3,
+  SEV_VEP3X3,
+} from "@/lib/riskEngine/riskMatrixLabels";
+import RiskClassificationMap from "./RiskClassificationMap";
 import { IperMethodology } from "@/types/preferences";
+import useIperAiSuggestions from "@/hooks/useIperAiSuggestions";
+import type {
+  ControlSuggestionItem,
+  HazardSuggestionItem,
+  IperAiContextInput,
+  RiskSuggestionItem,
+  TaskSuggestionItem,
+} from "@/types/ai";
 
-export const PROB_5X5 = [
-  { val: 1, label: "1 - Muy baja", desc: "Altamente improbable / Rara ocurrencia" },
-  { val: 2, label: "2 - Baja", desc: "Poco frecuente / Escenario controlado" },
-  { val: 3, label: "3 - Media", desc: "Ocurrencia ocasional / Posible en el ciclo" },
-  { val: 4, label: "4 - Alta", desc: "Frecuente / Condición subestándar recurrente" },
-  { val: 5, label: "5 - Muy alta", desc: "Inminente / Exposición continua sin barreras" },
-];
-
-export const SEV_5X5 = [
-  { val: 1, label: "1 - Menor", desc: "Primeros auxilios / Molestias sin baja médica" },
-  { val: 2, label: "2 - Moderada", desc: "Lesión con tiempo perdido leve o reversible" },
-  { val: 3, label: "3 - Seria", desc: "Lesión grave con incapacidad temporal prolongada" },
-  { val: 4, label: "4 - Mayor", desc: "Incapacidad permanente parcial o daño crítico" },
-  { val: 5, label: "5 - Catastrófica", desc: "Fatalidad múltiple o invalidez total permanente" },
-];
-
-export const PROB_VEP3X3 = [
-  { val: 1, label: "1 - Bajo", desc: "Situación controlada / Poco frecuente" },
-  { val: 2, label: "2 - Medio", desc: "Materialización posible / Ocurrencia media" },
-  { val: 4, label: "4 - Alto", desc: "Situación deficiente / Exposición continua" },
-];
-
-export const SEV_VEP3X3 = [
-  { val: 1, label: "1 - Bajo / Leve", desc: "Lesión menor / Primeros auxilios sin CTP" },
-  { val: 2, label: "2 - Medio / Moderado", desc: "Lesión con incapacidad temporal (CTP)" },
-  { val: 4, label: "4 - Alto / Grave", desc: "Incapacidad permanente o fatalidad" },
-];
+export { PROB_5X5, SEV_5X5, PROB_VEP3X3, SEV_VEP3X3 };
 
 export interface ProcessItem {
   id: string;
@@ -242,11 +231,26 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
     return getSectorRiskProfile(preferences.organizationSector);
   }, [preferences.organizationSector]);
 
+  const configuredMethodology = preferences.moduleConfigurations?.miper?.methodology;
   const effectiveMethodology: IperMethodology =
-    preferences.moduleConfigurations?.miper?.methodology ||
-    (preferences.riskEvaluationMethod === "matrix5x5" ? "matrix5x5" : "dynamic5x5_vep");
+    configuredMethodology && configuredMethodology !== "pending"
+      ? configuredMethodology
+      : preferences.riskEvaluationMethod === "matrix5x5"
+        ? "matrix5x5"
+        : preferences.riskEvaluationMethod === "ds44"
+          ? "vep3x3"
+          : "dynamic5x5_vep";
 
-  const is5x5 = effectiveMethodology === "matrix5x5" || effectiveMethodology === "dynamic5x5_vep";
+  const is5x5 =
+    effectiveMethodology === "matrix5x5" || effectiveMethodology === "dynamic5x5_vep";
+
+  const { fetchSuggestions, loading: aiSuggestionsLoading, error: aiSuggestionsError } =
+    useIperAiSuggestions();
+
+  const [aiTaskSuggestions, setAiTaskSuggestions] = useState<TaskSuggestionItem[]>([]);
+  const [aiHazardSuggestions, setAiHazardSuggestions] = useState<HazardSuggestionItem[]>([]);
+  const [aiRiskSuggestions, setAiRiskSuggestions] = useState<RiskSuggestionItem[]>([]);
+  const [aiControlSuggestions, setAiControlSuggestions] = useState<ControlSuggestionItem[]>([]);
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const { areas, positions, users } = useOrgStructure();
@@ -363,16 +367,136 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
 
   // Tareas contextuales sugeridas según Proceso y Subproceso (Req 16)
   const contextualTaskSuggestions = useMemo(() => {
-    const pName = currentProcess?.name || matrix.processName || "";
+    if (!currentArea || !currentProcess) return [];
+    const pName = currentProcess.name;
     const sName = taskFormSubprocess || "";
     return getContextualTasksForProcess(pName, sName, preferences.organizationSector);
-  }, [currentProcess, matrix.processName, taskFormSubprocess, preferences.organizationSector]);
+  }, [currentArea, currentProcess, taskFormSubprocess, preferences.organizationSector]);
 
   // Peligros / Riesgos contextuales según la Tarea seleccionada (Req 21)
   const contextualHazardSuggestions = useMemo(() => {
     if (!activeTask) return [];
     return getContextualHazardsForTask(activeTask.name, sectorProfile.suggestedHazards);
   }, [activeTask, sectorProfile.suggestedHazards]);
+
+  const taskSuggestionLabels = useMemo(() => {
+    if (aiTaskSuggestions.length > 0) {
+      return aiTaskSuggestions.map((s) => s.name);
+    }
+    return contextualTaskSuggestions;
+  }, [aiTaskSuggestions, contextualTaskSuggestions]);
+
+  const taskSuggestionsFromAi = aiTaskSuggestions.length > 0;
+
+  useEffect(() => {
+    setAiTaskSuggestions([]);
+  }, [taskFormAreaId, taskFormProcessId, taskFormSubprocess]);
+
+  useEffect(() => {
+    setAiHazardSuggestions([]);
+    setAiRiskSuggestions([]);
+  }, [activeTask?.id, activeTask?.name]);
+
+  useEffect(() => {
+    setAiControlSuggestions([]);
+  }, [activeHazard?.id, activeHazard?.hazardDescription, activeHazard?.specificRiskName]);
+
+  const buildBaseIperContext = (): IperAiContextInput => ({
+    workCenterName: matrix.workCenterName || matrix.workCenter,
+    areaName: currentArea?.name || matrix.areaName,
+    processName: currentProcess?.name || matrix.processName,
+    subprocessName: taskFormSubprocess || activeTask?.subprocessName,
+    taskName: activeTask?.name,
+    existingTaskNames: tasks.map((t) => t.name),
+    existingHazardNames: taskHazards.map((h) => h.hazardDescription),
+    existingRiskNames: taskHazards.map((h) => h.specificRiskName),
+    existingControls: activeHazard?.controlsList.map((c) => ({
+      type: c.type,
+      description: c.description,
+    })),
+    hazards: hazardFormDesc.trim()
+      ? [{ name: hazardFormDesc.trim() }]
+      : taskHazards.map((h) => ({ name: h.hazardDescription })),
+    risks: activeHazard
+      ? [{ name: activeHazard.specificRiskName }]
+      : hazardFormName
+        ? [{ name: hazardFormName }]
+        : [],
+  });
+
+  const handleGenerateTaskSuggestions = async () => {
+    if (!currentArea || !currentProcess) return;
+    const items = await fetchSuggestions<TaskSuggestionItem>("task", {
+      workCenterName: matrix.workCenterName || matrix.workCenter,
+      areaName: currentArea.name,
+      processName: currentProcess.name,
+      subprocessName: taskFormSubprocess || undefined,
+      existingTaskNames: tasks.map((t) => t.name),
+    });
+    if (items?.length) setAiTaskSuggestions(items);
+  };
+
+  const handleGenerateHazardSuggestions = async () => {
+    const taskName = activeTask?.name?.trim();
+    if (!taskName) return;
+    const items = await fetchSuggestions<HazardSuggestionItem>("hazard", {
+      ...buildBaseIperContext(),
+      taskName,
+    });
+    if (items?.length) setAiHazardSuggestions(items);
+  };
+
+  const handleGenerateRiskSuggestions = async () => {
+    const taskName = activeTask?.name?.trim();
+    const hazardNames = hazardFormDesc.trim()
+      ? [hazardFormDesc.trim()]
+      : taskHazards.map((h) => h.hazardDescription);
+    if (!taskName || hazardNames.length === 0) return;
+    const items = await fetchSuggestions<RiskSuggestionItem>("risk", {
+      ...buildBaseIperContext(),
+      taskName,
+      hazards: hazardNames.map((name) => ({ name })),
+      existingRiskNames: taskHazards.map((h) => h.specificRiskName),
+    });
+    if (items?.length) setAiRiskSuggestions(items);
+  };
+
+  const handleGenerateControlSuggestions = async () => {
+    if (!activeTask || !activeHazard) return;
+    const items = await fetchSuggestions<ControlSuggestionItem>("control", {
+      workCenterName: matrix.workCenterName || matrix.workCenter,
+      areaName: activeTask.areaName || matrix.areaName,
+      processName: activeTask.processName,
+      subprocessName: activeTask.subprocessName,
+      taskName: activeTask.name,
+      hazards: [{ name: activeHazard.hazardDescription }],
+      risks: [{ name: activeHazard.specificRiskName }],
+      existingControls: activeHazard.controlsList.map((c) => ({
+        type: c.type,
+        description: c.description,
+      })),
+    });
+    if (items?.length) setAiControlSuggestions(items);
+  };
+
+  const applyRiskSuggestionToForm = (riskName: string, family?: string) => {
+    setHazardFormName(riskName);
+    if (family) setHazardFormFamily(family);
+    const allRisks = Object.values(RISK_CATALOGS).flatMap((c) => c.risks);
+    const match = allRisks.find(
+      (r) => r.name.toLowerCase() === riskName.toLowerCase() || riskName.includes(r.name)
+    );
+    if (match) {
+      setHazardFormCode(match.code);
+      setHazardFormName(match.name);
+      setHazardFormFamily(match.family);
+      setHazardFormClass(
+        (Object.keys(RISK_CATALOGS) as HazardItem["riskClassification"][]).find((key) =>
+          RISK_CATALOGS[key]?.risks.some((r) => r.code === match.code)
+        ) || hazardFormClass
+      );
+    }
+  };
 
   // Actualizar un peligro existente
   const updateHazardItem = (hazardId: string, updates: Partial<HazardItem>) => {
@@ -422,10 +546,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
   const handleLoadAllSectorHazards = () => {
     if (!activeTask) return;
 
-    const hazardsToLoad =
-      contextualHazardSuggestions.length > 0
-        ? contextualHazardSuggestions
-        : sectorProfile.suggestedHazards;
+    const hazardsToLoad = contextualHazardSuggestions;
+    if (hazardsToLoad.length === 0) return;
 
     const newHazardsToAdd: HazardItem[] = [];
     hazardsToLoad.forEach((sug, idx) => {
@@ -966,48 +1088,11 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                   <div>
                     <h3 className="text-base font-bold text-gray-900">Tareas y Cargos de la Organización</h3>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      Selecciona el área, proceso y subproceso, registra la tarea (*Rutinaria* / *No rutinaria*) y asigna los cargos con su dotación expuesta.
+                      Define el contexto (área y proceso), registra la tarea y asocia los cargos expuestos desde tu estructura organizacional.
                     </p>
                   </div>
                 </div>
               </div>
-
-              {/* Sugerencias de Tareas para el Rubro */}
-              {sectorProfile.recommendedTasks.length > 0 && (
-                <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-3.5 flex flex-col gap-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-teal-950">
-                    <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Tareas habituales en {sectorProfile.sector}:</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {sectorProfile.recommendedTasks.map((recTask, tIdx) => (
-                      <button
-                        key={tIdx}
-                        type="button"
-                        onClick={() => {
-                          setTaskFormName(recTask.taskName);
-                          setTaskFormType(recTask.taskType);
-                          setTaskFormLocation(recTask.location);
-                          if (recTask.defaultPositions) {
-                            setTaskFormPositionsList(
-                              recTask.defaultPositions.map((pos, pIdx) => ({
-                                id: `pos-rec-${Date.now()}-${pIdx}`,
-                                name: pos.name,
-                                headcountMen: pos.headcountMen,
-                                headcountWomen: pos.headcountWomen,
-                                headcountDiversity: 0,
-                              }))
-                            );
-                          }
-                        }}
-                        className="px-2.5 py-1 bg-white hover:bg-teal-100/70 text-teal-900 text-[11px] font-medium rounded-lg border border-teal-200 shadow-2xs transition cursor-pointer text-left"
-                      >
-                        + {recTask.taskName}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {areas.length === 0 ? (
                 <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center flex flex-col items-center gap-2">
@@ -1029,6 +1114,9 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                 <>
                   {/* Formulario de Nueva Tarea */}
                   <div className="bg-gray-50/70 border border-gray-200/80 rounded-2xl p-4 flex flex-col gap-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      Sección 1 — Contexto de la tarea
+                    </p>
                     <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
                       <h4 className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
                         <LuPlus className="w-3.5 h-3.5 text-teal-600" />
@@ -1118,7 +1206,9 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       </div>
                     </div>
 
-                    {/* 2. Nombre de la Tarea y Tipo de Tarea (UNO AL LADO DEL OTRO) */}
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 pt-1">
+                      Sección 2 — Tarea
+                    </p>
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
                       <div className="sm:col-span-8">
                         <label className="text-[11px] font-semibold text-gray-700 block mb-1">
@@ -1166,23 +1256,62 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       </div>
                     </div>
 
-                    {/* Sugerencias contextuales de tareas según Proceso / Subproceso (Req 16) */}
-                    {contextualTaskSuggestions.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                          Sugerencias contextuales:
-                        </span>
-                        {contextualTaskSuggestions.slice(0, 6).map((sug, sIdx) => (
+                    {currentArea && currentProcess ? (
+                      <div className="flex flex-col gap-2 pt-0.5">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="text-[11px] font-bold text-teal-900 flex items-center gap-1">
+                            <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                            Sugerencias de APR Virtual IA
+                          </span>
                           <button
-                            key={sIdx}
                             type="button"
-                            onClick={() => setTaskFormName(sug)}
-                            className="text-[11px] px-2.5 py-1 rounded-lg bg-teal-50/80 hover:bg-teal-100 text-teal-800 border border-teal-200 transition cursor-pointer font-medium"
+                            disabled={aiSuggestionsLoading}
+                            onClick={() => void handleGenerateTaskSuggestions()}
+                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50 cursor-pointer"
                           >
-                            + {sug}
+                            {aiSuggestionsLoading
+                              ? "Preparando…"
+                              : aiTaskSuggestions.length
+                                ? "Actualizar sugerencias"
+                                : "Generar sugerencias"}
                           </button>
-                        ))}
+                        </div>
+                        {aiSuggestionsLoading && (
+                          <p className="text-[11px] text-teal-700 animate-pulse">
+                            APR Virtual está preparando sugerencias…
+                          </p>
+                        )}
+                        {aiSuggestionsError && (
+                          <p className="text-[11px] text-amber-700">{aiSuggestionsError}</p>
+                        )}
+                        <p className="text-[10px] text-gray-500">
+                          {taskSuggestionsFromAi
+                            ? "Propuestas generadas por IA; tú decides cuáles utilizar."
+                            : "Propuestas de catálogo o genera sugerencias con IA."}
+                        </p>
+                        {taskSuggestionLabels.length > 0 ? (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {taskSuggestionLabels.slice(0, 6).map((sug, sIdx) => (
+                              <button
+                                key={sIdx}
+                                type="button"
+                                onClick={() => setTaskFormName(sug)}
+                                className="text-[11px] px-2.5 py-1 rounded-lg bg-teal-50/80 hover:bg-teal-100 text-teal-800 border border-teal-200 transition cursor-pointer font-medium text-left"
+                              >
+                                + {sug}
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-gray-500 italic">
+                            Pulsa «Generar sugerencias» o usa el catálogo cuando aplique.
+                          </p>
+                        )}
                       </div>
+                    ) : (
+                      <p className="text-[11px] text-gray-500 italic">
+                        Selecciona un Área y Proceso para recibir sugerencias.
+                      </p>
                     )}
 
                     {/* Lugar específico donde se realiza la tarea */}
@@ -1199,15 +1328,14 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       />
                     </div>
 
-                    {/* 3. Sub-formulario: Asignación de Cargos exclusivamente desde Estructura Organizacional (Req 17-20) */}
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      Sección 3 — Cargos asociados
+                    </p>
                     <div className="bg-white border border-teal-100 rounded-2xl p-3.5 flex flex-col gap-3 shadow-2xs">
                       <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                         <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
                           <LuBriefcase className="w-3.5 h-3.5 text-teal-600" />
-                          + Asignar Cargo a la Tarea
-                        </span>
-                        <span className="text-[10px] text-gray-400 font-medium">
-                          Catálogo de Cargos &gt; Dotación
+                          Agregar cargo a la tarea
                         </span>
                       </div>
 
@@ -1524,6 +1652,54 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
 
                   {/* Propuesta de Riesgos Contextualizada a la Tarea Activa (Req 21) */}
                   {activeTask && (
+                    <div className="bg-teal-50/40 border border-teal-200 rounded-2xl p-3 flex flex-col gap-2">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs font-bold text-teal-900 flex items-center gap-1">
+                          <LuSparkles className="w-3.5 h-3.5" /> Peligros sugeridos (APR Virtual IA)
+                        </span>
+                        <button
+                          type="button"
+                          disabled={aiSuggestionsLoading}
+                          onClick={() => void handleGenerateHazardSuggestions()}
+                          className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-teal-600 text-white disabled:opacity-50 cursor-pointer"
+                        >
+                          {aiHazardSuggestions.length
+                            ? "Actualizar sugerencias"
+                            : "Generar sugerencias"}
+                        </button>
+                      </div>
+                      {aiSuggestionsLoading && (
+                        <p className="text-[11px] text-teal-700">
+                          APR Virtual está preparando sugerencias…
+                        </p>
+                      )}
+                      {aiHazardSuggestions.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {aiHazardSuggestions.map((sug, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              title={sug.reason}
+                              onClick={() => {
+                                setHazardFormDesc(sug.name);
+                                if (sug.classification) setHazardFormClass(sug.classification);
+                              }}
+                              className="text-[11px] px-2 py-1 rounded-lg bg-white border border-teal-200 hover:border-teal-400 cursor-pointer text-left"
+                            >
+                              + {sug.name}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-gray-600">
+                          Usa la tarea «{activeTask.name}» como contexto. También puedes usar el catálogo
+                          sectorial abajo.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTask && contextualHazardSuggestions.length > 0 && (
                     <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-teal-50/50 border-2 border-amber-300/80 rounded-2xl p-4 flex flex-col gap-3 shadow-2xs">
                       <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-amber-200/70">
                         <div className="flex items-center gap-2.5">
@@ -1532,15 +1708,16 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           </div>
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="text-xs font-bold text-gray-900">
-                                Peligros y Riesgos Propuestos para la Tarea:
+                              <h4 className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                                <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                                Sugerencias de APR Virtual IA
                               </h4>
                               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-teal-900 border border-teal-300 line-clamp-1">
                                 {activeTask.name}
                               </span>
                             </div>
                             <p className="text-[11px] text-gray-600 mt-0.5">
-                              Sugerencias específicas derivadas de la naturaleza de la tarea. Haz clic para incorporar con sus medidas de control:
+                              Propuestas según la tarea seleccionada. No reemplazan tu criterio profesional.
                             </p>
                           </div>
                         </div>
@@ -1551,15 +1728,12 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
                         >
                           <LuSparkles className="w-3.5 h-3.5" />
-                          Cargar riesgos sugeridos
+                          Cargar sugerencias
                         </button>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-0.5">
-                        {(contextualHazardSuggestions.length > 0
-                          ? contextualHazardSuggestions
-                          : sectorProfile.suggestedHazards
-                        ).map((sug) => {
+                        {contextualHazardSuggestions.map((sug) => {
                           const isAlreadyInTask = taskHazards.some(
                             (h) =>
                               h.specificRiskCode === sug.specificRiskCode ||
@@ -1718,6 +1892,39 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                         className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                       />
                     </div>
+
+                    {(activeTask || taskFormName.trim()) && (
+                      <div className="p-3 bg-amber-50/50 border border-amber-200 rounded-xl flex flex-col gap-2">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <span className="text-[11px] font-bold text-amber-900">
+                            Riesgos sugeridos (APR Virtual IA)
+                          </span>
+                          <button
+                            type="button"
+                            disabled={aiSuggestionsLoading}
+                            onClick={() => void handleGenerateRiskSuggestions()}
+                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-600 text-white disabled:opacity-50 cursor-pointer"
+                          >
+                            {aiRiskSuggestions.length ? "Actualizar sugerencias" : "Generar sugerencias"}
+                          </button>
+                        </div>
+                        {aiRiskSuggestions.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {aiRiskSuggestions.map((sug, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                title={sug.reason}
+                                onClick={() => applyRiskSuggestionToForm(sug.name, sug.family)}
+                                className="text-[11px] px-2 py-1 rounded-lg bg-white border border-amber-200 hover:border-amber-400 cursor-pointer"
+                              >
+                                + {sug.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Paso 2 del orden: CLASIFICACIÓN DEL RIESGO CON TARJETAS (SIN ICONOS) */}
                     <div>
@@ -1961,13 +2168,10 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                   {/* Si es SEGURIDAD O EMERGENCIAS: Escala 5x5 o VEP 3x3 según Metodología (Req 23-25) */}
                   {isSafetyOrEmergency ? (
                     <div className="flex flex-col gap-4">
-                      {/* Probabilidad (P): adaptada según metodología (5 niveles o 3 niveles) */}
                       <div>
-                        <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                           <label className="text-xs font-bold text-gray-800">
-                            {preferences.experienceLevel === "guided"
-                              ? terminology.probabilityQuestion
-                              : "Probabilidad (P) de Ocurrencia:"}
+                            Mapa de clasificación del riesgo (selecciona una celda)
                           </label>
                           <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
                             {is5x5
@@ -1977,51 +2181,17 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                               : "VEP 3×3 (ISL / DS 44)"}
                           </span>
                         </div>
-                        <div className={clsx("grid gap-2 sm:gap-3", is5x5 ? "grid-cols-1 sm:grid-cols-5" : "grid-cols-3")}>
-                          {(is5x5 ? PROB_5X5 : PROB_VEP3X3).map((item) => (
-                            <button
-                              key={item.val}
-                              type="button"
-                              onClick={() => updateHazardItem(activeHazard.id, { probValue: item.val })}
-                              className={clsx(
-                                "p-2.5 sm:p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between",
-                                activeHazard.probValue === item.val
-                                  ? "bg-teal-50 border-teal-600 text-teal-900 ring-2 ring-teal-500/20 font-bold shadow-2xs"
-                                  : "bg-white border-gray-200 hover:bg-gray-50"
-                              )}
-                            >
-                              <span className="text-xs font-bold">{item.label}</span>
-                              <span className="text-[10px] text-gray-500 font-normal mt-1 line-clamp-2">{item.desc}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Severidad / Consecuencia (C): adaptada según metodología (5 niveles o 3 niveles) */}
-                      <div>
-                        <label className="text-xs font-bold text-gray-800 block mb-1.5">
-                          {preferences.experienceLevel === "guided"
-                            ? terminology.consequenceQuestion
-                            : "Severidad / Consecuencia (C):"}
-                        </label>
-                        <div className={clsx("grid gap-2 sm:gap-3", is5x5 ? "grid-cols-1 sm:grid-cols-5" : "grid-cols-3")}>
-                          {(is5x5 ? SEV_5X5 : SEV_VEP3X3).map((item) => (
-                            <button
-                              key={item.val}
-                              type="button"
-                              onClick={() => updateHazardItem(activeHazard.id, { sevValue: item.val })}
-                              className={clsx(
-                                "p-2.5 sm:p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between",
-                                activeHazard.sevValue === item.val
-                                  ? "bg-teal-50 border-teal-600 text-teal-900 ring-2 ring-teal-500/20 font-bold shadow-2xs"
-                                  : "bg-white border-gray-200 hover:bg-gray-50"
-                              )}
-                            >
-                              <span className="text-xs font-bold">{item.label}</span>
-                              <span className="text-[10px] text-gray-500 font-normal mt-1 line-clamp-2">{item.desc}</span>
-                            </button>
-                          ))}
-                        </div>
+                        <RiskClassificationMap
+                          mode={is5x5 ? "matrix5x5" : "vep3x3"}
+                          prob={activeHazard.probValue}
+                          sev={activeHazard.sevValue}
+                          onSelect={(p, c) =>
+                            updateHazardItem(activeHazard.id, { probValue: p, sevValue: c })
+                          }
+                          showDynamicVepHint={
+                            is5x5 && effectiveMethodology === "dynamic5x5_vep"
+                          }
+                        />
                       </div>
 
                       {/* Resultado Calculado */}
@@ -2228,6 +2398,76 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                         {activeHazard.controlsList.length} Control(es)
                       </span>
                     </div>
+                  </div>
+
+                  <div className="bg-teal-50/70 border border-teal-200 rounded-xl p-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-teal-950">
+                        <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                        Controles sugeridos (APR Virtual IA)
+                      </div>
+                      <button
+                        type="button"
+                        disabled={aiSuggestionsLoading}
+                        onClick={() => void handleGenerateControlSuggestions()}
+                        className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-teal-600 text-white disabled:opacity-50 cursor-pointer"
+                      >
+                        {aiControlSuggestions.length ? "Actualizar sugerencias" : "Generar sugerencias"}
+                      </button>
+                    </div>
+                    {aiSuggestionsLoading && (
+                      <p className="text-[11px] text-teal-700">
+                        APR Virtual está preparando sugerencias…
+                      </p>
+                    )}
+                    {aiControlSuggestions.length > 0 && (
+                      <div className="flex flex-col gap-1.5">
+                        {aiControlSuggestions.map((recCtrl, cIdx) => {
+                          const isCtrlAlreadyAdded = activeHazard.controlsList.some(
+                            (c) => c.description === recCtrl.description
+                          );
+                          return (
+                            <div
+                              key={cIdx}
+                              className="flex items-center justify-between p-2 rounded-lg bg-white border border-teal-100 text-xs"
+                            >
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-teal-800 text-[10px] bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
+                                  {recCtrl.type}
+                                </span>
+                                <span className="text-gray-800">{recCtrl.description}</span>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={isCtrlAlreadyAdded}
+                                onClick={() => {
+                                  const newC: ControlItem = {
+                                    id: `ctrl-ai-${Date.now()}-${cIdx}`,
+                                    type: recCtrl.type,
+                                    description: recCtrl.description,
+                                    responsible:
+                                      newControlResponsible ||
+                                      matrix.responsible ||
+                                      "Prevencionista de Riesgos",
+                                  };
+                                  updateHazardItem(activeHazard.id, {
+                                    controlsList: [...activeHazard.controlsList, newC],
+                                  });
+                                }}
+                                className={clsx(
+                                  "px-2 py-0.5 rounded text-[11px] font-bold transition flex items-center gap-1 cursor-pointer flex-shrink-0 ml-2",
+                                  isCtrlAlreadyAdded
+                                    ? "bg-emerald-100 text-emerald-800 cursor-default"
+                                    : "bg-teal-600 hover:bg-teal-700 text-white"
+                                )}
+                              >
+                                {isCtrlAlreadyAdded ? "Agregado" : "+ Agregar"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* Controles Sugeridos para el Riesgo en este Rubro */}
@@ -2518,72 +2758,22 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     <div className="flex flex-col gap-4">
                       {/* Selector de Probabilidad Residual */}
                       <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-xs font-bold text-gray-800">
-                            Probabilidad Residual (debe ser &le; Probabilidad Inicial {activeHazard.probValue}):
-                          </label>
-                          <span className="text-[10px] text-gray-400 font-medium">Opciones superiores bloqueadas</span>
-                        </div>
-                        <div className={clsx("grid gap-2 sm:gap-3", is5x5 ? "grid-cols-1 sm:grid-cols-5" : "grid-cols-3")}>
-                          {(is5x5 ? PROB_5X5 : PROB_VEP3X3).map((p) => {
-                            const isBlocked = p.val > activeHazard.probValue;
-                            return (
-                              <button
-                                key={p.val}
-                                type="button"
-                                disabled={isBlocked}
-                                onClick={() => updateHazardItem(activeHazard.id, { residualProb: p.val })}
-                                className={clsx(
-                                  "p-2.5 sm:p-3 rounded-xl border text-left transition flex flex-col justify-between",
-                                  isBlocked && "opacity-35 bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through",
-                                  !isBlocked && activeHazard.residualProb === p.val && "bg-emerald-50 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 font-bold shadow-2xs cursor-pointer",
-                                  !isBlocked && activeHazard.residualProb !== p.val && "bg-white border-gray-200 hover:bg-gray-50 cursor-pointer"
-                                )}
-                              >
-                                <span className="text-xs font-bold flex items-center justify-between">
-                                  {p.label}
-                                  {isBlocked && <LuLock className="w-3 h-3 text-gray-400" />}
-                                </span>
-                                <span className="text-[10px] text-gray-500 font-normal mt-1 line-clamp-2">{p.desc}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Selector de Severidad Residual */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-xs font-bold text-gray-800">
-                            Severidad / Consecuencia Residual (debe ser &le; Severidad Inicial {activeHazard.sevValue}):
-                          </label>
-                          <span className="text-[10px] text-gray-400 font-medium">Opciones superiores bloqueadas</span>
-                        </div>
-                        <div className={clsx("grid gap-2 sm:gap-3", is5x5 ? "grid-cols-1 sm:grid-cols-5" : "grid-cols-3")}>
-                          {(is5x5 ? SEV_5X5 : SEV_VEP3X3).map((s) => {
-                            const isBlocked = s.val > activeHazard.sevValue;
-                            return (
-                              <button
-                                key={s.val}
-                                type="button"
-                                disabled={isBlocked}
-                                onClick={() => updateHazardItem(activeHazard.id, { residualSev: s.val })}
-                                className={clsx(
-                                  "p-2.5 sm:p-3 rounded-xl border text-left transition flex flex-col justify-between",
-                                  isBlocked && "opacity-35 bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through",
-                                  !isBlocked && activeHazard.residualSev === s.val && "bg-emerald-50 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 font-bold shadow-2xs cursor-pointer",
-                                  !isBlocked && activeHazard.residualSev !== s.val && "bg-white border-gray-200 hover:bg-gray-50 cursor-pointer"
-                                )}
-                              >
-                                <span className="text-xs font-bold flex items-center justify-between">
-                                  {s.label}
-                                  {isBlocked && <LuLock className="w-3 h-3 text-gray-400" />}
-                                </span>
-                                <span className="text-[10px] text-gray-500 font-normal mt-1 line-clamp-2">{s.desc}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <label className="text-xs font-bold text-gray-800 block mb-2">
+                          Mapa de riesgo residual (P y C no pueden superar la evaluación inicial)
+                        </label>
+                        <RiskClassificationMap
+                          mode={is5x5 ? "matrix5x5" : "vep3x3"}
+                          prob={activeHazard.residualProb}
+                          sev={activeHazard.residualSev}
+                          maxProb={activeHazard.probValue}
+                          maxSev={activeHazard.sevValue}
+                          onSelect={(p, c) =>
+                            updateHazardItem(activeHazard.id, { residualProb: p, residualSev: c })
+                          }
+                          showDynamicVepHint={
+                            is5x5 && effectiveMethodology === "dynamic5x5_vep"
+                          }
+                        />
                       </div>
 
                       {/* Comparativa Inicial vs Residual */}
@@ -2802,24 +2992,47 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
               </div>
             )}
 
-            {activeHazard && (
-              <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 flex items-center justify-between">
-                <div>
+            {activeHazard && (currentStep >= 4 || activeHazard.riskLevelType) && (
+              <div
+                className={clsx(
+                  "bg-gray-50 rounded-xl p-3 border border-gray-100",
+                  currentStep >= 5 ? "flex items-center justify-between" : ""
+                )}
+              >
+                <div className={currentStep >= 5 ? "" : "w-full"}>
                   <span className="text-[10px] text-gray-400 block font-medium">
-                    {isSafetyOrEmergency ? "VEP Inicial" : "Nivel Inicial"}
+                    {isSafetyOrEmergency
+                      ? is5x5
+                        ? "Riesgo inicial (5×5)"
+                        : "Riesgo inicial (VEP)"
+                      : "Nivel inicial"}
                   </span>
                   <span className="text-base font-bold text-gray-900">
-                    {isSafetyOrEmergency ? `${vepScore} pts` : activeHazard.riskLevelType}
+                    {isSafetyOrEmergency
+                      ? is5x5
+                        ? `${score5x5.val5x5} pts`
+                        : `${vepScore} pts`
+                      : activeHazard.riskLevelType}
                   </span>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-gray-400 block font-medium">
-                    {isSafetyOrEmergency ? "Riesgo Residual" : "Nivel Residual"}
-                  </span>
-                  <span className="text-base font-bold text-emerald-600">
-                    {isSafetyOrEmergency ? `${residualScoreCalc} pts` : activeHazard.residualRiskLevel || "Bajo"}
-                  </span>
-                </div>
+                {currentStep >= 5 && (
+                  <div className="text-right border-l border-gray-200 pl-3 ml-3">
+                    <span className="text-[10px] text-gray-400 block font-medium">
+                      {isSafetyOrEmergency
+                        ? is5x5
+                          ? "Riesgo residual (5×5)"
+                          : "Riesgo residual (VEP)"
+                        : "Nivel residual"}
+                    </span>
+                    <span className="text-base font-bold text-emerald-600">
+                      {isSafetyOrEmergency
+                        ? is5x5
+                          ? `${scoreRes5x5.val5x5} pts`
+                          : `${residualScoreCalc} pts`
+                        : activeHazard.residualRiskLevel || "Bajo"}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 

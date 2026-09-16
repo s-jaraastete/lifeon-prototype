@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -29,12 +29,14 @@ import {
   LuFolderTree,
   LuBuilding2,
   LuChevronDown,
+  LuLock,
 } from "react-icons/lu";
 
 import DashboardKpis from "./components/DashboardKpis";
 import IperMatrixView from "./components/IperMatrixView";
 import PreventiveDocsView from "./components/PreventiveDocsView";
 import AprVirtualView from "./components/AprVirtualView";
+import AprVirtualAssistant from "./components/AprVirtualAssistant";
 import OrgStructureView from "./components/OrgStructureView";
 import UsersView from "./components/UsersView";
 import TechnicalDocsView from "./components/TechnicalDocsView";
@@ -61,6 +63,60 @@ import {
   NotificationItem,
 } from "./components/TopBarModals";
 
+import {
+  type DashboardMenuKey,
+  isTechnicalManagementMenu,
+} from "@/types/dashboardNav";
+import SetupGuide from "./components/onboarding/SetupGuide";
+import SetupGuideCompanion from "./components/onboarding/SetupGuideCompanion";
+import { useSetupGuideProgress } from "@/hooks/useSetupGuideProgress";
+import type { SetupGuidePreferences } from "@/types/preferences";
+
+type NavItemConfig = {
+  key: DashboardMenuKey;
+  label: string;
+  title: string;
+  icon: typeof LuHouse;
+  showIaBadge?: boolean;
+};
+
+type NavSectionConfig = {
+  id: string;
+  title: string;
+  items: NavItemConfig[];
+};
+
+const NAV_SECTIONS: NavSectionConfig[] = [
+  {
+    id: "inicio",
+    title: "Inicio",
+    items: [{ key: "dashboard", label: "Inicio", title: "Inicio", icon: LuHouse }],
+  },
+  {
+    id: "config",
+    title: "Configuración",
+    items: [
+      { key: "users", label: "Usuarios", title: "Usuarios", icon: LuUserRound },
+      { key: "org", label: "Estructura Organizacional", title: "Estructura Organizacional", icon: LuFolderTree },
+    ],
+  },
+  {
+    id: "tecnica",
+    title: "Gestión técnica",
+    items: [
+      { key: "iper", label: "Matriz IPER", title: "Matriz IPER", icon: LuLayoutGrid },
+      {
+        key: "docs",
+        label: "Planificación y Gestión Preventiva",
+        title: "Planificación y Gestión Preventiva",
+        icon: LuFileText,
+      },
+      { key: "techDocs", label: "Documentación Técnica", title: "Documentación Técnica", icon: LuFileText },
+      { key: "apr", label: "APR Virtual", title: "APR Virtual", icon: LuAtom, showIaBadge: true },
+    ],
+  },
+];
+
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -79,14 +135,93 @@ export default function DashboardPage() {
     }
   }, [isLoaded, preferences.onboardingCompleted, preferences.tourCompleted]);
 
+  const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
+  const { steps: setupGuideSteps, allComplete: setupGuideAllComplete } =
+    useSetupGuideProgress();
+  const setupGuideDoneCount = setupGuideSteps.filter((s) => s.complete).length;
+
+  const patchSetupGuide = (patch: Partial<SetupGuidePreferences>) => {
+    const prev = preferences.setupGuide;
+    updatePreferences({
+      setupGuide: {
+        completed: patch.completed ?? prev?.completed ?? false,
+        dismissed: patch.dismissed ?? prev?.dismissed ?? false,
+        completedAt: patch.completedAt !== undefined ? patch.completedAt : prev?.completedAt ?? null,
+        technicalStartAcknowledged:
+          patch.technicalStartAcknowledged ?? prev?.technicalStartAcknowledged ?? false,
+        initialModalShown: patch.initialModalShown ?? prev?.initialModalShown ?? false,
+        companionCollapsed: patch.companionCollapsed ?? prev?.companionCollapsed ?? false,
+        userFinalized: patch.userFinalized ?? prev?.userFinalized ?? false,
+      },
+    });
+  };
+
+  const setupGuideActive =
+    preferences.onboardingCompleted &&
+    preferences.tourCompleted &&
+    preferences.setupGuide?.userFinalized !== true;
+
+  const technicalModulesLocked = setupGuideActive;
+
+  const openSetupGuideModal = () => {
+    setIsSetupGuideOpen(true);
+    patchSetupGuide({ initialModalShown: true, companionCollapsed: false });
+  };
+
+  const tryOpenSetupGuideModalOnce = () => {
+    if (!setupGuideActive) return;
+    if (preferences.setupGuide?.initialModalShown) return;
+    setTimeout(() => openSetupGuideModal(), 400);
+  };
+
+  // Rehabilitar guía si se cerró por error (p. ej. al ir a un paso) o quedó completed sin userFinalized
+  useEffect(() => {
+    if (!isLoaded) return;
+    const sg = preferences.setupGuide;
+    if (!sg) return;
+
+    if (sg.userFinalized && !setupGuideAllComplete) {
+      patchSetupGuide({
+        userFinalized: false,
+        completed: false,
+        completedAt: null,
+        companionCollapsed: false,
+      });
+      return;
+    }
+
+    if (sg.completed && !sg.userFinalized) {
+      patchSetupGuide({ completed: false, completedAt: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, setupGuideAllComplete, preferences.setupGuide?.userFinalized, preferences.setupGuide?.completed]);
+
   const handleFinishTour = () => {
     setIsTourOpen(false);
     updatePreferences({ tourCompleted: true });
+    tryOpenSetupGuideModalOnce();
   };
 
   const handleCloseTour = () => {
     setIsTourOpen(false);
     updatePreferences({ tourCompleted: true });
+    tryOpenSetupGuideModalOnce();
+  };
+
+  const handleMinimizeSetupGuide = () => {
+    setIsSetupGuideOpen(false);
+    patchSetupGuide({ companionCollapsed: false });
+  };
+
+  const handleCompleteSetupGuide = () => {
+    setIsSetupGuideOpen(false);
+    patchSetupGuide({
+      completed: true,
+      dismissed: false,
+      completedAt: new Date().toISOString(),
+      userFinalized: true,
+      companionCollapsed: true,
+    });
   };
 
   // Dynamic user data with priority on active multi-tenant user or session
@@ -95,7 +230,25 @@ export default function DashboardPage() {
   const userEmail = currentUser?.email || session?.user?.email || "sergio.jara@lifeon.cl";
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeMenu, setActiveMenu] = useState<"dashboard" | "users" | "org" | "iper" | "docs" | "apr" | "techDocs">("dashboard");
+  const [activeMenu, setActiveMenu] = useState<DashboardMenuKey>("dashboard");
+
+  const navigateToMenu = useCallback(
+    (key: DashboardMenuKey) => {
+      if (technicalModulesLocked && isTechnicalManagementMenu(key)) {
+        openSetupGuideModal();
+        return;
+      }
+      setActiveMenu(key);
+    },
+    [technicalModulesLocked]
+  );
+
+  useEffect(() => {
+    if (!technicalModulesLocked) return;
+    if (isTechnicalManagementMenu(activeMenu)) {
+      setActiveMenu("dashboard");
+    }
+  }, [technicalModulesLocked, activeMenu]);
 
   const { workCenters } = useOrgStructure();
   const wpStorageKey = useMemo(
@@ -280,113 +433,105 @@ export default function DashboardPage() {
           </div>
 
           {/* Menú de Navegación */}
-          <nav className="flex flex-col gap-2 w-full">
-            {/* Dashboard */}
-            <button
-              onClick={() => setActiveMenu("dashboard")}
-              className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
-                activeMenu === "dashboard"
-                  ? "text-[#F04438] bg-red-50/70 font-semibold"
-                  : "text-gray-700 hover:bg-gray-50"
-              )}
-            >
-              <LuHouse className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span>Dashboard</span>}
-            </button>
-
-            {/* Usuarios */}
-            <button
-              onClick={() => setActiveMenu("users")}
-              className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
-                activeMenu === "users"
-                  ? "text-[#F04438] bg-red-50/70 font-semibold"
-                  : "text-gray-700 hover:bg-gray-50"
-              )}
-            >
-              <LuUserRound className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span>Usuarios</span>}
-            </button>
-
-            {/* Estructura Organizacional */}
-            <button
-              onClick={() => setActiveMenu("org")}
-              className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
-                activeMenu === "org"
-                  ? "text-[#F04438] bg-red-50/70 font-semibold"
-                  : "text-gray-700 hover:bg-gray-50"
-              )}
-            >
-              <LuFolderTree className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span>Estructura Organizacional</span>}
-            </button>
-
-            {/* Matriz IPER */}
-            <button
-              onClick={() => setActiveMenu("iper")}
-              className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
-                activeMenu === "iper"
-                  ? "text-[#F04438] bg-red-50/70 font-semibold"
-                  : "text-gray-700 hover:bg-gray-50"
-              )}
-            >
-              <LuLayoutGrid className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span>Matriz IPER</span>}
-            </button>
-
-            {/* Planificación y Gestión Preventiva */}
-            <button
-              onClick={() => setActiveMenu("docs")}
-              title="Planificación y Gestión Preventiva"
-              className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
-                activeMenu === "docs"
-                  ? "text-[#F04438] bg-red-50/70 font-semibold"
-                  : "text-gray-700 hover:bg-gray-50"
-              )}
-            >
-              <LuFileText className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span className="truncate">Planificación y Gestión Preventiva</span>}
-            </button>
-
-            {/* Documentación Técnica */}
-            <button
-              onClick={() => setActiveMenu("techDocs")}
-              className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
-                activeMenu === "techDocs"
-                  ? "text-[#F04438] bg-red-50/70 font-semibold"
-                  : "text-gray-700 hover:bg-gray-50"
-              )}
-            >
-              <LuFileText className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span className="truncate">Documentación Técnica</span>}
-            </button>
-
-            {/* APR Virtual */}
-            <button
-              onClick={() => setActiveMenu("apr")}
-              className={clsx(
-                "flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
-                activeMenu === "apr"
-                  ? "text-[#F04438] bg-red-50/70 font-semibold"
-                  : "text-gray-700 hover:bg-gray-50"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <LuAtom className="w-5 h-5 flex-shrink-0" />
-                {sidebarOpen && <span>APR Virtual</span>}
+          <nav className="flex flex-col w-full">
+            {NAV_SECTIONS.map((section, sectionIdx) => (
+              <div key={section.id} className={clsx(sectionIdx > 0 && (sidebarOpen ? "mt-3" : "mt-2"))}>
+                {sidebarOpen ? (
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 px-3 mb-1 flex items-center gap-1.5">
+                    <span>{section.title}</span>
+                    {section.id === "tecnica" && technicalModulesLocked && (
+                      <LuLock className="w-3 h-3 text-amber-600" aria-hidden />
+                    )}
+                  </p>
+                ) : (
+                  sectionIdx > 0 && <div className="h-2 mx-2 border-t border-gray-200/80" aria-hidden />
+                )}
+                <div className="flex flex-col gap-1">
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeMenu === item.key;
+                    const isLocked =
+                      technicalModulesLocked && isTechnicalManagementMenu(item.key);
+                    const baseClass = clsx(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition w-full text-left",
+                      item.showIaBadge && sidebarOpen && "justify-between",
+                      isLocked
+                        ? "text-gray-400 cursor-pointer opacity-75 hover:bg-amber-50/60"
+                        : "cursor-pointer",
+                      !isLocked &&
+                        (isActive
+                          ? "text-[#F04438] bg-red-50/70 font-semibold"
+                          : "text-gray-700 hover:bg-gray-50")
+                    );
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        title={
+                          isLocked
+                            ? "Completa la guía de primeros pasos para desbloquear"
+                            : item.title
+                        }
+                        onClick={() => navigateToMenu(item.key)}
+                        className={baseClass}
+                      >
+                        {item.showIaBadge ? (
+                          <>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Icon className="w-5 h-5 flex-shrink-0" />
+                              {sidebarOpen && <span className="truncate">{item.label}</span>}
+                            </div>
+                            {sidebarOpen && (
+                              <span className="flex items-center gap-1 flex-shrink-0">
+                                {isLocked && <LuLock className="w-3.5 h-3.5 text-amber-600" />}
+                                <span className="bg-[#DBEAFE] text-[#155DFC] text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                  IA
+                                </span>
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <Icon className="w-5 h-5 flex-shrink-0" />
+                            {sidebarOpen && <span className="truncate">{item.label}</span>}
+                            {sidebarOpen && isLocked && (
+                              <LuLock className="w-3.5 h-3.5 text-amber-600 ml-auto flex-shrink-0" />
+                            )}
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              {sidebarOpen && (
-                <span className="bg-[#DBEAFE] text-[#155DFC] text-[10px] font-bold px-1.5 py-0.5 rounded">
-                  IA
-                </span>
+            ))}
+          </nav>
+
+          {setupGuideActive && (
+            <button
+              type="button"
+              onClick={openSetupGuideModal}
+              title="Primeros pasos en LifeOn"
+              className={clsx(
+                "mt-4 w-full rounded-xl border border-amber-200/90 bg-amber-50/90 hover:bg-amber-100/90 transition cursor-pointer text-left",
+                sidebarOpen ? "px-3 py-2.5" : "p-2 flex justify-center"
+              )}
+            >
+              {sidebarOpen ? (
+                <>
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800/80">
+                    Puesta en marcha
+                  </p>
+                  <p className="text-xs font-bold text-amber-950 mt-0.5">Primeros pasos</p>
+                  <p className="text-[10px] text-amber-800 mt-1">
+                    {setupGuideDoneCount}/{setupGuideSteps.length} completados
+                  </p>
+                </>
+              ) : (
+                <span className="text-[10px] font-black text-amber-800">{setupGuideDoneCount}/{setupGuideSteps.length}</span>
               )}
             </button>
-          </nav>
+          )}
         </div>
 
         {/* Sección Inferior del Sidebar */}
@@ -491,7 +636,7 @@ export default function DashboardPage() {
                 query={searchQuery}
                 onClose={() => setIsSearchDropdownOpen(false)}
                 onNavigateTab={(tab: string) => {
-                  setActiveMenu(tab as any);
+                  navigateToMenu(tab as DashboardMenuKey);
                   setIsSearchDropdownOpen(false);
                 }}
               />
@@ -503,7 +648,7 @@ export default function DashboardPage() {
             {/* Botón APR Atom */}
             <button
               type="button"
-              onClick={() => setActiveMenu("apr")}
+              onClick={() => navigateToMenu("apr")}
               className={clsx(
                 "p-2 rounded-xl transition cursor-pointer",
                 activeMenu === "apr"
@@ -562,7 +707,7 @@ export default function DashboardPage() {
                   onMarkAllAsRead={handleMarkAllNotificationsRead}
                   onClose={() => setIsNotificationsOpen(false)}
                   onNavigateTab={(tab) => {
-                    setActiveMenu(tab as any);
+                    navigateToMenu(tab as DashboardMenuKey);
                     setIsNotificationsOpen(false);
                   }}
                 />
@@ -677,6 +822,15 @@ export default function DashboardPage() {
                       <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
                         Hola de nuevo, {userFirstName}
                       </h2>
+                      {setupGuideActive && (
+                          <button
+                            type="button"
+                            onClick={openSetupGuideModal}
+                            className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full cursor-pointer hover:bg-amber-100 transition"
+                          >
+                            Primeros pasos en LifeOn
+                          </button>
+                        )}
                       {preferences.onboardingCompleted && (
                         <span className="inline-flex items-center gap-1 bg-teal-50 border border-teal-200 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
                           <LuSparkles className="w-3 h-3 text-teal-600" />
@@ -708,7 +862,7 @@ export default function DashboardPage() {
                   <button
                     id="tour-apr-quick"
                     type="button"
-                    onClick={() => setActiveMenu("apr")}
+                    onClick={() => navigateToMenu("apr")}
                     className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 transition cursor-pointer border border-teal-200"
                   >
                     <LuSparkles className="w-4 h-4 text-teal-600" />
@@ -716,7 +870,7 @@ export default function DashboardPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setActiveMenu("iper")}
+                    onClick={() => navigateToMenu("iper")}
                     className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 transition cursor-pointer shadow-xs"
                   >
                     <LuTable className="w-4 h-4" />
@@ -727,7 +881,10 @@ export default function DashboardPage() {
 
               {/* Fila de 5 Tarjetas de Métricas KPI */}
               <div id="tour-kpis" className="w-full">
-                <DashboardKpis onSelectMetric={(tab) => setActiveMenu(tab as any)} activeWorkplace={activeWorkplace} />
+                <DashboardKpis
+                  onSelectMetric={(tab) => navigateToMenu(tab as DashboardMenuKey)}
+                  activeWorkplace={activeWorkplace}
+                />
               </div>
             </section>
 
@@ -755,7 +912,7 @@ export default function DashboardPage() {
 
                     <button
                       type="button"
-                      onClick={() => setActiveMenu("iper")}
+                      onClick={() => navigateToMenu("iper")}
                       className="text-xs text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1 cursor-pointer"
                     >
                       Ver Matriz <LuArrowRight className="w-3.5 h-3.5" />
@@ -772,7 +929,7 @@ export default function DashboardPage() {
                         Los indicadores de riesgos aparecerán automáticamente a medida que registres o importes tus matrices IPER.
                       </p>
                       <button
-                        onClick={() => setActiveMenu("iper")}
+                        onClick={() => navigateToMenu("iper")}
                         className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
                       >
                         <LuTable className="w-4 h-4" />
@@ -880,7 +1037,7 @@ export default function DashboardPage() {
                       : `${vigentesCount} ${vigentesCount === 1 ? "vigente" : "vigentes"} • ${enRevisionCount} en revisión • ${borradoresCount} ${borradoresCount === 1 ? "borrador" : "borradores"} (${totalMatricesCount} ${totalMatricesCount === 1 ? "total" : "totales"})`}
                   </span>
                   <button
-                    onClick={() => setActiveMenu("iper")}
+                    onClick={() => navigateToMenu("iper")}
                     className="text-teal-600 hover:underline font-medium cursor-pointer"
                   >
                     Administrar Matrices &rarr;
@@ -910,7 +1067,7 @@ export default function DashboardPage() {
 
                     <button
                       type="button"
-                      onClick={() => setActiveMenu("docs")}
+                      onClick={() => navigateToMenu("docs")}
                       className="text-xs text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1 cursor-pointer"
                     >
                       Ver Todo <LuArrowRight className="w-3.5 h-3.5" />
@@ -927,7 +1084,7 @@ export default function DashboardPage() {
                         Configura tu Programa de Trabajo para comenzar la planificación y seguimiento preventivo de tu organización.
                       </p>
                       <button
-                        onClick={() => setActiveMenu("docs")}
+                        onClick={() => navigateToMenu("docs")}
                         className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
                       >
                         <LuFileText className="w-4 h-4" />
@@ -954,7 +1111,7 @@ export default function DashboardPage() {
 
                         <button
                           type="button"
-                          onClick={() => setActiveMenu("apr")}
+                          onClick={() => navigateToMenu("apr")}
                           className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg shadow-xs transition cursor-pointer whitespace-nowrap"
                         >
                           Iniciar Asistente &rarr;
@@ -1029,7 +1186,7 @@ export default function DashboardPage() {
                 <div className="pt-3 mt-3 border-t border-gray-100 flex justify-between items-center text-[11px] text-gray-400">
                   <span>Supervisado por: {userDisplayName}</span>
                   <button
-                    onClick={() => setActiveMenu("docs")}
+                    onClick={() => navigateToMenu("docs")}
                     className="text-teal-600 hover:underline font-medium cursor-pointer"
                   >
                     Ver Planificación Preventiva &rarr;
@@ -1049,7 +1206,7 @@ export default function DashboardPage() {
         {/* Vista: Matriz IPER */}
         {activeMenu === "iper" && (
           <IperMatrixView
-            onOpenAprVirtual={() => setActiveMenu("apr")}
+            onOpenAprVirtual={() => navigateToMenu("apr")}
             onNavigateToOrg={() => setActiveMenu("org")}
           />
         )}
@@ -1069,6 +1226,14 @@ export default function DashboardPage() {
         isOpen={isHelpModalOpen}
         onClose={() => setIsHelpModalOpen(false)}
         onOpenTour={() => setIsTourOpen(true)}
+        onOpenSetupGuide={
+          setupGuideActive
+            ? () => {
+                setIsHelpModalOpen(false);
+                openSetupGuideModal();
+              }
+            : undefined
+        }
       />
       <FilterWorkplaceModal
         isOpen={isFilterModalOpen}
@@ -1124,6 +1289,31 @@ export default function DashboardPage() {
         isOpen={isTourOpen}
         onClose={handleCloseTour}
         onFinish={handleFinishTour}
+      />
+
+      {activeMenu !== "apr" && (
+        <AprVirtualAssistant
+          activeModule={activeMenu}
+          companionVisible={
+            setupGuideActive && !(preferences.setupGuide?.companionCollapsed ?? false)
+          }
+        />
+      )}
+
+      {setupGuideActive && (
+        <SetupGuideCompanion
+          collapsed={preferences.setupGuide?.companionCollapsed ?? false}
+          onToggleCollapsed={(collapsed) => patchSetupGuide({ companionCollapsed: collapsed })}
+          onOpenModal={openSetupGuideModal}
+        />
+      )}
+
+      <SetupGuide
+        isOpen={isSetupGuideOpen}
+        onComplete={handleCompleteSetupGuide}
+        onMinimize={handleMinimizeSetupGuide}
+        onNavigate={navigateToMenu}
+        onOpenAccount={() => setIsAccountModalOpen(true)}
       />
     </div>
   );

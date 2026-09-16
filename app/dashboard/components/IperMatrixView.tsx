@@ -54,9 +54,15 @@ import {
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import { getSectorRiskProfile } from "@/data/sectorRiskTemplates";
 import IperMatrixDetailView, { IperEvaluationRow } from "./IperMatrixDetailView";
+import IrlEntryModal from "./IrlEntryModal";
+import IrlDocumentModal from "./IrlDocumentModal";
 import OrgStructureModal from "./OrgStructureModal";
 import IperModuleOnboardingModal from "./IperModuleOnboardingModal";
 import { convert5x5ToVep3x3 } from "@/lib/riskEngine/riskEquivalence";
+import {
+  GRID_3X3_VEP,
+  SIGNIFICANCE_GRID_5X5 as SIGNIFICANCE_GRID,
+} from "@/lib/riskEngine/riskMatrixHeatmap";
 import { useOrgStructure } from "@/hooks/useOrgStructure";
 import {
   saveIperMatricesToSupabase,
@@ -100,6 +106,7 @@ export interface IperMatrixItem {
   processName?: string;
   description?: string;
   evaluations?: IperEvaluationRow[];
+  acknowledgements?: import("@/types/irlAcknowledgements").IrlAcknowledgement[];
 }
 
 export interface SafetyEmergencyRiskItem {
@@ -492,79 +499,6 @@ const INITIAL_PROTOCOL_RISKS: ProtocolRiskItem[] = [
   },
 ];
 
-export interface Grid3x3Cell {
-  prob: number;
-  severidad: number;
-  vep: number;
-  color: "green" | "yellow" | "orange" | "red";
-  level: "Bajo" | "Medio" | "Alto" | "Crítico";
-}
-
-const GRID_3X3_VEP: Grid3x3Cell[][] = [
-  // Severidad 4: Fatal / Grave (Fila 0)
-  [
-    { prob: 1, severidad: 4, vep: 4, color: "yellow", level: "Medio" },
-    { prob: 2, severidad: 4, vep: 8, color: "orange", level: "Alto" },
-    { prob: 4, severidad: 4, vep: 16, color: "red", level: "Crítico" },
-  ],
-  // Severidad 2: Moderada / Grave (Fila 1)
-  [
-    { prob: 1, severidad: 2, vep: 2, color: "green", level: "Bajo" },
-    { prob: 2, severidad: 2, vep: 4, color: "yellow", level: "Medio" },
-    { prob: 4, severidad: 2, vep: 8, color: "orange", level: "Alto" },
-  ],
-  // Severidad 1: Leve (Fila 2)
-  [
-    { prob: 1, severidad: 1, vep: 1, color: "green", level: "Bajo" },
-    { prob: 2, severidad: 1, vep: 2, color: "green", level: "Bajo" },
-    { prob: 4, severidad: 1, vep: 4, color: "yellow", level: "Medio" },
-  ],
-];
-
-// Matrix Heatmap Definition (5 Rows x 5 Cols)
-const SIGNIFICANCE_GRID = [
-  // Impact 5 (Row index 0)
-  [
-    { val: 18, color: "orange", count: 0, prob: 1, impact: 5 },
-    { val: 19, color: "orange", count: 1, prob: 2, impact: 5 },
-    { val: 23, color: "red", count: 0, prob: 3, impact: 5 },
-    { val: 24, color: "red", count: 0, prob: 4, impact: 5 },
-    { val: 25, color: "red", count: 0, prob: 5, impact: 5 },
-  ],
-  // Impact 4 (Row index 1)
-  [
-    { val: 12, color: "yellow", count: 0, prob: 1, impact: 4 },
-    { val: 16, color: "orange", count: 1, prob: 2, impact: 4 },
-    { val: 17, color: "orange", count: 1, prob: 3, impact: 4 },
-    { val: 21, color: "red", count: 0, prob: 4, impact: 4 },
-    { val: 22, color: "red", count: 0, prob: 5, impact: 4 },
-  ],
-  // Impact 3 (Row index 2)
-  [
-    { val: 10, color: "yellow", count: 0, prob: 1, impact: 3 },
-    { val: 11, color: "yellow", count: 0, prob: 2, impact: 3 },
-    { val: 14, color: "orange", count: 0, prob: 3, impact: 3 },
-    { val: 15, color: "orange", count: 2, prob: 4, impact: 3 },
-    { val: 20, color: "red", count: 0, prob: 5, impact: 3 },
-  ],
-  // Impact 2 (Row index 3)
-  [
-    { val: 4, color: "green", count: 0, prob: 1, impact: 2 },
-    { val: 5, color: "green", count: 0, prob: 2, impact: 2 },
-    { val: 8, color: "yellow", count: 2, prob: 3, impact: 2 },
-    { val: 9, color: "yellow", count: 1, prob: 4, impact: 2 },
-    { val: 13, color: "orange", count: 2, prob: 5, impact: 2 },
-  ],
-  // Impact 1 (Row index 4)
-  [
-    { val: 1, color: "green", count: 0, prob: 1, impact: 1 },
-    { val: 2, color: "green", count: 0, prob: 2, impact: 1 },
-    { val: 3, color: "green", count: 0, prob: 3, impact: 1 },
-    { val: 6, color: "yellow", count: 0, prob: 4, impact: 1 },
-    { val: 7, color: "yellow", count: 1, prob: 5, impact: 1 },
-  ],
-];
-
 interface MatrixActionItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -710,23 +644,10 @@ export default function IperMatrixView({
   const [isMethodologyModalExplicitOpen, setIsMethodologyModalExplicitOpen] = useState(false);
   const [methodologyPromptMessage, setMethodologyPromptMessage] = useState<string | undefined>(undefined);
 
-  // Estados de Información de Riesgos Laborales (IRL) (Reqs 13-16)
-  const [isIrlCargoListOpen, setIsIrlCargoListOpen] = useState(false);
-  const [selectedIrlCargoItem, setSelectedIrlCargoItem] = useState<{
-    cargo: string;
-    area: string;
-    matrices: IperMatrixItem[];
-    lastUpdate: string;
-    status: "Actualizado" | "Pendiente";
-    risks: {
-      task: string;
-      hazard: string;
-      riskEvent: string;
-      controls: string;
-      matrixCode: string;
-      matrixName: string;
-      area: string;
-    }[];
+  const [isIrlEntryOpen, setIsIrlEntryOpen] = useState(false);
+  const [irlDocumentState, setIrlDocumentState] = useState<{
+    matrix: IperMatrixItem;
+    initialPosition: string;
   } | null>(null);
 
   // Matrices en estado Vigente (Fuente exclusiva para IRL según Reqs 3-7)
@@ -1917,7 +1838,7 @@ export default function IperMatrixView({
 
           <button
             type="button"
-            onClick={() => setIsIrlCargoListOpen(true)}
+            onClick={() => setIsIrlEntryOpen(true)}
             className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-2 whitespace-nowrap self-stretch lg:self-auto justify-center"
           >
             <LuFileText className="w-4 h-4" />
@@ -3880,313 +3801,33 @@ export default function IperMatrixView({
         }}
       />
 
-      {/* ==================================================================== */}
-      {/* MODAL: VISTA DE INFORMACIÓN DE RIESGOS LABORALES (IRL) POR CARGO (Req 16) */}
-      {/* ==================================================================== */}
-      {isIrlCargoListOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 flex flex-col justify-between animate-in fade-in zoom-in-95 duration-200">
-            <div>
-              {/* Encabezado */}
-              <div className="flex items-start justify-between gap-3 pb-4 border-b border-gray-100 mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-                    <LuFileText className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-gray-900 tracking-tight">
-                      Información de Riesgos Laborales (IRL) por Cargo
-                    </h3>
-                    <p className="text-xs text-gray-500">
-                      Documentos preventivos generados exclusivamente a partir de matrices IPER vigentes de la organización.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsIrlCargoListOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition cursor-pointer"
-                >
-                  <LuX className="w-5 h-5" />
-                </button>
-              </div>
+      <IrlEntryModal
+        isOpen={isIrlEntryOpen}
+        matrices={matrices.filter((m) => m.status === "Vigente")}
+        onClose={() => setIsIrlEntryOpen(false)}
+        onOpenIrl={(matrix, cargo) => {
+          setIsIrlEntryOpen(false);
+          setIrlDocumentState({ matrix, initialPosition: cargo });
+        }}
+      />
 
-              {/* Lista de Cargos o Estado Vacío */}
-              {irlCargosData.length === 0 ? (
-                <div className="p-10 text-center border-2 border-dashed border-gray-200 rounded-2xl my-4">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-                    <LuFileText className="w-6 h-6" />
-                  </div>
-                  <h4 className="text-sm font-bold text-gray-800 mb-1">
-                    No existen matrices IPER en estado Vigente
-                  </h4>
-                  <p className="text-xs text-gray-500 max-w-md mx-auto mb-4">
-                    La Información de Riesgos Laborales (IRL) se genera automáticamente a partir de matrices en estado <strong>Vigente</strong>. Una vez que apruebes matrices IPER, los cargos asociados aparecerán aquí disponibles para emisión.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsIrlCargoListOpen(false);
-                      handleOpenNewMatrix();
-                    }}
-                    className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
-                  >
-                    Crear primera matriz IPER
-                  </button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-gray-200 text-gray-400 font-semibold uppercase tracking-wider text-[10px]">
-                        <th className="py-3 px-3">Cargo</th>
-                        <th className="py-3 px-3">Área</th>
-                        <th className="py-3 px-3">Matrices asociadas</th>
-                        <th className="py-3 px-3">Última actualización</th>
-                        <th className="py-3 px-3">Estado</th>
-                        <th className="py-3 px-3 text-right">Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {irlCargosData.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-teal-50/30 transition">
-                          <td className="py-3 px-3">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-teal-500" />
-                              <span className="font-bold text-gray-900">{item.cargo}</span>
-                            </div>
-                          </td>
-                          <td className="py-3 px-3 text-gray-600">{item.area}</td>
-                          <td className="py-3 px-3">
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {item.matrices.map((m) => (
-                                <span
-                                  key={m.id}
-                                  className="px-2 py-0.5 bg-gray-100 text-gray-700 font-mono text-[10px] rounded font-bold"
-                                  title={m.name}
-                                >
-                                  {m.code}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-3 px-3 text-gray-600">{item.lastUpdate}</td>
-                          <td className="py-3 px-3">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              {item.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedIrlCargoItem(item)}
-                              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg shadow-xs transition cursor-pointer"
-                            >
-                              Ver IRL
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-4 border-t border-gray-100 flex justify-end mt-4">
-              <button
-                type="button"
-                onClick={() => setIsIrlCargoListOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-100 rounded-xl transition cursor-pointer"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
+      {irlDocumentState && (
+        <IrlDocumentModal
+          matrix={irlDocumentState.matrix}
+          evaluations={irlDocumentState.matrix.evaluations || []}
+          initialPosition={irlDocumentState.initialPosition}
+          acknowledgements={irlDocumentState.matrix.acknowledgements || []}
+          onAcknowledgementsChange={(acks) => {
+            const updated = { ...irlDocumentState.matrix, acknowledgements: acks };
+            setIrlDocumentState({ ...irlDocumentState, matrix: updated });
+            updateAndPersistMatrices(
+              matrices.map((m) => (m.id === updated.id ? updated : m))
+            );
+          }}
+          onClose={() => setIrlDocumentState(null)}
+        />
       )}
 
-      {/* ==================================================================== */}
-      {/* MODAL: DOCUMENTO IRL COMPLETO POR CARGO */}
-      {/* ==================================================================== */}
-      {selectedIrlCargoItem && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 flex flex-col justify-between max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
-            <div>
-              {/* Barra Superior con Acciones */}
-              <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-6 gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-                    <LuFileText className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-gray-900">
-                      Documento Oficial IRL
-                    </h3>
-                    <p className="text-[11px] text-gray-500">
-                      {selectedIrlCargoItem.cargo} • {selectedIrlCargoItem.area}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="px-3.5 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition cursor-pointer"
-                  >
-                    <LuPrinter className="w-3.5 h-3.5 text-gray-500" />
-                    <span>Imprimir</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedIrlCargoItem(null)}
-                    className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition cursor-pointer"
-                  >
-                    <LuX className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* CUERPO DEL DOCUMENTO CORPORATIVO */}
-              <div className="bg-slate-50/60 rounded-2xl p-6 sm:p-8 border border-slate-200 text-gray-900 flex flex-col gap-6 text-xs leading-relaxed">
-                {/* Membrete Oficial */}
-                <div className="text-center pb-4 border-b border-slate-200">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-700">
-                    LIFEON SST • GESTIÓN DE RIESGOS LABORALES
-                  </span>
-                  <h2 className="text-lg sm:text-xl font-black text-gray-900 mt-1">
-                    INFORMACIÓN DE RIESGOS LABORALES (IRL)
-                  </h2>
-                  <p className="text-[11px] text-gray-500 mt-0.5">
-                    Obligación de Informar los Riesgos Laborales (Art. 21 D.S. N° 40 / Ley 16.744 / D.S. N° 44)
-                  </p>
-                </div>
-
-                {/* Cuadro de Identificación */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-white p-4 rounded-xl border border-slate-200 text-xs">
-                  <div>
-                    <span className="text-[10px] text-gray-400 font-semibold block uppercase">Empresa</span>
-                    <strong className="text-gray-800 font-bold">{preferences.organizationName || "Constructora Santa María SpA"}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-400 font-semibold block uppercase">Puesto / Cargo</span>
-                    <strong className="text-teal-800 font-bold">{selectedIrlCargoItem.cargo}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-400 font-semibold block uppercase">Área Operativa</span>
-                    <strong className="text-gray-800 font-bold">{selectedIrlCargoItem.area}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-400 font-semibold block uppercase">Fecha de Emisión</span>
-                    <span className="text-gray-700">{selectedIrlCargoItem.lastUpdate}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-[10px] text-gray-400 font-semibold block uppercase">Matrices IPER Vigentes Fuente</span>
-                    <span className="text-gray-700 font-mono text-[11px]">
-                      {selectedIrlCargoItem.matrices.map((m) => m.code).join(", ")}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 1. Marco Legal */}
-                <div>
-                  <h4 className="font-extrabold text-gray-900 text-xs uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                    <LuShieldCheck className="w-4 h-4 text-teal-600" />
-                    1. Objetivo y Alcance
-                  </h4>
-                  <p className="text-gray-600 text-justify">
-                    El presente documento tiene por objetivo informar oportuna y convenientemente a los trabajadores sobre los riesgos inherentes a sus labores, las medidas preventivas adoptadas por la empresa y los métodos de trabajo correctos, conforme a lo establecido en el Artículo 21 del Decreto Supremo N° 40, en concordancia con la Ley N° 16.744 y el Decreto Supremo N° 44.
-                  </p>
-                </div>
-
-                {/* 2. Peligros y Medidas de Control (Consolidados de Matrices Vigentes) */}
-                <div>
-                  <h4 className="font-extrabold text-gray-900 text-xs uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                    <LuShieldAlert className="w-4 h-4 text-amber-600" />
-                    2. Peligros, Riesgos Evaluados y Medidas Preventivas Obligatorias
-                  </h4>
-                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-100 text-gray-700 font-bold border-b border-slate-200 text-[10px] uppercase">
-                          <th className="p-2.5 w-1/5">Tarea Evaluada</th>
-                          <th className="p-2.5 w-1/4">Peligro Identificado</th>
-                          <th className="p-2.5 w-1/4">Consecuencia / Evento</th>
-                          <th className="p-2.5 w-1/4">Medida Preventiva / Control DS 44</th>
-                          <th className="p-2.5 w-1/12 text-center">Matriz</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-[11px]">
-                        {selectedIrlCargoItem.risks.map((r, rIdx) => (
-                          <tr key={rIdx}>
-                            <td className="p-2.5 font-semibold text-gray-800">{r.task}</td>
-                            <td className="p-2.5 text-gray-900">{r.hazard}</td>
-                            <td className="p-2.5 text-gray-600">{r.riskEvent}</td>
-                            <td className="p-2.5 text-teal-900 bg-teal-50/40">{r.controls}</td>
-                            <td className="p-2.5 text-center font-mono text-[10px] text-gray-600 font-bold">{r.matrixCode}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* 3. EPP Obligatorio */}
-                <div>
-                  <h4 className="font-extrabold text-gray-900 text-xs uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                    <LuCheck className="w-4 h-4 text-emerald-600" />
-                    3. Elementos de Protección Personal (EPP) Obligatorios
-                  </h4>
-                  <ul className="list-disc list-inside text-gray-600 space-y-0.5 ml-1">
-                    <li>Casco de seguridad dieléctrico con barbiquejo de 3 puntas.</li>
-                    <li>Calzado de seguridad con puntera de acero o composite y suela antideslizante.</li>
-                    <li>Lentes de seguridad con protección UV y sello hermético contra partículas.</li>
-                    <li>Chaleco reflectante de alta visibilidad clase 2 o 3 según norma.</li>
-                    <li>Guantes de seguridad certificados específicos para la tarea (mecánicos / nitrilo).</li>
-                    <li>Protección respiratoria con filtros certificados según exposición a polvo o vapores.</li>
-                  </ul>
-                </div>
-
-                {/* 4. Declaración de Recepción y Firma */}
-                <div className="p-4 bg-white rounded-xl border border-slate-200 flex flex-col gap-4 mt-2">
-                  <p className="text-[11px] text-gray-600 text-justify">
-                    Declaro haber recibido la información y capacitación sobre los riesgos propios de mis funciones como <strong>{selectedIrlCargoItem.cargo}</strong>, comprometiéndome a cumplir las normas internas, los procedimientos de trabajo seguro y el uso permanente de mis EPP.
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-[11px]">
-                    <div>
-                      <span className="text-gray-400 block text-[10px]">Nombre Trabajador</span>
-                      <div className="border-b border-gray-300 pt-3"></div>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 block text-[10px]">RUT</span>
-                      <div className="border-b border-gray-300 pt-3"></div>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 block text-[10px]">Fecha de Entrega</span>
-                      <div className="border-b border-gray-300 pt-3 text-gray-700">{selectedIrlCargoItem.lastUpdate}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 block text-[10px]">Firma</span>
-                      <div className="border-b border-gray-300 pt-3"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-gray-100 flex justify-end mt-4">
-              <button
-                type="button"
-                onClick={() => setSelectedIrlCargoItem(null)}
-                className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs"
-              >
-                Entendido / Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

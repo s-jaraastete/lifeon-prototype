@@ -1,4 +1,5 @@
 import { resetSupabaseDataForOrg } from "@/lib/services/supabaseService";
+import { clearLifeOnSessionCookie } from "@/lib/auth/lifeonSessionClient";
 
 export interface AuthUser {
   id: string;
@@ -221,6 +222,7 @@ export function setActiveUser(user: AuthUser): void {
 export function logoutActiveUser(): void {
   if (typeof window === "undefined") return;
   try {
+    void clearLifeOnSessionCookie();
     window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
     window.dispatchEvent(new CustomEvent(SESSION_CHANGE_EVENT, { detail: null }));
   } catch (e) {

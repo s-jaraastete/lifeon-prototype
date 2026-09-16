@@ -68,6 +68,8 @@ export interface ProgramActivity {
   applicability?: ActivityApplicability;
   status: ActivityStatus;
   progress: number;  // 0 - 100
+  /** Peso relativo para Curva S (default 1 si no se define) */
+  weight?: number;
   evidences: ActivityEvidence[];
   observations?: string;
 }

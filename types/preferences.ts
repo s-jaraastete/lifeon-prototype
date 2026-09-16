@@ -20,6 +20,19 @@ export interface PreventivePlanningModuleConfig {
   configuredAt?: string | null;
 }
 
+export interface SetupGuidePreferences {
+  completed: boolean;
+  dismissed: boolean;
+  completedAt?: string | null;
+  technicalStartAcknowledged?: boolean;
+  /** Modal de guía mostrado al menos una vez tras el tour */
+  initialModalShown?: boolean;
+  /** Panel flotante minimizado a botón */
+  companionCollapsed?: boolean;
+  /** true solo cuando el usuario pulsa «Finalizar guía» */
+  userFinalized?: boolean;
+}
+
 export interface OrganizationModuleConfigurations {
   miper: IperModuleConfig;
   preventivePlanning: PreventivePlanningModuleConfig;
@@ -45,6 +58,7 @@ export interface OrganizationPreferences {
   onboardingCompletedAt?: string | null;
   onboardingStep: number;
   tourCompleted?: boolean;
+  setupGuide?: SetupGuidePreferences;
   organizationLogo?: string | null;
   profilePhoto?: string | null;
   preventiveActivities?: any[];
@@ -83,6 +97,15 @@ export const DEFAULT_ORGANIZATION_PREFERENCES: OrganizationPreferences = {
   onboardingCompletedAt: null,
   onboardingStep: 1,
   tourCompleted: false,
+  setupGuide: {
+    completed: false,
+    dismissed: false,
+    completedAt: null,
+    technicalStartAcknowledged: false,
+    initialModalShown: false,
+    companionCollapsed: false,
+    userFinalized: false,
+  },
   organizationLogo: null,
   profilePhoto: null,
 };
@@ -118,6 +141,15 @@ export const EMPTY_ORGANIZATION_PREFERENCES: OrganizationPreferences = {
   onboardingCompletedAt: null,
   onboardingStep: 1,
   tourCompleted: false,
+  setupGuide: {
+    completed: false,
+    dismissed: false,
+    completedAt: null,
+    technicalStartAcknowledged: false,
+    initialModalShown: false,
+    companionCollapsed: false,
+    userFinalized: false,
+  },
   organizationLogo: null,
   profilePhoto: null,
 };

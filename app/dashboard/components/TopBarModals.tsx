@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { isResetAllowedForUser } from "@/lib/auth/authService";
+import { ECONOMIC_SECTOR_LABELS } from "@/data/economicSectors";
 import {
   LuX,
   LuCheck,
@@ -37,6 +38,7 @@ import {
   LuSlidersHorizontal,
   LuRotateCcw,
   LuLightbulb,
+  LuListChecks,
   LuImage,
   LuUpload,
   LuTrash2,
@@ -976,17 +978,6 @@ export function SettingsModal({
     }, 1000);
   };
 
-  const SECTORS_LIST = [
-    "Construcción",
-    "Minería y Extracción",
-    "Servicios e Ingeniería",
-    "Manufactura e Industria",
-    "Logística y Transporte",
-    "Salud y Asistencia",
-    "Comercio y Retail",
-    "Otro Rubro",
-  ];
-
   const WORKER_RANGES_LIST = [
     "1 a 20 trabajadores",
     "21 a 50 trabajadores",
@@ -1157,7 +1148,7 @@ export function SettingsModal({
                       onChange={(e) => setOrgSector(e.target.value)}
                       className="w-full border border-gray-200 rounded-xl p-2.5 text-xs text-gray-800 bg-white"
                     >
-                      {SECTORS_LIST.map((sec) => (
+                      {ECONOMIC_SECTOR_LABELS.map((sec) => (
                         <option key={sec} value={sec}>
                           {sec}
                         </option>
@@ -1495,10 +1486,12 @@ export function HelpModal({
   isOpen,
   onClose,
   onOpenTour,
+  onOpenSetupGuide,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onOpenTour?: () => void;
+  onOpenSetupGuide?: () => void;
 }) {
   if (!isOpen) return null;
 
@@ -1545,22 +1538,33 @@ export function HelpModal({
           </div>
         </div>
 
-        <div className="flex justify-between items-center gap-2 pt-2 border-t border-gray-100">
-          {onOpenTour ? (
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onOpenTour();
-              }}
-              className="px-3.5 py-2 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl transition cursor-pointer flex items-center gap-1.5"
-            >
-              <LuSparkles className="w-3.5 h-3.5" />
-              Iniciar Tutorial Guiado
-            </button>
-          ) : (
-            <div />
-          )}
+        <div className="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-gray-100">
+          <div className="flex flex-wrap gap-2">
+            {onOpenSetupGuide ? (
+              <button
+                type="button"
+                onClick={onOpenSetupGuide}
+                className="px-3.5 py-2 text-xs font-semibold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+              >
+                <LuListChecks className="w-3.5 h-3.5" />
+                Primeros pasos en LifeOn
+              </button>
+            ) : null}
+            {onOpenTour ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenTour();
+                }}
+                className="px-3.5 py-2 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+              >
+                <LuSparkles className="w-3.5 h-3.5" />
+                Iniciar Tutorial Guiado
+              </button>
+            ) : null}
+          </div>
+          {!onOpenTour && !onOpenSetupGuide ? <div /> : null}
 
           <button
             onClick={onClose}

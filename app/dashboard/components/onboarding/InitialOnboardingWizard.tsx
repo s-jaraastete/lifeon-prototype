@@ -27,6 +27,7 @@ import {
   GuidanceLevel,
 } from "@/types/preferences";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
+import { ECONOMIC_SECTOR_LABELS } from "@/data/economicSectors";
 
 interface InitialOnboardingWizardProps {
   onCompleted?: () => void;
@@ -34,17 +35,6 @@ interface InitialOnboardingWizardProps {
 }
 
 const TOTAL_STEPS = 5;
-
-const SECTORS = [
-  "Construcción",
-  "Minería y Extracción",
-  "Servicios e Ingeniería",
-  "Manufactura e Industria",
-  "Logística y Transporte",
-  "Salud y Asistencia",
-  "Comercio y Retail",
-  "Otro Rubro",
-];
 
 const WORKER_RANGES = [
   "1 a 20 trabajadores",
@@ -354,7 +344,7 @@ export default function InitialOnboardingWizard({
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 text-gray-800 cursor-pointer"
                   >
                     <option value="">Selecciona un rubro o sector...</option>
-                    {SECTORS.map((sec) => (
+                    {ECONOMIC_SECTOR_LABELS.map((sec) => (
                       <option key={sec} value={sec}>
                         {sec}
                       </option>

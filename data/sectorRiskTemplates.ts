@@ -37,6 +37,8 @@ export interface SectorTaskSuggestion {
   }[];
 }
 
+import { resolveSectorTemplateKey, type SectorTemplateKey } from "./economicSectors";
+
 export interface SectorRiskProfile {
   sector: string;
   sectorDisplayName: string;
@@ -46,7 +48,7 @@ export interface SectorRiskProfile {
   suggestedHazards: SectorHazardSuggestion[];
 }
 
-export const SECTOR_RISK_PROFILES: Record<string, SectorRiskProfile> = {
+export const SECTOR_RISK_PROFILES: Record<SectorTemplateKey, SectorRiskProfile> = {
   Minería: {
     sector: "Minería",
     sectorDisplayName: "Minería y Procesamiento de Minerales",
@@ -649,37 +651,92 @@ export const SECTOR_RISK_PROFILES: Record<string, SectorRiskProfile> = {
       },
     ],
   },
+  Genérico: {
+    sector: "Genérico",
+    sectorDisplayName: "Actividades económicas diversas",
+    suggestedMatrixTitles: ["Matriz IPER General de la Organización"],
+    recommendedProcesses: [
+      {
+        name: "Operaciones y Servicios Generales",
+        workArea: "Área Operativa Principal",
+        subprocesses: [
+          "Ejecución de tareas habituales del puesto",
+          "Mantenimiento y orden del área de trabajo",
+          "Coordinación con equipos internos",
+        ],
+      },
+      {
+        name: "Gestión y Administración",
+        workArea: "Oficinas y Soporte",
+        subprocesses: [
+          "Planificación y seguimiento de actividades",
+          "Gestión documental y registros",
+          "Atención a requerimientos internos",
+        ],
+      },
+    ],
+    recommendedTasks: [],
+    suggestedHazards: [
+      {
+        id: "gen-1",
+        hazardDescription: "Trabajo en altura en accesos, escaleras o plataformas sin protección colectiva",
+        specificRiskCode: "B1",
+        specificRiskName: "Caída de personas a distinto nivel",
+        riskFamily: "Caídas",
+        riskClassification: "Seguridad",
+        defaultProb: 2,
+        defaultSev: 4,
+        prob5x5: 2,
+        sev5x5: 4,
+        recommendedControls: [
+          { type: "Controles Administrativos", description: "Permiso de trabajo y verificación de puntos de anclaje certificados", isCritical: true },
+          { type: "Elementos de Protección Personal (EPP)", description: "Arnés de seguridad con línea de vida y casco con barbiquejo", isCritical: true },
+        ],
+        tags: ["Altura", "General"],
+      },
+      {
+        id: "gen-2",
+        hazardDescription: "Contacto con energía eléctrica en equipos, tableros o extensiones",
+        specificRiskCode: "B5",
+        specificRiskName: "Contacto eléctrico directo o indirecto",
+        riskFamily: "Electricidad",
+        riskClassification: "Seguridad",
+        defaultProb: 2,
+        defaultSev: 4,
+        prob5x5: 2,
+        sev5x5: 4,
+        recommendedControls: [
+          { type: "Controles Administrativos", description: "Bloqueo y etiquetado LOTO antes de intervención", isCritical: true },
+        ],
+        tags: ["Eléctrico", "General"],
+      },
+      {
+        id: "gen-3",
+        hazardDescription: "Manejo manual de cargas y posturas forzadas en tareas repetitivas",
+        specificRiskCode: "ME1",
+        specificRiskName: "Trastornos musculoesqueléticos por sobreesfuerzo",
+        riskFamily: "Ergonomía",
+        riskClassification: "Músculo-esquelético",
+        defaultProb: 3,
+        defaultSev: 2,
+        prob5x5: 3,
+        sev5x5: 2,
+        recommendedControls: [
+          { type: "Controles Administrativos", description: "Capacitación en técnicas de levantamiento y rotación de tareas" },
+        ],
+        tags: ["Ergonomía", "General"],
+      },
+    ],
+  },
 };
 
-// Obtener el perfil del sector o el predeterminado si no coincide exactamente
+/** Claves de plantilla IPER disponibles para carga de estructura organizacional */
+export const SECTOR_TEMPLATE_KEYS = Object.keys(SECTOR_RISK_PROFILES) as SectorTemplateKey[];
+
+// Obtener el perfil del sector según catálogo centralizado de rubros
 export function getSectorRiskProfile(sectorName?: string): SectorRiskProfile {
-  if (!sectorName) return SECTOR_RISK_PROFILES["Construcción"];
-
-  const sLower = sectorName.toLowerCase().trim();
-  if (sLower.includes("servicio") || sLower.includes("ingenier") || sLower.includes("consultor")) {
-    return SECTOR_RISK_PROFILES["Servicios e Ingeniería"];
-  }
-  if (sLower.includes("miner")) {
-    return SECTOR_RISK_PROFILES["Minería"];
-  }
-  if (sLower.includes("transp") || sLower.includes("logíst")) {
-    return SECTOR_RISK_PROFILES["Transporte y Logística"];
-  }
-  if (sLower.includes("manuf") || sLower.includes("industr")) {
-    return SECTOR_RISK_PROFILES["Manufactura / Industrial"];
-  }
-  if (sLower.includes("construc") || sLower.includes("obra") || sLower.includes("edific")) {
-    return SECTOR_RISK_PROFILES["Construcción"];
-  }
-
-  // Búsqueda aproximada
-  const key = Object.keys(SECTOR_RISK_PROFILES).find(
-    (k) =>
-      k.toLowerCase().includes(sLower) ||
-      sLower.includes(k.toLowerCase())
-  );
-
-  return key ? SECTOR_RISK_PROFILES[key] : SECTOR_RISK_PROFILES["Construcción"];
+  const key = resolveSectorTemplateKey(sectorName);
+  return SECTOR_RISK_PROFILES[key] ?? SECTOR_RISK_PROFILES["Genérico"];
 }
 
 /**
@@ -815,11 +872,7 @@ export function getContextualTasksForProcess(
 
   if (matchedFromProfile.length > 0) return matchedFromProfile;
 
-  return [
-    `Ejecución operacional estándar de ${processName}`,
-    `Inspección previa de herramientas y área de trabajo para ${processName}`,
-    `Mantenimiento básico y limpieza al finalizar ${processName}`,
-  ];
+  return [];
 }
 
 /**
@@ -880,6 +933,6 @@ export function getContextualHazardsForTask(
     });
   }
 
-  return pool.slice(0, 5);
+  return [];
 }
 
