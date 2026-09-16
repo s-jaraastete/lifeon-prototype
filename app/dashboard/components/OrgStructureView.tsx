@@ -9,7 +9,6 @@ import {
   LuDownload,
   LuSearch,
   LuBriefcase,
-  LuUsers,
   LuLayers,
   LuPencil,
   LuPower,
@@ -20,8 +19,6 @@ import {
   LuChevronDown,
   LuChevronRight,
   LuBuilding2,
-  LuMail,
-  LuUserCheck,
   LuSparkles,
   LuFileSpreadsheet,
   LuMapPin,
@@ -35,11 +32,10 @@ import {
   OrgArea,
   OrgProcess,
   OrgPosition,
-  UserRole,
   XlsxValidationReport,
 } from "@/types/orgStructure";
 
-type OrgTab = "centros" | "areas" | "procesos" | "cargos" | "usuarios";
+type OrgTab = "centros" | "areas" | "procesos" | "cargos";
 
 export default function OrgStructureView() {
   const { isGuided } = useLifeOnPreferences();
@@ -47,7 +43,6 @@ export default function OrgStructureView() {
     workCenters,
     areas,
     positions,
-    users,
     addWorkCenter,
     updateWorkCenter,
     toggleWorkCenterStatus,
@@ -63,9 +58,6 @@ export default function OrgStructureView() {
     addPosition,
     updatePosition,
     togglePositionStatus,
-    addUser,
-    updateUser,
-    toggleUserStatus,
     validateImportFile,
     applyBulkImportXlsx,
     downloadTemplateXlsx,
@@ -76,7 +68,6 @@ export default function OrgStructureView() {
     totalProcessesCount,
     totalSubprocessesCount,
     totalPositionsCount,
-    totalUsersCount,
   } = useOrgStructure();
 
   const [activeTab, setActiveTab] = useState<OrgTab>("centros");
@@ -102,7 +93,6 @@ export default function OrgStructureView() {
   const [isEditPositionModalOpen, setIsEditPositionModalOpen] = useState(false);
   const [editingPos, setEditingPos] = useState<OrgPosition | null>(null);
 
-  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Formularios Centros de Trabajo
@@ -138,13 +128,6 @@ export default function OrgStructureView() {
   const [posFormDisabledCount, setPosFormDisabledCount] = useState(0);
   const [posFormSensitiveCount, setPosFormSensitiveCount] = useState(0);
   const [posFormConditionsNote, setPosFormConditionsNote] = useState("");
-
-  // Formularios Usuarios
-  const [userFormName, setUserFormName] = useState("");
-  const [userFormEmail, setUserFormEmail] = useState("");
-  const [userFormCargoId, setUserFormCargoId] = useState("");
-  const [userFormAreaId, setUserFormAreaId] = useState("");
-  const [userFormRole, setUserFormRole] = useState<UserRole>("Editor");
 
   // Importación masiva XLSX
   const [xlsxReport, setXlsxReport] = useState<XlsxValidationReport | null>(null);
@@ -361,25 +344,6 @@ export default function OrgStructureView() {
   };
 
   // =========================================================================
-  // HANDLERS USUARIOS
-  // =========================================================================
-  const handleOpenAddUser = () => {
-    setUserFormName("");
-    setUserFormEmail("");
-    setUserFormCargoId(positions[0]?.id || "");
-    setUserFormAreaId(areas[0]?.id || "");
-    setUserFormRole("Editor");
-    setIsAddUserModalOpen(true);
-  };
-
-  const handleCreateUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userFormName.trim() || !userFormEmail.trim()) return;
-    addUser(userFormName.trim(), userFormEmail.trim(), userFormCargoId, userFormAreaId, userFormRole);
-    setIsAddUserModalOpen(false);
-  };
-
-  // =========================================================================
   // IMPORTACIÓN MASIVA
   // =========================================================================
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -485,18 +449,6 @@ export default function OrgStructureView() {
     );
   }, [positions, searchQuery]);
 
-  const filteredUsers = useMemo(() => {
-    if (!searchQuery.trim()) return users;
-    const q = searchQuery.toLowerCase();
-    return users.filter(
-      (u) =>
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        (u.cargoName && u.cargoName.toLowerCase().includes(q)) ||
-        (u.areaName && u.areaName.toLowerCase().includes(q))
-    );
-  }, [users, searchQuery]);
-
   return (
     <div className="flex flex-col gap-4 font-[family-name:var(--font-poppins)] select-none">
       {/* Encabezado del Módulo */}
@@ -592,21 +544,11 @@ export default function OrgStructureView() {
             </button>
           )}
 
-          {activeTab === "usuarios" && (
-            <button
-              type="button"
-              onClick={handleOpenAddUser}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#F04438] hover:bg-[#D92D20] transition shadow-xs cursor-pointer"
-            >
-              <LuPlus className="w-4 h-4" />
-              <span>Nuevo Usuario</span>
-            </button>
-          )}
         </div>
       </section>
 
       {/* Métricas KPI de la Estructura */}
-      <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
           <div className="flex items-center justify-between text-gray-400 mb-1">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Centros</span>
@@ -643,14 +585,6 @@ export default function OrgStructureView() {
           <span className="text-[10px] text-gray-500 mt-0.5">Dotación registrada</span>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between text-gray-400 mb-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Usuarios</span>
-            <LuUsers className="w-4 h-4 text-emerald-500" />
-          </div>
-          <p className="text-2xl font-black text-gray-900">{totalUsersCount}</p>
-          <span className="text-[10px] text-gray-500 mt-0.5">Accesos SST</span>
-        </div>
       </section>
 
       {/* Barra de 5 Pestañas Diferenciadas (Req 3) */}
@@ -712,19 +646,6 @@ export default function OrgStructureView() {
             <span>Cargos ({totalPositionsCount})</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("usuarios")}
-            className={clsx(
-              "px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-2 shrink-0",
-              activeTab === "usuarios"
-                ? "bg-white text-gray-900 shadow-xs"
-                : "text-gray-600 hover:text-gray-900"
-            )}
-          >
-            <LuUsers className="w-4 h-4 text-emerald-600" />
-            <span>Usuarios ({totalUsersCount})</span>
-          </button>
         </div>
 
         <div className="relative w-full sm:w-72">
@@ -1313,117 +1234,6 @@ export default function OrgStructureView() {
                               <LuPower className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ==================================================================== */}
-      {/* SECCIÓN 5: USUARIOS Y ACCESOS (REQ 3) */}
-      {/* ==================================================================== */}
-      {activeTab === "usuarios" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-slate-50/50">
-            <div>
-              <h2 className="text-sm font-bold text-gray-900">Usuarios con Acceso a la Plataforma</h2>
-              <p className="text-xs text-gray-500">
-                Gestión de accesos, roles y asignación de cargos de LifeOn.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleOpenAddUser}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
-            >
-              <LuPlus className="w-3.5 h-3.5" />
-              <span>Nuevo Usuario</span>
-            </button>
-          </div>
-
-          {filteredUsers.length === 0 ? (
-            <div className="p-12 text-center text-gray-400 text-xs">
-              No hay usuarios registrados. Haz clic en "Nuevo Usuario" para registrar uno.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-gray-50/80 text-gray-500 font-semibold border-b border-gray-100">
-                  <tr>
-                    <th className="py-3 px-4">Usuario</th>
-                    <th className="py-3 px-4">Email</th>
-                    <th className="py-3 px-4">Cargo Asignado</th>
-                    <th className="py-3 px-4">Área</th>
-                    <th className="py-3 px-4">Rol SST</th>
-                    <th className="py-3 px-4">Estado</th>
-                    <th className="py-3 px-4 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredUsers.map((usr) => {
-                    const isInactive = usr.status === "Inactivo";
-                    const role = usr.role || "Editor";
-
-                    return (
-                      <tr key={usr.id} className="hover:bg-gray-50/50 transition">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-teal-50 text-teal-700 font-bold flex items-center justify-center text-xs">
-                              {usr.name.slice(0, 1).toUpperCase()}
-                            </div>
-                            <span className="font-bold text-gray-900">{usr.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 font-mono text-[11px] text-gray-600">{usr.email}</td>
-                        <td className="py-3 px-4 font-medium text-gray-800">
-                          {usr.cargoName || "Sin cargo asignado"}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">{usr.areaName || "General"}</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={clsx(
-                              "px-2 py-0.5 rounded-full text-[10px] font-bold border",
-                              role === "Administrador"
-                                ? "bg-purple-50 text-purple-700 border-purple-200"
-                                : role === "Lector"
-                                ? "bg-slate-100 text-slate-700 border-slate-200"
-                                : "bg-teal-50 text-teal-700 border-teal-200"
-                            )}
-                          >
-                            {role}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={clsx(
-                              "px-2 py-0.5 rounded-full text-[10px] font-bold border",
-                              isInactive
-                                ? "bg-gray-100 text-gray-500 border-gray-200"
-                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            )}
-                          >
-                            {usr.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => toggleUserStatus(usr.id)}
-                            className={clsx(
-                              "p-1.5 rounded-lg transition cursor-pointer",
-                              isInactive
-                                ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
-                                : "text-gray-400 hover:bg-gray-100"
-                            )}
-                            title={isInactive ? "Activar usuario" : "Desactivar usuario"}
-                          >
-                            <LuPower className="w-3.5 h-3.5" />
-                          </button>
                         </td>
                       </tr>
                     );
@@ -2295,127 +2105,6 @@ export default function OrgStructureView() {
       )}
 
       {/* ==================================================================== */}
-      {/* MODAL: NUEVO USUARIO */}
-      {/* ==================================================================== */}
-      {isAddUserModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-              <h3 className="text-base font-bold text-gray-900">Registrar Usuario SST</h3>
-              <button
-                type="button"
-                onClick={() => setIsAddUserModalOpen(false)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg cursor-pointer"
-              >
-                <LuX className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateUser} className="flex flex-col gap-3">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Nombre Completo *
-                </label>
-                <input
-                  type="text"
-                  value={userFormName}
-                  onChange={(e) => setUserFormName(e.target.value)}
-                  placeholder="Ej: Marcelo Morales Soto"
-                  required
-                  autoFocus
-                  className="w-full px-3.5 py-2.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Correo Electrónico *
-                </label>
-                <input
-                  type="email"
-                  value={userFormEmail}
-                  onChange={(e) => setUserFormEmail(e.target.value)}
-                  placeholder="marcelo.morales@empresa.cl"
-                  required
-                  className="w-full px-3.5 py-2.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Cargo
-                  </label>
-                  <select
-                    value={userFormCargoId}
-                    onChange={(e) => setUserFormCargoId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                  >
-                    <option value="">Sin cargo</option>
-                    {positions.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Área
-                  </label>
-                  <select
-                    value={userFormAreaId}
-                    onChange={(e) => setUserFormAreaId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                  >
-                    <option value="">General</option>
-                    {areas.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Rol / Permisos SST *
-                </label>
-                <select
-                  value={userFormRole}
-                  onChange={(e) => setUserFormRole(e.target.value as UserRole)}
-                  className="w-full px-3.5 py-2.5 text-xs border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-semibold"
-                >
-                  <option value="Editor">Editor (Gestión y carga de evidencias)</option>
-                  <option value="Lector">Lector (Solo visualización de matrices e IRL)</option>
-                  <option value="Administrador">Administrador (Control total de configuración)</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddUserModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-100 rounded-xl transition cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={!userFormName.trim() || !userFormEmail.trim()}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl disabled:opacity-50 transition cursor-pointer shadow-xs"
-                >
-                  Registrar Usuario
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ==================================================================== */}
       {/* MODAL: IMPORTAR ESTRUCTURA ORGANIZACIONAL (XLSX) */}
       {/* ==================================================================== */}
       {isImportModalOpen && (
@@ -2425,7 +2114,7 @@ export default function OrgStructureView() {
               <div>
                 <h3 className="text-base font-bold text-gray-900">Importación Masiva XLSX</h3>
                 <p className="text-xs text-gray-500">
-                  Carga estructurada de Centros de Trabajo, Áreas, Procesos, Subprocesos, Cargos y Usuarios.
+                  Carga estructurada de Centros de Trabajo, Áreas, Procesos, Subprocesos y Cargos.
                 </p>
               </div>
               <button
@@ -2455,7 +2144,7 @@ export default function OrgStructureView() {
                     Selecciona tu archivo Excel (.xlsx) completado
                   </p>
                   <p className="text-[11px] text-gray-400 mb-3">
-                    Recomendamos utilizar la plantilla oficial de 7 hojas de LifeOn
+                    Recomendamos utilizar la plantilla oficial de 6 hojas de LifeOn
                   </p>
                   <input
                     type="file"
@@ -2504,10 +2193,6 @@ export default function OrgStructureView() {
                       <div className="p-2 bg-white rounded-lg border border-gray-100">
                         <span className="text-gray-400 block">Cargos</span>
                         <strong className="text-gray-900">{xlsxReport.summary.positionsCount}</strong>
-                      </div>
-                      <div className="p-2 bg-white rounded-lg border border-gray-100">
-                        <span className="text-gray-400 block">Usuarios</span>
-                        <strong className="text-gray-900">{xlsxReport.summary.usersCount}</strong>
                       </div>
                     </div>
 

@@ -36,6 +36,8 @@ import IperMatrixView from "./components/IperMatrixView";
 import PreventiveDocsView from "./components/PreventiveDocsView";
 import AprVirtualView from "./components/AprVirtualView";
 import OrgStructureView from "./components/OrgStructureView";
+import UsersView from "./components/UsersView";
+import TechnicalDocsView from "./components/TechnicalDocsView";
 import InitialOnboardingWizard from "./components/onboarding/InitialOnboardingWizard";
 import InteractivePlatformTour from "./components/onboarding/InteractivePlatformTour";
 import SupabaseSyncModal from "./components/SupabaseSyncModal";
@@ -93,7 +95,7 @@ export default function DashboardPage() {
   const userEmail = currentUser?.email || session?.user?.email || "sergio.jara@lifeon.cl";
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeMenu, setActiveMenu] = useState<"dashboard" | "org" | "iper" | "docs" | "apr">("dashboard");
+  const [activeMenu, setActiveMenu] = useState<"dashboard" | "users" | "org" | "iper" | "docs" | "apr" | "techDocs">("dashboard");
 
   const { workCenters } = useOrgStructure();
   const wpStorageKey = useMemo(
@@ -293,6 +295,20 @@ export default function DashboardPage() {
               {sidebarOpen && <span>Dashboard</span>}
             </button>
 
+            {/* Usuarios */}
+            <button
+              onClick={() => setActiveMenu("users")}
+              className={clsx(
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
+                activeMenu === "users"
+                  ? "text-[#F04438] bg-red-50/70 font-semibold"
+                  : "text-gray-700 hover:bg-gray-50"
+              )}
+            >
+              <LuUserRound className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && <span>Usuarios</span>}
+            </button>
+
             {/* Estructura Organizacional */}
             <button
               onClick={() => setActiveMenu("org")}
@@ -321,10 +337,10 @@ export default function DashboardPage() {
               {sidebarOpen && <span>Matriz IPER</span>}
             </button>
 
-            {/* Programa de Trabajo Preventivo */}
+            {/* Planificación y Gestión Preventiva */}
             <button
               onClick={() => setActiveMenu("docs")}
-              title="Programa de Trabajo en Gestión de Riesgos Laborales"
+              title="Planificación y Gestión Preventiva"
               className={clsx(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
                 activeMenu === "docs"
@@ -333,7 +349,21 @@ export default function DashboardPage() {
               )}
             >
               <LuFileText className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span className="truncate">Programa Preventivo</span>}
+              {sidebarOpen && <span className="truncate">Planificación y Gestión Preventiva</span>}
+            </button>
+
+            {/* Documentación Técnica */}
+            <button
+              onClick={() => setActiveMenu("techDocs")}
+              className={clsx(
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition cursor-pointer w-full text-left",
+                activeMenu === "techDocs"
+                  ? "text-[#F04438] bg-red-50/70 font-semibold"
+                  : "text-gray-700 hover:bg-gray-50"
+              )}
+            >
+              <LuFileText className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && <span className="truncate">Documentación Técnica</span>}
             </button>
 
             {/* APR Virtual */}
@@ -1002,13 +1032,16 @@ export default function DashboardPage() {
                     onClick={() => setActiveMenu("docs")}
                     className="text-teal-600 hover:underline font-medium cursor-pointer"
                   >
-                    Ver Programa Preventivo &rarr;
+                    Ver Planificación Preventiva &rarr;
                   </button>
                 </div>
               </div>
             </section>
           </div>
         )}
+
+        {/* Vista: Usuarios */}
+        {activeMenu === "users" && <UsersView />}
 
         {/* Vista: Estructura Organizacional */}
         {activeMenu === "org" && <OrgStructureView />}
@@ -1021,11 +1054,14 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* Vista: Programa y Documentos */}
+        {/* Vista: Planificación y Gestión Preventiva */}
         {activeMenu === "docs" && <PreventiveDocsView />}
 
         {/* Vista: APR Virtual con IA */}
         {activeMenu === "apr" && <AprVirtualView />}
+
+        {/* Vista: Documentación Técnica */}
+        {activeMenu === "techDocs" && <TechnicalDocsView />}
       </main>
 
       {/* Modales Globales */}

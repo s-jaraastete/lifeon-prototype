@@ -1124,9 +1124,9 @@ export function useOrgStructure() {
     // Hoja 1: INSTRUCCIONES
     const wsInstructions = createThemedInstructionsSheet({
       title: "PLANTILLA OFICIAL DE ESTRUCTURA ORGANIZACIONAL",
-      subtitle: "Estructura jerárquica de centros de trabajo, áreas, procesos, subprocesos, cargos y usuarios en LifeOn.",
+      subtitle: "Estructura jerárquica de centros de trabajo, áreas, procesos, subprocesos y cargos en LifeOn.",
       legendNotes: [
-        "Las hojas 'CENTROS DE TRABAJO', 'ÁREAS', 'PROCESOS', 'CARGOS' y 'USUARIOS' contienen columnas obligatorias.",
+        "Las hojas 'CENTROS DE TRABAJO', 'ÁREAS', 'PROCESOS' y 'CARGOS' contienen columnas obligatorias.",
         "Los Subprocesos continúan siendo opcionales dentro de cada proceso.",
       ],
       sections: [
@@ -1392,65 +1392,12 @@ export function useOrgStructure() {
       ],
     });
 
-    // Hoja 7: USUARIOS
-    const wsUsers = createThemedDataSheet({
-      sheetTitle: "USUARIOS",
-      columns: [
-        { header: "Nombre", key: "name", mandatory: true, width: 18 },
-        { header: "Apellido", key: "lastName", mandatory: false, width: 22 },
-        { header: "Email", key: "email", mandatory: true, width: 32 },
-        { header: "Cargo", key: "cargo", mandatory: false, width: 36 },
-        { header: "Área", key: "area", mandatory: false, width: 30 },
-        { header: "Rol / Perfil", key: "role", mandatory: true, width: 18 },
-        { header: "Estado", key: "status", mandatory: false, width: 14 },
-      ],
-      data: [
-        {
-          name: "Carlos",
-          lastName: "Mendoza Riquelme",
-          email: "carlos.mendoza@empresa.cl",
-          cargo: "Jefe de Terreno / Administrador de Obra",
-          area: "Operaciones y Montaje",
-          role: "Administrador",
-          status: "Activo",
-        },
-        {
-          name: "Pedro",
-          lastName: "Alarcón Silva",
-          email: "pedro.alarcon@empresa.cl",
-          cargo: "Supervisor de Operaciones y Montaje",
-          area: "Operaciones y Montaje",
-          role: "Editor",
-          status: "Activo",
-        },
-        {
-          name: "Juan",
-          lastName: "Pérez Morales",
-          email: "juan.perez@empresa.cl",
-          cargo: "Maestro Mayor Albañil / Demoledor",
-          area: "Operaciones y Montaje",
-          role: "Lector",
-          status: "Activo",
-        },
-        {
-          name: "María",
-          lastName: "Rojas Soto",
-          email: "maria.rojas@empresa.cl",
-          cargo: "Bodeguero Central",
-          area: "Instalación de Faena y Bodegas",
-          role: "Editor",
-          status: "Activo",
-        },
-      ],
-    });
-
     XLSX.utils.book_append_sheet(wb, wsInstructions, "INSTRUCCIONES");
     XLSX.utils.book_append_sheet(wb, wsWorkCenters, "CENTROS DE TRABAJO");
     XLSX.utils.book_append_sheet(wb, wsAreas, "ÁREAS");
     XLSX.utils.book_append_sheet(wb, wsProcesses, "PROCESOS");
     XLSX.utils.book_append_sheet(wb, wsSubprocesses, "SUBPROCESOS");
     XLSX.utils.book_append_sheet(wb, wsPositions, "CARGOS");
-    XLSX.utils.book_append_sheet(wb, wsUsers, "USUARIOS");
 
     XLSX.writeFile(wb, "Plantilla_Estructura_Organizacional_LifeOn.xlsx");
   }, []);
@@ -1498,7 +1445,6 @@ export function useOrgStructure() {
       const sheetProcesses = findSheet("proceso") && !findSheet("subproceso") ? findSheet("proceso") : wb.Sheets["PROCESOS"] || wb.Sheets["Procesos"];
       const sheetSubprocesses = findSheet("subproceso") || wb.Sheets["SUBPROCESOS"] || wb.Sheets["Subprocesos"];
       const sheetPositions = findSheet("cargo") || wb.Sheets["CARGOS"] || wb.Sheets["Cargos"];
-      const sheetUsers = findSheet("usuario") || wb.Sheets["USUARIOS"] || wb.Sheets["Usuarios"];
 
       let totalRecords = 0;
       let validRecords = 0;
@@ -1690,71 +1636,6 @@ export function useOrgStructure() {
         });
       }
 
-      // 5. Usuarios
-      if (sheetUsers) {
-        const rows: any[] = normalizeImportedRows(sheetUsers);
-        const seenEmailsInFile = new Set<string>();
-
-        rows.forEach((r, idx) => {
-          totalRecords++;
-          const rowNum = idx + 2;
-          const name = String(r["nombre"] || "").trim();
-          const lastName = String(r["apellido"] || "").trim();
-          const email = String(r["email"] || r["correo"] || "").trim().toLowerCase();
-          const cargo = String(r["cargo"] || "").trim();
-          const area = String(r["area"] || "").trim();
-          const rawRole = String(r["rol / perfil"] || r["rol"] || r["perfil"] || "Editor").trim();
-          const status = String(r["estado"] || "Activo").trim() as EntityStatus;
-
-          const fullName = lastName ? `${name} ${lastName}`.trim() : name;
-          let hasError = false;
-
-          if (!name) {
-            errors.push({ sheet: "USUARIOS", rowNumber: rowNum, item: `Fila ${rowNum}`, error: "El Nombre del usuario es obligatorio." });
-            hasError = true;
-          }
-
-          if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            errors.push({ sheet: "USUARIOS", rowNumber: rowNum, item: fullName || `Fila ${rowNum}`, error: `Email '${email}' no es válido.` });
-            hasError = true;
-          } else if (seenEmailsInFile.has(email)) {
-            errors.push({ sheet: "USUARIOS", rowNumber: rowNum, item: fullName || email, error: `Email '${email}' duplicado en la hoja de USUARIOS.` });
-            hasError = true;
-          } else {
-            seenEmailsInFile.add(email);
-          }
-
-          if (cargo) {
-            const cargoExists =
-              existingPositionNames.has(cargo.toLowerCase()) ||
-              importedPositionNames.has(cargo.toLowerCase());
-            if (!cargoExists) {
-              errors.push({
-                sheet: "USUARIOS",
-                rowNumber: rowNum,
-                item: fullName || email,
-                error: `El cargo '${cargo}' asignado al usuario no existe en el catálogo actual ni en la hoja de CARGOS.`,
-              });
-              hasError = true;
-            }
-          }
-
-          let role: UserRole = "Editor";
-          if (rawRole.toLowerCase().includes("admin")) {
-            role = "Administrador";
-          } else if (rawRole.toLowerCase().includes("lector")) {
-            role = "Lector";
-          } else {
-            role = "Editor";
-          }
-
-          if (!hasError) {
-            validRecords++;
-            parsedData.users.push({ name: fullName, email, cargo, area, role, status });
-          }
-        });
-      }
-
       // Si no se encontró ninguna de las hojas, procesar formato legacy monocapa
       if (totalRecords === 0 && wb.SheetNames.length > 0) {
         const firstSheet = wb.Sheets[wb.SheetNames[0]];
@@ -1789,9 +1670,6 @@ export function useOrgStructure() {
             if (!importedPositionNames.has(cargoName.toLowerCase())) {
               parsedData.positions.push({ code: `CARG-00${positions.length + parsedData.positions.length + 1}`, name: cargoName, status: "Activo" });
               importedPositionNames.add(cargoName.toLowerCase());
-            }
-            if (userName && userEmail) {
-              parsedData.users.push({ name: userName, email: userEmail, cargo: cargoName, area: areaName, role: "Editor", status: "Activo" });
             }
           }
         });
@@ -1958,28 +1836,6 @@ export function useOrgStructure() {
             sensitiveCount: cRow.sensitiveCount || 0,
           };
           updatedPositions.push(pos);
-        }
-      });
-
-      // 5. Usuarios
-      parsedData.users.forEach((uRow) => {
-        const userExists = updatedUsers.some((u) => u.email.toLowerCase() === uRow.email.toLowerCase());
-        if (!userExists) {
-          const pos = updatedPositions.find((p) => p.name.toLowerCase() === uRow.cargo.toLowerCase());
-          const area = updatedAreas.find((a) => a.name.toLowerCase() === (uRow.area || "").toLowerCase());
-          updatedUsers.push({
-            id: `usr-imp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-            name: uRow.name,
-            email: uRow.email,
-            cargoId: pos?.id,
-            cargoName: pos?.name || uRow.cargo,
-            areaId: area?.id,
-            areaName: area?.name || uRow.area,
-            role: uRow.role || "Editor",
-            status: uRow.status || "Activo",
-            organizationId: orgId,
-            createdAt: new Date().toISOString(),
-          });
         }
       });
 

@@ -266,6 +266,8 @@ export async function resetTestAccount(userEmail: string): Promise<boolean> {
           key.includes(`lifeon_iper_matrices_${orgId}`) ||
           key.includes(`lifeon_preventive_program_${orgId}`) ||
           key.includes(`lifeon_preferences_${orgId}`) ||
+          key.includes(`lifeon_platform_users_${orgId}`) ||
+          key.includes(`lifeon_technical_docs_${orgId}`) ||
           key === "lifeon_active_session")
       ) {
         keysToRemove.push(key);
@@ -283,6 +285,8 @@ export async function resetTestAccount(userEmail: string): Promise<boolean> {
     window.dispatchEvent(new CustomEvent("lifeon-org-structure-change", { detail: null }));
     window.dispatchEvent(new CustomEvent("lifeon-iper-matrices-change", { detail: null }));
     window.dispatchEvent(new CustomEvent("lifeon-preventive-program-change", { detail: null }));
+    window.dispatchEvent(new CustomEvent("lifeon-platform-users-change", { detail: null }));
+    window.dispatchEvent(new CustomEvent("lifeon-technical-docs-change", { detail: null }));
 
     return true;
   } catch (e) {
