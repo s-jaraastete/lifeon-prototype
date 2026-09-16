@@ -11,9 +11,9 @@ import {
   IperMethodology,
 } from "@/types/preferences";
 import {
-  fetchPreferencesFromSupabase,
-  savePreferencesToSupabase,
-} from "@/lib/services/supabaseService";
+  fetchOrganizationPreferences,
+  saveOrganizationPreferences,
+} from "@/lib/repositories/organizationRepository";
 import { getActiveUser, getScopedStorageKey, AuthUser, SESSION_CHANGE_EVENT } from "@/lib/auth/authService";
 
 export const PREFERENCES_STORAGE_KEY = "lifeon_org_preferences";
@@ -94,7 +94,7 @@ export default function LifeOnPreferencesProvider({
 
     try {
       // Hidratar desde Supabase como fuente de verdad obligatoria
-      const cloudPrefs = await fetchPreferencesFromSupabase(user.orgId);
+      const cloudPrefs = await fetchOrganizationPreferences(user.orgId);
       if (cloudPrefs) {
         const baseMiper = basePrefs.moduleConfigurations?.miper || defaultPrefs.moduleConfigurations?.miper || DEFAULT_MODULE_CONFIGURATIONS.miper;
         const basePrev = basePrefs.moduleConfigurations?.preventivePlanning || defaultPrefs.moduleConfigurations?.preventivePlanning || DEFAULT_MODULE_CONFIGURATIONS.preventivePlanning;
@@ -145,7 +145,7 @@ export default function LifeOnPreferencesProvider({
           const { seedSergioConstructionDemo } = await import("@/lib/seeds/sergioConstructionDataset");
           await seedSergioConstructionDemo();
           // Reintentar la carga de preferencias recién sembradas
-          const seededPrefs = await fetchPreferencesFromSupabase(user.orgId);
+          const seededPrefs = await fetchOrganizationPreferences(user.orgId);
           if (seededPrefs) {
             setPreferences({
               ...defaultPrefs,
@@ -219,8 +219,10 @@ export default function LifeOnPreferencesProvider({
       console.warn("No se pudo persistir preferencias en localStorage:", e);
     }
 
-    savePreferencesToSupabase(newPrefs, currentUser.orgId).catch((err) => {
-      console.warn("No se pudo sincronizar preferencias con Supabase:", err);
+    void saveOrganizationPreferences(currentUser.orgId, newPrefs).then((ok) => {
+      if (!ok) {
+        console.warn("No se pudo sincronizar preferencias con Supabase");
+      }
     });
   }, [currentUser.orgId]);
 

@@ -37,6 +37,8 @@ import IperMatrixView from "./components/IperMatrixView";
 import PreventiveDocsView from "./components/PreventiveDocsView";
 import AprVirtualView from "./components/AprVirtualView";
 import AprVirtualAssistant from "./components/AprVirtualAssistant";
+import AprVirtualSessionPrompt from "./components/AprVirtualSessionPrompt";
+import { hasLifeOnAiSession } from "@/lib/auth/lifeonSessionClient";
 import OrgStructureView from "./components/OrgStructureView";
 import UsersView from "./components/UsersView";
 import TechnicalDocsView from "./components/TechnicalDocsView";
@@ -48,6 +50,9 @@ import { useOrgStructure } from "@/hooks/useOrgStructure";
 import { useIperMatrices } from "@/hooks/useIperMatrices";
 import { usePreventiveProgram } from "@/hooks/usePreventiveProgram";
 import { logoutActiveUser, resetTestAccount, isResetAllowedForUser, getScopedStorageKey } from "@/lib/auth/authService";
+import { signOutLifeOn } from "@/lib/auth/lifeonAuth";
+import { queryClient } from "@/providers/ReactQueryProvider";
+import { clearDashboardQueryCache } from "@/lib/dashboard/clearDashboardCaches";
 import { isSupabaseConfigured } from "@/lib/supabaseClient";
 import {
   NotificationsDropdown,
@@ -231,6 +236,11 @@ export default function DashboardPage() {
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeMenu, setActiveMenu] = useState<DashboardMenuKey>("dashboard");
+  const [aiSessionReady, setAiSessionReady] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    void hasLifeOnAiSession().then(setAiSessionReady);
+  }, []);
 
   const navigateToMenu = useCallback(
     (key: DashboardMenuKey) => {
@@ -349,7 +359,10 @@ export default function DashboardPage() {
   };
 
   const handleLogout = async () => {
-    logoutActiveUser();
+    const orgId = currentUser?.orgId;
+    clearDashboardQueryCache(queryClient);
+    await signOutLifeOn();
+    logoutActiveUser(orgId);
     if (session) {
       await signOut({ redirect: false });
     }
@@ -571,6 +584,9 @@ export default function DashboardPage() {
 
       {/* Contenedor Principal */}
       <main className="flex-1 flex flex-col gap-3 overflow-y-auto">
+        {aiSessionReady === false && (
+          <AprVirtualSessionPrompt onReady={() => setAiSessionReady(true)} />
+        )}
         {/* Barra Superior (Top Navigation) */}
         <header
           ref={headerRef}

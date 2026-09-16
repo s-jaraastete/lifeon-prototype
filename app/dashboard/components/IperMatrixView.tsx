@@ -66,9 +66,18 @@ import {
 import { useOrgStructure } from "@/hooks/useOrgStructure";
 import {
   saveIperMatricesToSupabase,
+  saveIperMatrixToSupabase,
   fetchIperMatricesFromSupabase,
   deleteIperMatrixFromSupabase,
+  iperMatrixExistsInSupabase,
 } from "@/lib/services/supabaseService";
+import { isSupabaseConfigured } from "@/lib/supabaseClient";
+import {
+  cloudPersistenceHint,
+  mergeIperMatrixLists,
+} from "@/lib/utils/iperMatrixPersistence";
+import { queryClient } from "@/providers/ReactQueryProvider";
+import { dashboardQueryKeys } from "@/lib/dashboard/queryKeys";
 
 export type MatrixStatus =
   | "Vigente"
@@ -538,7 +547,10 @@ export default function IperMatrixView({
     return (!currentUser?.orgId || currentUser?.orgId === "org_demo") ? INITIAL_MATRICES : [];
   });
 
-  const updateAndPersistMatrices = (newMatrices: IperMatrixItem[]) => {
+  const updateAndPersistMatrices = async (
+    newMatrices: IperMatrixItem[],
+    options?: { prioritizeMatrix?: IperMatrixItem; silentCloudError?: boolean }
+  ): Promise<boolean> => {
     setMatrices(newMatrices);
     if (typeof window !== "undefined") {
       try {
@@ -550,7 +562,23 @@ export default function IperMatrixView({
         );
       } catch (e) {}
     }
-    saveIperMatricesToSupabase(newMatrices, orgId);
+
+    let cloudOk = false;
+    if (options?.prioritizeMatrix) {
+      cloudOk = await saveIperMatrixToSupabase(options.prioritizeMatrix, orgId);
+    }
+    if (!cloudOk) {
+      cloudOk = await saveIperMatricesToSupabase(newMatrices, orgId);
+    }
+
+    if (!cloudOk && !options?.silentCloudError) {
+      showToast(cloudPersistenceHint(isSupabaseConfigured()));
+    } else if (cloudOk) {
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.iper(orgId) });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.dashboardKpis(orgId) });
+    }
+
+    return cloudOk;
   };
 
   const [selectedMatrix, setSelectedMatrix] = useState<IperMatrixItem | null>(null);
@@ -608,16 +636,18 @@ export default function IperMatrixView({
       setProtocolRisks(INITIAL_PROTOCOL_RISKS);
     }
 
-    // Sincronizar con Supabase
+    // Sincronizar con Supabase (fusionar; no borrar datos locales con remoto vacío)
     fetchIperMatricesFromSupabase(orgId).then((remote) => {
-      if (remote && Array.isArray(remote) && remote.length > 0) {
-        setMatrices(remote);
+      if (remote === null) return;
+      setMatrices((prev) => {
+        const merged = mergeIperMatrixLists(prev, remote, orgId);
         if (typeof window !== "undefined") {
           try {
-            localStorage.setItem(storageKey, JSON.stringify(remote));
+            localStorage.setItem(storageKey, JSON.stringify(merged));
           } catch (e) {}
         }
-      }
+        return merged;
+      });
     });
   }, [orgId, storageKey]);
 
@@ -967,6 +997,7 @@ export default function IperMatrixView({
             workCenter: cleanWc,
             workCenterName: cleanWc,
             responsible: cleanResp,
+            updatedAt: new Date().toISOString(),
           }
         : m
     );
@@ -1366,7 +1397,7 @@ export default function IperMatrixView({
     setImportErrorsList([]);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
@@ -1530,14 +1561,29 @@ export default function IperMatrixView({
         };
 
         const updatedList = [importedMatrix, ...matrices];
-        updateAndPersistMatrices(updatedList);
+        const cloudOk = await updateAndPersistMatrices(updatedList, {
+          prioritizeMatrix: importedMatrix,
+          silentCloudError: true,
+        });
+        const verifiedInCloud =
+          cloudOk &&
+          (isDemo || (await iperMatrixExistsInSupabase(importedMatrix.id, orgId)));
+        const persisted = verifiedInCloud || isDemo;
 
         setIsImportOpen(false);
         setImportFile(null);
         setImportError(null);
         setImportErrorsList([]);
         setIsProcessingImport(false);
-        showToast(`Matriz '${parsedMatrixName}' importada con éxito: ${validRowsData.length} evaluaciones cargadas en estado Borrador.`);
+        if (persisted) {
+          showToast(
+            `Matriz '${parsedMatrixName}' importada con éxito: ${validRowsData.length} evaluaciones cargadas en estado Borrador.`
+          );
+        } else {
+          showToast(
+            `Matriz '${parsedMatrixName}' importada en este navegador (${validRowsData.length} evaluaciones). ${cloudPersistenceHint(isSupabaseConfigured())}`
+          );
+        }
       } catch (err: any) {
         console.error("Error importando matriz:", err);
         setImportError("Error al interpretar la planilla Excel: " + (err.message || "Formato incompatible."));

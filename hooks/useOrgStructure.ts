@@ -31,10 +31,11 @@ import {
 } from "@/types/orgStructure";
 import { useLifeOnPreferences } from "./useLifeOnPreferences";
 import { getSectorRiskProfile } from "@/data/sectorRiskTemplates";
+import { fetchOrgStructureFromSupabase } from "@/lib/services/supabaseService";
 import {
-  fetchOrgStructureFromSupabase,
-  saveOrgStructureToSupabase,
-} from "@/lib/services/supabaseService";
+  fetchNormalizedStructure,
+  saveNormalizedStructure,
+} from "@/lib/repositories/structureRepository";
 import { getScopedStorageKey } from "@/lib/auth/authService";
 
 export const ORG_STRUCTURE_STORAGE_KEY = "lifeon_org_structure";
@@ -343,42 +344,50 @@ export function useOrgStructure() {
         }
       }
 
-      // Hidratar inmediatamente desde Supabase (FUENTE ÚNICA DE VERDAD)
-      fetchOrgStructureFromSupabase(orgId).then((cloudData) => {
-        if (cloudData) {
-          const hasCloudContent =
-            (cloudData.workCenters && cloudData.workCenters.length > 0) ||
-            (cloudData.areas && cloudData.areas.length > 0) ||
-            (cloudData.positions && cloudData.positions.length > 0) ||
-            (cloudData.users && cloudData.users.length > 0);
+      const applyCloudPayload = (cloudData: OrgStructureData) => {
+        const hasCloudContent =
+          (cloudData.workCenters && cloudData.workCenters.length > 0) ||
+          (cloudData.areas && cloudData.areas.length > 0) ||
+          (cloudData.positions && cloudData.positions.length > 0) ||
+          (cloudData.users && cloudData.users.length > 0);
+        if (!hasCloudContent) return;
 
-          if (hasCloudContent) {
-            setWorkCenters(cloudData.workCenters || []);
-            setAreas(cloudData.areas || []);
-            setPositions(cloudData.positions || []);
-            setUsers(cloudData.users || []);
+        setWorkCenters(cloudData.workCenters || []);
+        setAreas(cloudData.areas || []);
+        setPositions(cloudData.positions || []);
+        setUsers(cloudData.users || []);
 
-            const payload: OrgStructureData = {
-              workCenters: cloudData.workCenters || [],
-              areas: cloudData.areas || [],
-              positions: cloudData.positions || [],
-              users: cloudData.users || [],
-              lastUpdated: cloudData.lastUpdated || new Date().toISOString(),
-            };
+        const payload: OrgStructureData = {
+          workCenters: cloudData.workCenters || [],
+          areas: cloudData.areas || [],
+          positions: cloudData.positions || [],
+          users: cloudData.users || [],
+          lastUpdated: cloudData.lastUpdated || new Date().toISOString(),
+        };
 
-            if (typeof window !== "undefined") {
-              window.localStorage.setItem(storageKey, JSON.stringify(payload));
-              window.dispatchEvent(
-                new CustomEvent("lifeon-org-structure-change", {
-                  detail: { orgId, payload },
-                })
-              );
-            }
-          }
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(storageKey, JSON.stringify(payload));
+          window.dispatchEvent(
+            new CustomEvent("lifeon-org-structure-change", {
+              detail: { orgId, payload },
+            })
+          );
         }
-      }).catch((err) => {
-        console.warn("Error hidratando estructura desde Supabase:", err);
-      });
+      };
+
+      fetchNormalizedStructure(orgId)
+        .then((normalized) => {
+          if (normalized) {
+            applyCloudPayload(normalized);
+            return;
+          }
+          return fetchOrgStructureFromSupabase(orgId).then((blobData) => {
+            if (blobData) applyCloudPayload(blobData);
+          });
+        })
+        .catch((err) => {
+          console.warn("Error hidratando estructura desde Supabase:", err);
+        });
     } catch (e) {
       console.warn("No se pudo cargar la estructura organizacional de localStorage:", e);
       if (!isDemoOrg) {
@@ -466,8 +475,10 @@ export function useOrgStructure() {
         console.warn("Error al guardar estructura organizacional en localStorage:", e);
       }
 
-      saveOrgStructureToSupabase(payload, orgId).catch((err) => {
-        console.warn("Error persistiendo estructura en Supabase:", err);
+      void saveNormalizedStructure(orgId, payload).then((ok) => {
+        if (!ok) {
+          console.warn("Error persistiendo estructura normalizada en Supabase");
+        }
       });
     },
     [storageKey, orgId]

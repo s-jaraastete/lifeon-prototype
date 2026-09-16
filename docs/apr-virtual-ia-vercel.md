@@ -2,12 +2,22 @@
 
 Configura estas variables en el proyecto de Vercel vinculado a tu rama personal. **No** incluyas valores reales en el repositorio.
 
-## Secrets (Environment: Production)
+## Secrets (Production **y Preview**)
+
+Configura las mismas variables para **Production** y **Preview** si pruebas despliegues de rama personal.
 
 | Variable | Tipo | Descripción |
 |----------|------|-------------|
 | `GROQ_API_KEY` | Secret | API key de Groq. Solo servidor. |
-| `LIFEON_SESSION_SECRET` | Secret | Cadena aleatoria larga para firmar la cookie `lifeon_session` (httpOnly). |
+| `LIFEON_SESSION_SECRET` | Secret | Cadena aleatoria larga (32+ caracteres) para firmar la cookie `lifeon_session`. **Obligatoria** para APR Virtual IA. |
+
+Tras agregar o cambiar variables: **Redeploy** del deployment.
+
+## Si pide “iniciar sesión” para usar IA
+
+1. El dashboard guarda usuario en el navegador; la IA usa cookie httpOnly aparte.
+2. En el dashboard usa el banner **「Activar IA」** con tu contraseña, o cierra sesión y vuelve a entrar en `/login`.
+3. Confirma que `LIFEON_SESSION_SECRET` existe en el entorno del deployment que estás probando.
 
 ## Opcionales
 

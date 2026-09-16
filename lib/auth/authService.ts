@@ -1,5 +1,6 @@
 import { resetSupabaseDataForOrg } from "@/lib/services/supabaseService";
 import { clearLifeOnSessionCookie } from "@/lib/auth/lifeonSessionClient";
+import { clearOrgScopedLocalStorage } from "@/lib/dashboard/clearDashboardCaches";
 
 export interface AuthUser {
   id: string;
@@ -219,12 +220,20 @@ export function setActiveUser(user: AuthUser): void {
 /**
  * Cierra la sesión activa y notifica a los suscriptores.
  */
-export function logoutActiveUser(): void {
+export function logoutActiveUser(orgId?: string): void {
   if (typeof window === "undefined") return;
   try {
     void clearLifeOnSessionCookie();
     window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
     window.dispatchEvent(new CustomEvent(SESSION_CHANGE_EVENT, { detail: null }));
+    window.dispatchEvent(new CustomEvent("lifeon-org-structure-change", { detail: null }));
+    window.dispatchEvent(new CustomEvent("lifeon-iper-matrices-change", { detail: null }));
+    window.dispatchEvent(new CustomEvent("lifeon-preventive-program-change", { detail: null }));
+    window.dispatchEvent(new CustomEvent("lifeon-platform-users-change", { detail: null }));
+    window.dispatchEvent(new CustomEvent("lifeon-technical-docs-change", { detail: null }));
+    if (orgId) {
+      clearOrgScopedLocalStorage(orgId);
+    }
   } catch (e) {
     console.warn("Error limpiando sesión activa:", e);
   }

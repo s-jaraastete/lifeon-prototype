@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLifeOnPreferences } from "./useLifeOnPreferences";
 import { fetchIperMatricesFromSupabase } from "@/lib/services/supabaseService";
+import { mergeIperMatrixLists } from "@/lib/utils/iperMatrixPersistence";
 import { IperMatrixItem } from "@/app/dashboard/components/IperMatrixView";
 import { INITIAL_MATRICES } from "@/app/dashboard/components/IperMatrixView";
 
@@ -44,14 +45,16 @@ export function useIperMatrices(activeWorkplace?: string) {
     setIsLoading(true);
     fetchIperMatricesFromSupabase(orgId)
       .then((cloudMatrices) => {
-        if (cloudMatrices && Array.isArray(cloudMatrices)) {
-          setMatrices(cloudMatrices);
+        if (cloudMatrices === null) return;
+        setMatrices((prev) => {
+          const merged = mergeIperMatrixLists(prev, cloudMatrices, orgId);
           if (typeof window !== "undefined") {
             try {
-              localStorage.setItem(storageKey, JSON.stringify(cloudMatrices));
+              localStorage.setItem(storageKey, JSON.stringify(merged));
             } catch (_) {}
           }
-        }
+          return merged;
+        });
       })
       .catch((err) => {
         console.warn("Error cargando matrices desde Supabase:", err);

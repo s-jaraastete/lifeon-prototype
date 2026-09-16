@@ -569,13 +569,40 @@ export function AccountModal({
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nameParts = name.trim().split(/\s+/).filter(Boolean);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ");
+
     updatePreferences({
       profilePhoto,
       organizationLogo: orgLogo,
       organizationName: company,
     });
+
+    const { getSupabaseAuthUserId } = await import("@/lib/auth/lifeonAuth");
+    const { upsertProfile } = await import("@/lib/repositories/profileRepository");
+    const { updateOrganization } = await import("@/lib/repositories/organizationRepository");
+
+    const authId = await getSupabaseAuthUserId();
+    if (authId) {
+      await upsertProfile(authId, {
+        first_name: firstName,
+        last_name: lastName || null,
+        phone: phone.trim() || null,
+        avatar_path: profilePhoto,
+      });
+    }
+
+    if (currentUser?.orgId) {
+      await updateOrganization(currentUser.orgId, {
+        name: company.trim(),
+        logo_url: orgLogo,
+        logo_path: orgLogo,
+      });
+    }
+
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);

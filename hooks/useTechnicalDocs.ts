@@ -9,6 +9,13 @@ import {
 } from "@/types/technicalDocs";
 import { useLifeOnPreferences } from "./useLifeOnPreferences";
 import { getScopedStorageKey } from "@/lib/auth/authService";
+import {
+  deleteTechnicalDocument,
+  fetchTechnicalDocuments,
+  upsertTechnicalDocument,
+} from "@/lib/repositories/technicalDocumentsRepository";
+import { isSupabaseConfigured } from "@/lib/supabaseClient";
+import { getSupabaseAuthUserId } from "@/lib/auth/lifeonAuth";
 
 export const TECHNICAL_DOCS_STORAGE_KEY = "lifeon_technical_docs";
 export const TECH_DOCS_CHANGE_EVENT = "lifeon-technical-docs-change";
@@ -120,8 +127,27 @@ export function useTechnicalDocs() {
     } catch {
       setDocuments([]);
     }
+
+    if (isSupabaseConfigured()) {
+      void fetchTechnicalDocuments(orgId).then((cloudDocs) => {
+        if (cloudDocs.length > 0) {
+          setDocuments(cloudDocs);
+          try {
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(
+                storageKey,
+                JSON.stringify({ documents: cloudDocs, lastUpdated: new Date().toISOString() })
+              );
+            }
+          } catch {
+            /* noop */
+          }
+        }
+      });
+    }
+
     setIsLoaded(true);
-  }, [storageKey]);
+  }, [storageKey, orgId]);
 
   useEffect(() => {
     loadDocs();
@@ -143,8 +169,15 @@ export function useTechnicalDocs() {
         }
       } catch { /* noop */ }
       setDocuments(updated);
+      if (isSupabaseConfigured()) {
+        void getSupabaseAuthUserId().then((authId) => {
+          void Promise.all(
+            updated.map((doc) => upsertTechnicalDocument(orgId, doc, authId))
+          );
+        });
+      }
     },
-    [storageKey]
+    [storageKey, orgId]
   );
 
   const createDocument = useCallback(
@@ -179,8 +212,11 @@ export function useTechnicalDocs() {
   const deleteDocument = useCallback(
     (docId: string) => {
       persistDocs(documents.filter((d) => d.id !== docId));
+      if (isSupabaseConfigured()) {
+        void deleteTechnicalDocument(orgId, docId);
+      }
     },
-    [documents, persistDocs]
+    [documents, persistDocs, orgId]
   );
 
   const getTypeDefinition = useCallback((type: DocumentType) => {

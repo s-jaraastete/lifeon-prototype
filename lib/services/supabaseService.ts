@@ -323,38 +323,118 @@ export async function fetchOrgStructureFromSupabase(orgId?: string): Promise<Org
 }
 
 // ============================================================================
-// SERVICIOS DE DOCUMENTACIÓN PREVENTIVA
+// SERVICIOS DE DOCUMENTACIÓN PREVENTIVA (multi-tenant vía prefijo en id)
 // ============================================================================
-export async function savePreventiveDocsToSupabase(docs: PreventiveDoc[]): Promise<boolean> {
+
+const KNOWN_ORG_IDS = [
+  "org_demo",
+  "org_luis",
+  "org_sergio",
+  "org_aldo",
+  "org_gonzalo_c",
+  "org_gonzalo_b",
+];
+
+export function scopePreventiveDocId(docId: string, orgId?: string): string {
+  const currentOrg = orgId || "org_demo";
+  if (docId.startsWith(`${currentOrg}_`)) return docId;
+  for (const org of KNOWN_ORG_IDS) {
+    if (org !== currentOrg && docId.startsWith(`${org}_`)) return docId;
+  }
+  if (currentOrg === "org_demo" && /^DOC-/i.test(docId)) return docId;
+  return `${currentOrg}_${docId}`;
+}
+
+function mapPreventiveDocToRow(d: PreventiveDoc, orgId?: string) {
+  return {
+    id: scopePreventiveDocId(d.id, orgId),
+    code: d.code,
+    title: d.title,
+    category: d.category,
+    regulatory_basis: d.regulatoryBasis,
+    version: d.version,
+    status: d.status,
+    author: d.author,
+    approver: d.approver || null,
+    issue_date: d.issueDate,
+    expiry_date: d.expiryDate,
+    days_remaining: d.daysRemaining,
+    source: d.source,
+    has_file: d.hasFile,
+    file_name: d.fileName || null,
+    file_size: d.fileSize || null,
+    content_sections: d.contentSections || [],
+    audit_checklist: d.auditChecklist || [],
+    audit_score: d.auditScore,
+    audit_status: d.auditStatus,
+  };
+}
+
+function mapPreventiveDocRow(row: any): PreventiveDoc {
+  return {
+    id: row.id,
+    code: row.code,
+    title: row.title,
+    category: row.category,
+    version: row.version,
+    regulatoryBasis: row.regulatory_basis || "Normativa Legal Vigente",
+    status: row.status,
+    author: row.author || "Depto. Prevención de Riesgos",
+    approver: row.approver || undefined,
+    issueDate: row.issue_date,
+    expiryDate: row.expiry_date,
+    daysRemaining: row.days_remaining,
+    source: row.source || "Plantilla del Sistema",
+    hasFile: Boolean(row.has_file),
+    fileName: row.file_name || undefined,
+    fileSize: row.file_size || undefined,
+    contentSections: row.content_sections || [],
+    auditChecklist: row.audit_checklist || [],
+    auditScore: row.audit_score || 0,
+    auditStatus: row.audit_status,
+  };
+}
+
+export async function savePreventiveDocsToSupabase(
+  docs: PreventiveDoc[],
+  orgId?: string
+): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
 
-  try {
-    const rows = docs.map((d) => ({
-      id: d.id,
-      code: d.code,
-      title: d.title,
-      category: d.category,
-      regulatory_basis: d.regulatoryBasis,
-      version: d.version,
-      status: d.status,
-      author: d.author,
-      approver: d.approver || null,
-      issue_date: d.issueDate,
-      expiry_date: d.expiryDate,
-      days_remaining: d.daysRemaining,
-      source: d.source,
-      has_file: d.hasFile,
-      file_name: d.fileName || null,
-      file_size: d.fileSize || null,
-      content_sections: d.contentSections || [],
-      audit_checklist: d.auditChecklist || [],
-      audit_score: d.auditScore,
-      audit_status: d.auditStatus,
-    }));
+  const currentOrg = orgId || "org_demo";
 
-    const { error } = await client.from("preventive_docs").upsert(rows);
-    if (error) throw error;
+  try {
+    const rows = docs.map((d) => mapPreventiveDocToRow(d, currentOrg));
+    const scopedIds = new Set(rows.map((r) => r.id));
+
+    if (rows.length > 0) {
+      const { error } = await client.from("preventive_docs").upsert(rows);
+      if (error) throw error;
+    }
+
+    let existingQuery = client.from("preventive_docs").select("id");
+    if (currentOrg === "org_demo") {
+      existingQuery = existingQuery.or("id.like.DOC-%,id.like.org_demo_%");
+    } else {
+      existingQuery = existingQuery.like("id", `${currentOrg}_%`);
+    }
+
+    const { data: existingRows, error: listError } = await existingQuery;
+    if (listError) throw listError;
+
+    const staleIds = (existingRows || [])
+      .map((r: { id: string }) => r.id)
+      .filter((id: string) => !scopedIds.has(id));
+
+    if (staleIds.length > 0) {
+      const { error: deleteError } = await client
+        .from("preventive_docs")
+        .delete()
+        .in("id", staleIds);
+      if (deleteError) throw deleteError;
+    }
+
     return true;
   } catch (e) {
     console.warn("Error al guardar documentos preventivos en Supabase:", e);
@@ -362,40 +442,33 @@ export async function savePreventiveDocsToSupabase(docs: PreventiveDoc[]): Promi
   }
 }
 
-export async function fetchPreventiveDocsFromSupabase(): Promise<PreventiveDoc[] | null> {
+export async function fetchPreventiveDocsFromSupabase(
+  orgId?: string
+): Promise<PreventiveDoc[] | null> {
   const client = getSupabaseClient();
   if (!client) return null;
 
+  const currentOrg = orgId || "org_demo";
+
   try {
-    const { data, error } = await client
-      .from("preventive_docs")
-      .select("*")
-      .order("code", { ascending: true });
+    let query = client.from("preventive_docs").select("*");
 
-    if (error || !data || data.length === 0) return null;
+    if (currentOrg === "org_demo") {
+      query = query.or("id.like.DOC-%,id.like.org_demo_%");
+    } else {
+      query = query.like("id", `${currentOrg}_%`);
+    }
 
-    return data.map((row: any) => ({
-      id: row.id,
-      code: row.code,
-      title: row.title,
-      category: row.category,
-      version: row.version,
-      regulatoryBasis: row.regulatory_basis || "Normativa Legal Vigente",
-      status: row.status,
-      author: row.author || "Depto. Prevención de Riesgos",
-      approver: row.approver || undefined,
-      issueDate: row.issue_date,
-      expiryDate: row.expiry_date,
-      daysRemaining: row.days_remaining,
-      source: row.source || "Plantilla del Sistema",
-      hasFile: Boolean(row.has_file),
-      fileName: row.file_name || undefined,
-      fileSize: row.file_size || undefined,
-      contentSections: row.content_sections || [],
-      auditChecklist: row.audit_checklist || [],
-      auditScore: row.audit_score || 0,
-      auditStatus: row.audit_status,
-    }));
+    const { data, error } = await query.order("code", { ascending: true });
+
+    if (error) {
+      console.warn("Error al recuperar documentos preventivos de Supabase:", error);
+      return null;
+    }
+
+    if (!data || data.length === 0) return [];
+
+    return data.map(mapPreventiveDocRow);
   } catch (e) {
     console.warn("Error al recuperar documentos preventivos de Supabase:", e);
     return null;
@@ -405,51 +478,117 @@ export async function fetchPreventiveDocsFromSupabase(): Promise<PreventiveDoc[]
 // ============================================================================
 // SERVICIOS DE MATRICES IPER
 // ============================================================================
-export async function saveIperMatricesToSupabase(matrices: any[], orgId?: string): Promise<boolean> {
+
+function mapIperMatrixToSupabaseRow(m: any, currentOrg: string) {
+  const scopedId =
+    m.id.startsWith("org_") || m.id.startsWith("m-") || m.id.startsWith("MA-")
+      ? m.id.startsWith(`${currentOrg}_`)
+        ? m.id
+        : `${currentOrg}_${m.id}`
+      : `${currentOrg}_${m.id}`;
+
+  const finalTitle = (m.name || m.title || "").trim();
+  const finalWorkCenter = (m.workCenterName || m.workCenter || "").trim();
+  const finalArea = (m.areaName || m.area || "").trim();
+
+  const organizationId = currentOrg === "org_demo" ? "org_demo" : currentOrg;
+
+  return {
+    id: scopedId,
+    organization_id: organizationId,
+    code: m.code || `MA-${Date.now().toString().slice(-4)}`,
+    title: finalTitle,
+    area: finalArea,
+    work_center: finalWorkCenter,
+    work_center_id: m.workCenterId || m.work_center_id || null,
+    area_id: m.areaId || m.area_id || null,
+    responsible: (m.responsible || "").trim(),
+    status: m.status || "Borrador",
+    progress: typeof m.progress === "number" ? m.progress : 0,
+    total_risks:
+      typeof m.totalRecords === "number" ? m.totalRecords : m.total_risks || 0,
+    critical_risks:
+      typeof m.intolerableRisks === "number"
+        ? m.intolerableRisks
+        : m.critical_risks || 0,
+    last_review: m.lastReview || m.lastReviewDate || null,
+    next_review: m.nextReview || m.expiryText || null,
+    hazards: m.evaluations || m.hazards || [],
+    acknowledgements: m.acknowledgements || [],
+    updated_at: (m as { updatedAt?: string }).updatedAt || new Date().toISOString(),
+  };
+}
+
+async function upsertIperMatrixRows(
+  client: NonNullable<ReturnType<typeof getSupabaseClient>>,
+  rows: ReturnType<typeof mapIperMatrixToSupabaseRow>[]
+): Promise<boolean> {
+  if (rows.length === 0) return true;
+
+  const { error } = await client.from("iper_matrices").upsert(rows);
+  if (!error) return true;
+
+  console.warn(
+    "Upsert batch IPER falló, reintentando fila a fila:",
+    error.message
+  );
+
+  let okCount = 0;
+  for (const row of rows) {
+    const { error: rowError } = await client.from("iper_matrices").upsert(row);
+    if (rowError) {
+      console.warn("Error guardando matriz IPER:", row.id, rowError.message);
+    } else {
+      okCount += 1;
+    }
+  }
+  return okCount === rows.length;
+}
+
+export async function saveIperMatricesToSupabase(
+  matrices: any[],
+  orgId?: string
+): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
 
   const currentOrg = orgId || "org_demo";
 
   try {
-    const rows = matrices.map((m) => {
-      // Formatear el ID garantizando prefijo de tenant si es necesario
-      const scopedId = m.id.startsWith("org_") || m.id.startsWith("m-") || m.id.startsWith("MA-")
-        ? (m.id.startsWith(`${currentOrg}_`) ? m.id : `${currentOrg}_${m.id}`)
-        : `${currentOrg}_${m.id}`;
-
-      const finalTitle = (m.name || m.title || "").trim();
-      const finalWorkCenter = (m.workCenterName || m.workCenter || "").trim();
-      const finalArea = (m.areaName || m.area || "").trim();
-      const finalProcess = (m.processName || m.process || "").trim();
-
-      return {
-        id: scopedId,
-        code: m.code || `MA-${Date.now().toString().slice(-4)}`,
-        title: finalTitle,
-        area: finalArea,
-        work_center: finalWorkCenter,
-        responsible: (m.responsible || "").trim(),
-        status: m.status || "Borrador",
-        progress: typeof m.progress === "number" ? m.progress : 0,
-        total_risks: typeof m.totalRecords === "number" ? m.totalRecords : (m.total_risks || 0),
-        critical_risks: typeof m.intolerableRisks === "number" ? m.intolerableRisks : (m.critical_risks || 0),
-        last_review: m.lastReview || m.lastReviewDate || null,
-        next_review: m.nextReview || m.expiryText || null,
-        hazards: m.evaluations || m.hazards || [],
-        acknowledgements: m.acknowledgements || [],
-      };
-    });
-
-    if (rows.length === 0) return true;
-
-    const { error } = await client.from("iper_matrices").upsert(rows);
-    if (error) throw error;
-    return true;
+    const rows = matrices.map((m) => mapIperMatrixToSupabaseRow(m, currentOrg));
+    return await upsertIperMatrixRows(client, rows);
   } catch (e) {
-    console.warn("Error al guardar matrices IPER en Supabase:", e);
+    const detail =
+      e && typeof e === "object" && "message" in e
+        ? String((e as { message?: string }).message)
+        : String(e);
+    console.warn("Error al guardar matrices IPER en Supabase:", detail, e);
     return false;
   }
+}
+
+/** Comprueba que una matriz exista en Supabase tras guardar (misma org y id). */
+export async function iperMatrixExistsInSupabase(
+  matrixId: string,
+  orgId?: string
+): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  const currentOrg = orgId || "org_demo";
+  const scopedId = mapIperMatrixToSupabaseRow({ id: matrixId }, currentOrg).id;
+
+  const { data, error } = await client
+    .from("iper_matrices")
+    .select("id")
+    .eq("id", scopedId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("Error verificando matriz IPER en Supabase:", error.message);
+    return false;
+  }
+  return Boolean(data?.id);
 }
 
 /**
@@ -460,35 +599,10 @@ export async function saveIperMatrixToSupabase(matrix: any, orgId?: string): Pro
   if (!client) return false;
 
   const currentOrg = orgId || "org_demo";
-  const scopedId = matrix.id.startsWith("org_") || matrix.id.startsWith("m-") || matrix.id.startsWith("MA-")
-    ? (matrix.id.startsWith(`${currentOrg}_`) ? matrix.id : `${currentOrg}_${matrix.id}`)
-    : `${currentOrg}_${matrix.id}`;
-
-  const finalTitle = (matrix.name || matrix.title || "").trim();
-  const finalWorkCenter = (matrix.workCenterName || matrix.workCenter || "").trim();
-  const finalArea = (matrix.areaName || matrix.area || "").trim();
-
-  const row = {
-    id: scopedId,
-    code: matrix.code || `MA-${Date.now().toString().slice(-4)}`,
-    title: finalTitle,
-    area: finalArea,
-    work_center: finalWorkCenter,
-    responsible: (matrix.responsible || "").trim(),
-    status: matrix.status || "Borrador",
-    progress: typeof matrix.progress === "number" ? matrix.progress : 0,
-    total_risks: typeof matrix.totalRecords === "number" ? matrix.totalRecords : (matrix.total_risks || 0),
-    critical_risks: typeof matrix.intolerableRisks === "number" ? matrix.intolerableRisks : (matrix.critical_risks || 0),
-    last_review: matrix.lastReview || matrix.lastReviewDate || null,
-    next_review: matrix.nextReview || matrix.expiryText || null,
-    hazards: matrix.evaluations || matrix.hazards || [],
-    acknowledgements: matrix.acknowledgements || [],
-  };
+  const row = mapIperMatrixToSupabaseRow(matrix, currentOrg);
 
   try {
-    const { error } = await client.from("iper_matrices").upsert(row);
-    if (error) throw error;
-    return true;
+    return await upsertIperMatrixRows(client, [row]);
   } catch (e) {
     console.warn("Error al guardar matriz IPER individual en Supabase:", e);
     return false;
@@ -624,17 +738,24 @@ export async function resetSupabaseDataForOrg(orgId: string, userId?: string): P
       await client.from("work_centers").delete().eq("organization_id", orgId);
     } catch (_) {}
 
+    try {
+      await client.from("preventive_evidence").delete().eq("organization_id", orgId);
+      await client.from("preventive_activities").delete().eq("organization_id", orgId);
+      await client.from("preventive_plans").delete().eq("organization_id", orgId);
+      await client.from("technical_documents").delete().eq("organization_id", orgId);
+    } catch (_) {}
+
     // 3. Eliminar documentos preventivos asociados a la organización
     await client.from("preventive_docs").delete().like("id", `${orgId}_%`);
 
     // 4. Eliminar matrices IPER asociadas a la organización
-    await client.from("iper_matrices").delete().like("id", `${orgId}_%`);
+    await client.from("iper_matrices").delete().or(`organization_id.eq.${orgId},id.like.${orgId}_%`);
 
-    // 5. Eliminar estructura organizacional compuesta
+    // 5. Eliminar estructura organizacional compuesta (legado)
     await client.from("org_structure").delete().in("id", [`structure_${orgId}`, orgId]);
 
-    // 6. Eliminar preferencias organizacionales (onboarding, módulos, actividades preventivas)
-    await client.from("organization_preferences").delete().eq("id", orgId);
+    // 6. Eliminar preferencias organizacionales (onboarding, módulos)
+    await client.from("organization_preferences").delete().or(`id.eq.${orgId},organization_id.eq.${orgId}`);
 
     return true;
   } catch (e) {
@@ -660,7 +781,7 @@ export async function seedInitialDataToSupabase(): Promise<{ success: boolean; m
     await saveOrgStructureToSupabase(defaultAreas);
 
     // 2. Documentos preventivos por defecto
-    await savePreventiveDocsToSupabase(DEFAULT_PREVENTIVE_DOCS);
+    await savePreventiveDocsToSupabase(DEFAULT_PREVENTIVE_DOCS, "org_demo");
 
     // 3. Matrices iniciales
     await saveIperMatricesToSupabase(INITIAL_MATRICES);

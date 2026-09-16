@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { LuArrowLeft, LuEye, LuEyeOff } from "react-icons/lu";
-import { authenticateUser, setActiveUser, DEMO_USER } from "@/lib/auth/authService";
+import { setActiveUser, DEMO_USER } from "@/lib/auth/authService";
+import { signInLifeOn } from "@/lib/auth/lifeonAuth";
 import { syncLifeOnSessionCookie } from "@/lib/auth/lifeonSessionClient";
 
 const PROFESSION_IMAGES = [
@@ -44,9 +45,17 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMessage("");
 
-    const result = authenticateUser(email, password);
+    const result = await signInLifeOn(email, password);
     if (result.success) {
-      await syncLifeOnSessionCookie(email, password);
+      const sync = await syncLifeOnSessionCookie(email, password);
+      if (!sync.ok) {
+        setErrorMessage(
+          sync.message ||
+            "Acceso correcto, pero APR Virtual IA no pudo activarse en el servidor. Revisa GROQ_API_KEY y LIFEON_SESSION_SECRET en Vercel."
+        );
+        router.push("/dashboard");
+        return;
+      }
       router.push("/dashboard");
     } else {
       setErrorMessage(result.message || "Credenciales incorrectas.");
@@ -55,7 +64,13 @@ export default function LoginPage() {
 
   const handleSocialLogin = async () => {
     setActiveUser(DEMO_USER);
-    await syncLifeOnSessionCookie(DEMO_USER.email, "serg");
+    const sync = await syncLifeOnSessionCookie(DEMO_USER.email, "serg");
+    if (!sync.ok) {
+      setErrorMessage(
+        sync.message ||
+          "No se pudo activar APR Virtual IA en el servidor. Configura las variables en Vercel."
+      );
+    }
     router.push("/dashboard");
   };
 

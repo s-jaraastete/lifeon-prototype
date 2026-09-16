@@ -18,6 +18,12 @@ import {
 } from "@/types/users";
 import { useLifeOnPreferences } from "./useLifeOnPreferences";
 import { getScopedStorageKey } from "@/lib/auth/authService";
+import {
+  deleteMember,
+  fetchMembersByOrganization,
+  upsertMember,
+} from "@/lib/repositories/memberRepository";
+import { isSupabaseConfigured } from "@/lib/supabaseClient";
 
 export const PLATFORM_USERS_STORAGE_KEY = "lifeon_platform_users";
 export const USERS_CHANGE_EVENT = "lifeon-platform-users-change";
@@ -42,8 +48,27 @@ export function useUsers() {
     } catch {
       setUsers([]);
     }
+
+    if (isSupabaseConfigured()) {
+      void fetchMembersByOrganization(orgId).then((cloudUsers) => {
+        if (cloudUsers.length > 0) {
+          setUsers(cloudUsers);
+          try {
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(
+                storageKey,
+                JSON.stringify({ users: cloudUsers, lastUpdated: new Date().toISOString() })
+              );
+            }
+          } catch {
+            /* noop */
+          }
+        }
+      });
+    }
+
     setIsLoaded(true);
-  }, [storageKey]);
+  }, [storageKey, orgId]);
 
   useEffect(() => {
     loadUsers();
@@ -65,8 +90,15 @@ export function useUsers() {
         }
       } catch { /* noop */ }
       setUsers(updated);
+      if (isSupabaseConfigured()) {
+        void Promise.all(updated.map((u) => upsertMember(orgId, u))).then((results) => {
+          if (results.some((r) => !r)) {
+            console.warn("Algunos usuarios no se guardaron en Supabase.");
+          }
+        });
+      }
     },
-    [storageKey]
+    [storageKey, orgId]
   );
 
   const addUser = useCallback(
@@ -111,8 +143,11 @@ export function useUsers() {
   const deleteUser = useCallback(
     (userId: string) => {
       persistUsers(users.filter((u) => u.id !== userId));
+      if (isSupabaseConfigured()) {
+        void deleteMember(orgId, userId);
+      }
     },
-    [users, persistUsers]
+    [users, persistUsers, orgId]
   );
 
   const downloadTemplateXlsx = useCallback(() => {

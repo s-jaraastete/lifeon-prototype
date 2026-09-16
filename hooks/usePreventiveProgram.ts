@@ -10,10 +10,11 @@ import {
 } from "@/types/preventiveProgram";
 import { useLifeOnPreferences } from "./useLifeOnPreferences";
 import { getScopedStorageKey } from "@/lib/auth/authService";
+import { savePreventiveActivitiesToSupabase } from "@/lib/services/supabaseService";
 import {
-  savePreventiveActivitiesToSupabase,
-  fetchPreventiveActivitiesFromSupabase,
-} from "@/lib/services/supabaseService";
+  fetchPreventiveActivities,
+  savePreventiveActivities,
+} from "@/lib/repositories/planningRepository";
 
 export const PREVENTIVE_PROGRAM_STORAGE_KEY = "lifeon_preventive_program";
 
@@ -719,15 +720,15 @@ export function usePreventiveProgram() {
     }
 
     // Hidratar desde Supabase como fuente definitiva de verdad
-    fetchPreventiveActivitiesFromSupabase(orgId)
+    fetchPreventiveActivities(orgId)
       .then((cloudActivities) => {
-        if (cloudActivities && Array.isArray(cloudActivities) && cloudActivities.length > 0) {
+        if (cloudActivities && cloudActivities.length > 0) {
           setActivities(cloudActivities);
           try {
             window.localStorage.setItem(storageKey, JSON.stringify(cloudActivities));
           } catch (_) {}
         } else if (localActivities && localActivities.length > 0 && orgId !== "org_demo") {
-          // Si teníamos datos locales no sincronizados en la nube, persistirlos
+          void savePreventiveActivities(orgId, localActivities);
           savePreventiveActivitiesToSupabase(localActivities, orgId);
         }
       })
@@ -777,7 +778,12 @@ export function usePreventiveProgram() {
       } catch (e) {
         console.warn("Error guardando programa preventivo en localStorage:", e);
       }
-      savePreventiveActivitiesToSupabase(newActivities, orgId);
+      void savePreventiveActivities(orgId, newActivities).then((ok) => {
+        if (!ok) {
+          console.warn("No se pudo guardar el programa en tablas preventivas; usando respaldo en preferencias.");
+          savePreventiveActivitiesToSupabase(newActivities, orgId);
+        }
+      });
       if (newActivities.length > 0) {
         configurePreventivePlanningModule(true, "upload_existing");
       }

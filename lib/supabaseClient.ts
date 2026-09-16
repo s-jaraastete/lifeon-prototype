@@ -16,6 +16,25 @@ export const isSupabaseConfigured = (): boolean => {
   );
 };
 
+/** Diagnóstico sin exponer secretos (útil en producción). */
+export function getSupabasePublicConfigStatus(): {
+  configured: boolean;
+  urlHost: string;
+  hasAnonKey: boolean;
+} {
+  let urlHost = "";
+  try {
+    if (supabaseUrl) urlHost = new URL(supabaseUrl).host;
+  } catch {
+    urlHost = "";
+  }
+  return {
+    configured: isSupabaseConfigured(),
+    urlHost,
+    hasAnonKey: Boolean(supabaseAnonKey),
+  };
+}
+
 let clientInstance: SupabaseClient | null = null;
 
 /**

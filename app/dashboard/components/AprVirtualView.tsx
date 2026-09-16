@@ -10,8 +10,6 @@ import {
 } from "react-icons/lu";
 import useLifeOnPreferences from "@/hooks/useLifeOnPreferences";
 import useAprVirtualChat from "@/hooks/useAprVirtualChat";
-import { hasLifeOnAiSession } from "@/lib/auth/lifeonSessionClient";
-import Link from "next/link";
 
 const PREBUILT_PROMPTS = [
   {
@@ -43,12 +41,7 @@ export default function AprVirtualView() {
   );
 
   const [input, setInput] = useState("");
-  const [aiSessionOk, setAiSessionOk] = useState<boolean | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    void hasLifeOnAiSession().then(setAiSessionOk);
-  }, []);
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -124,16 +117,6 @@ export default function AprVirtualView() {
       {error && (
         <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
           {error}
-        </p>
-      )}
-
-      {aiSessionOk === false && (
-        <p className="text-xs text-amber-900 bg-amber-50 border border-amber-300 rounded-xl px-3 py-2">
-          Para usar APR Virtual IA debes{" "}
-          <Link href="/login" className="font-bold underline text-teal-800">
-            cerrar sesión e iniciar sesión de nuevo
-          </Link>{" "}
-          (así se activa la sesión segura del servidor). Tu clave Groq ya está configurada.
         </p>
       )}
 

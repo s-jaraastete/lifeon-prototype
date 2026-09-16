@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   PreventiveDoc,
   DocStatus,
@@ -14,62 +14,114 @@ import {
   fetchPreventiveDocsFromSupabase,
   savePreventiveDocsToSupabase,
 } from "@/lib/services/supabaseService";
+import { useLifeOnPreferences } from "./useLifeOnPreferences";
+import {
+  getScopedStorageKey,
+  SESSION_CHANGE_EVENT,
+} from "@/lib/auth/authService";
 
-const STORAGE_KEY = "lifeon_preventive_docs";
+export const PREVENTIVE_DOCS_STORAGE_KEY = "lifeon_preventive_docs";
+
+function withAutoVigencia(docs: PreventiveDoc[]): PreventiveDoc[] {
+  return docs.map((doc) => {
+    const { status, daysRemaining } = getAutoVigenciaStatus(doc.expiryDate, doc.status);
+    return { ...doc, status, daysRemaining };
+  });
+}
+
+function defaultDocsForOrg(_orgId: string): PreventiveDoc[] {
+  return withAutoVigencia(DEFAULT_PREVENTIVE_DOCS);
+}
 
 export function usePreventiveDocs() {
-  const [docs, setDocs] = useState<PreventiveDoc[]>(() => {
-    if (typeof window === "undefined") {
-      return DEFAULT_PREVENTIVE_DOCS.map((doc) => {
-        const { status, daysRemaining } = getAutoVigenciaStatus(doc.expiryDate, doc.status);
-        return { ...doc, status, daysRemaining };
-      });
-    }
+  const { currentUser } = useLifeOnPreferences();
+  const orgId = currentUser?.orgId || "org_demo";
+  const storageKey = useMemo(
+    () => getScopedStorageKey(PREVENTIVE_DOCS_STORAGE_KEY, orgId),
+    [orgId]
+  );
+
+  const [docs, setDocs] = useState<PreventiveDoc[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const skipNextCloudSave = useRef(false);
+
+  const loadDocsForOrg = useCallback(() => {
+    setIsLoaded(false);
+    let localDocs: PreventiveDoc[] | null = null;
 
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored =
+        typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
       if (stored) {
         const parsed: PreventiveDoc[] = JSON.parse(stored);
-        return parsed.map((doc) => {
-          const { status, daysRemaining } = getAutoVigenciaStatus(doc.expiryDate, doc.status);
-          return { ...doc, status, daysRemaining };
-        });
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localDocs = withAutoVigencia(parsed);
+          setDocs(localDocs);
+        }
       }
     } catch (err) {
       console.error("Error reading preventive docs from localStorage:", err);
     }
 
-    return DEFAULT_PREVENTIVE_DOCS.map((doc) => {
-      const { status, daysRemaining } = getAutoVigenciaStatus(doc.expiryDate, doc.status);
-      return { ...doc, status, daysRemaining };
-    });
-  });
+    if (!localDocs) {
+      setDocs(defaultDocsForOrg(orgId));
+    }
 
-  // Intentar hidratar desde Supabase si está disponible
+    fetchPreventiveDocsFromSupabase(orgId)
+      .then((cloudDocs) => {
+        if (cloudDocs === null) return;
+        if (cloudDocs.length > 0) {
+          skipNextCloudSave.current = true;
+          const hydrated = withAutoVigencia(cloudDocs);
+          setDocs(hydrated);
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(hydrated));
+          } catch {
+            /* noop */
+          }
+        } else if (localDocs && localDocs.length > 0) {
+          savePreventiveDocsToSupabase(localDocs, orgId);
+        }
+      })
+      .catch((err) => {
+        console.warn("Error hidratando documentos preventivos desde Supabase:", err);
+      })
+      .finally(() => {
+        setIsLoaded(true);
+      });
+  }, [orgId, storageKey]);
+
   useEffect(() => {
-    fetchPreventiveDocsFromSupabase().then((cloudDocs) => {
-      if (cloudDocs && cloudDocs.length > 0) {
-        setDocs(cloudDocs);
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudDocs));
-        } catch {}
+    loadDocsForOrg();
+
+    const onSessionChange = () => loadDocsForOrg();
+    if (typeof window !== "undefined") {
+      window.addEventListener(SESSION_CHANGE_EVENT, onSessionChange);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener(SESSION_CHANGE_EVENT, onSessionChange);
       }
-    });
-  }, []);
+    };
+  }, [loadDocsForOrg]);
 
-  // Guardar en localStorage y Supabase cuando cambian los documentos
   useEffect(() => {
+    if (!isLoaded) return;
+
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(docs));
+      localStorage.setItem(storageKey, JSON.stringify(docs));
     } catch (err) {
       console.error("Error saving preventive docs to localStorage:", err);
     }
 
-    // Persistir en Supabase en segundo plano sin bloquear
-    savePreventiveDocsToSupabase(docs);
-  }, [docs]);
+    if (skipNextCloudSave.current) {
+      skipNextCloudSave.current = false;
+      return;
+    }
 
-  // Actualizar un documento por ID
+    void savePreventiveDocsToSupabase(docs, orgId);
+  }, [docs, orgId, storageKey, isLoaded]);
+
   const updateDoc = (id: string, updates: Partial<PreventiveDoc>) => {
     setDocs((prev) =>
       prev.map((doc) => {
@@ -84,7 +136,6 @@ export function usePreventiveDocs() {
     );
   };
 
-  // Cargar un archivo propio de la empresa para un documento existente
   const uploadCustomFile = (
     docId: string,
     fileInfo: {
@@ -116,7 +167,6 @@ export function usePreventiveDocs() {
     );
   };
 
-  // Actualizar el estado de un punto de auditoría específico
   const updateAuditPoint = (
     docId: string,
     pointId: string,
@@ -137,7 +187,6 @@ export function usePreventiveDocs() {
           };
         });
 
-        // Recalcular puntaje y estado de auditoría
         const applicablePoints = updatedChecklist.filter((p) => p.status !== "No Aplica");
         const total = applicablePoints.length;
         if (total === 0) {
@@ -145,7 +194,7 @@ export function usePreventiveDocs() {
             ...doc,
             auditChecklist: updatedChecklist,
             auditScore: 100,
-            auditStatus: "Conforme",
+            auditStatus: "Conforme" as AuditStatus,
           };
         }
 
@@ -157,9 +206,15 @@ export function usePreventiveDocs() {
 
         const newScore = Math.round((scoreSum / total) * 100);
         let newAuditStatus: AuditStatus = "Conforme";
-        if (newScore < 70 || applicablePoints.some((p) => p.criticality === "Crítico" && p.status === "No Cumple")) {
+        if (
+          newScore < 70 ||
+          applicablePoints.some((p) => p.criticality === "Crítico" && p.status === "No Cumple")
+        ) {
           newAuditStatus = "No Conforme";
-        } else if (newScore < 100 || applicablePoints.some((p) => p.status === "Observado")) {
+        } else if (
+          newScore < 100 ||
+          applicablePoints.some((p) => p.status === "Observado")
+        ) {
           newAuditStatus = "Con Observaciones";
         }
 
@@ -173,14 +228,12 @@ export function usePreventiveDocs() {
     );
   };
 
-  // Actualizar las secciones de contenido de la propuesta base
   const updateDocSections = (docId: string, sections: DocSection[]) => {
     setDocs((prev) =>
       prev.map((doc) => (doc.id === docId ? { ...doc, contentSections: sections } : doc))
     );
   };
 
-  // Agregar un nuevo documento (personalizado o desde catálogo)
   const addDocument = (newDoc: Omit<PreventiveDoc, "id">) => {
     const id = `DOC-${Date.now().toString().slice(-4)}`;
     const { status, daysRemaining } = getAutoVigenciaStatus(newDoc.expiryDate, newDoc.status);
@@ -194,22 +247,16 @@ export function usePreventiveDocs() {
     return docWithId;
   };
 
-  // Eliminar un documento
   const deleteDocument = (id: string) => {
     setDocs((prev) => prev.filter((d) => d.id !== id));
   };
 
-  // Restablecer al catálogo predeterminado
   const resetToDefaults = () => {
-    const fresh = DEFAULT_PREVENTIVE_DOCS.map((doc) => {
-      const { status, daysRemaining } = getAutoVigenciaStatus(doc.expiryDate, doc.status);
-      return { ...doc, status, daysRemaining };
-    });
+    const fresh = defaultDocsForOrg(orgId);
     setDocs(fresh);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+    localStorage.setItem(storageKey, JSON.stringify(fresh));
   };
 
-  // Métricas agregadas y estadísticas de cumplimiento
   const metrics = useMemo(() => {
     const totalDocs = docs.length;
     const vigentesCount = docs.filter((d) => d.status === "Vigente").length;
@@ -217,7 +264,6 @@ export function usePreventiveDocs() {
     const vencidosCount = docs.filter((d) => d.status === "Vencido").length;
     const pendientesCount = docs.filter((d) => d.status === "Pendiente de Carga").length;
 
-    // Puntos de auditoría agregados
     let totalPoints = 0;
     let passedPoints = 0;
     let observedPoints = 0;
@@ -263,6 +309,7 @@ export function usePreventiveDocs() {
 
   return {
     docs,
+    isLoaded,
     updateDoc,
     uploadCustomFile,
     updateAuditPoint,
