@@ -3,9 +3,18 @@
 import { createContext, ReactNode, useContext, useState } from "react";
 import { Subscription } from "@/types/admin";
 import BillingDetailPanel from "./BillingDetailPanel";
+import CreditNoteDetailPanel from "./CreditNoteDetailPanel";
+
+type BillingDetailView = "invoice" | "credit_note";
+
+type SelectedBillingDetail = {
+  view: BillingDetailView;
+  subscription: Subscription;
+} | null;
 
 type BillingDetailContextValue = {
-  openDetail: (subscription: Subscription) => void;
+  openBillingDetail: (subscription: Subscription) => void;
+  openCreditNoteDetail: (subscription: Subscription) => void;
 };
 
 const BillingDetailContext = createContext<
@@ -19,17 +28,36 @@ type BillingDetailProviderProps = {
 };
 
 const BillingDetailProvider = ({ children }: BillingDetailProviderProps) => {
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [selectedDetail, setSelectedDetail] =
+    useState<SelectedBillingDetail>(null);
+
+  const closeDetail = () => setSelectedDetail(null);
 
   return (
     <BillingDetailContext.Provider
-      value={{ openDetail: (subscription) => setSubscription(subscription) }}
+      value={{
+        openBillingDetail: (subscription) =>
+          setSelectedDetail({ view: "invoice", subscription }),
+        openCreditNoteDetail: (subscription) =>
+          setSelectedDetail({ view: "credit_note", subscription }),
+      }}
     >
       {children}
       <BillingDetailPanel
-        open={subscription !== null}
-        subscription={subscription}
-        onClose={() => setSubscription(null)}
+        open={selectedDetail?.view === "invoice"}
+        subscription={
+          selectedDetail?.view === "invoice" ? selectedDetail.subscription : null
+        }
+        onClose={closeDetail}
+      />
+      <CreditNoteDetailPanel
+        open={selectedDetail?.view === "credit_note"}
+        subscription={
+          selectedDetail?.view === "credit_note"
+            ? selectedDetail.subscription
+            : null
+        }
+        onClose={closeDetail}
       />
     </BillingDetailContext.Provider>
   );

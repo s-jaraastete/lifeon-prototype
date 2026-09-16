@@ -1,6 +1,7 @@
 "use client";
 
-import { LuEllipsis } from "react-icons/lu";
+import GenericMenu, { MenuItem } from "@/components/reusable/GenericMenu";
+import { LuEye } from "react-icons/lu";
 import { Subscription } from "@/types/admin";
 import { useBillingDetail } from "./BillingDetailProvider";
 
@@ -8,19 +9,26 @@ type BillingRowActionProps = {
   subscription: Subscription;
 };
 
-// TODO: Reemplazar por menú de acciones cuando exista la API de facturación.
+// TODO: Con datos reales de la API de facturación, mostrar solo la opción
+// correspondiente según el tipo de documento (factura o nota de crédito)
 const BillingRowAction = ({ subscription }: BillingRowActionProps) => {
   const detail = useBillingDetail();
 
   return (
-    <button
-      type="button"
-      onClick={() => detail?.openDetail(subscription)}
-      aria-label="Ver detalle de facturación"
-      className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition-colors hover:bg-gray-100"
-    >
-      <LuEllipsis className="size-4" />
-    </button>
+    <GenericMenu>
+      <MenuItem
+        icon={<LuEye />}
+        onClick={() => detail?.openBillingDetail(subscription)}
+      >
+        Ver detalle de facturación
+      </MenuItem>
+      <MenuItem
+        icon={<LuEye />}
+        onClick={() => detail?.openCreditNoteDetail(subscription)}
+      >
+        Ver detalle de Nota de crédito
+      </MenuItem>
+    </GenericMenu>
   );
 };
 

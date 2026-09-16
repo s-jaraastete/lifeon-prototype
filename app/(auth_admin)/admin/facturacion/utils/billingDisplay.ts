@@ -86,3 +86,26 @@ export const getChargeBreakdown = (total: number | null | undefined) => {
   const iva = total - subtotal;
   return { subtotal, iva, total };
 };
+
+// TODO: ID derivado del ID de suscripción mientras no exista el modelo de nota de crédito.
+export const getCreditNoteId = (subscription: Subscription): string =>
+  subscription.subscription_id.replace(/^SUB-/, "NC-");
+
+// TODO: Formato de monto negativo mientras la API de facturación no entregue
+// el valor real de la nota de crédito (siempre se muestra negativo).
+export const formatBillingCreditNoteAmount = (
+  value: number | null | undefined
+): string => {
+  const formatted = formatApiAmount(value ? Math.abs(value) : value);
+  return formatted ? `CLP -$${formatted}` : DISPLAY_FALLBACK;
+};
+
+// TODO: Desglose del ajuste derivado matemáticamente (IVA 19%) mientras la API
+// de facturación no entregue el desglose real.
+export const getCreditNoteBreakdown = (total: number | null | undefined) => {
+  if (!total) return null;
+  const abs = Math.abs(total);
+  const subtotal = Math.round(abs / 1.19);
+  const iva = abs - subtotal;
+  return { subtotal: -subtotal, iva: -iva, total: -abs };
+};
