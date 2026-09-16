@@ -387,7 +387,11 @@ export function useOrgStructure() {
         })
         .catch((err) => {
           console.warn("Error hidratando estructura desde Supabase:", err);
+        })
+        .finally(() => {
+          setIsLoaded(true);
         });
+      return;
     } catch (e) {
       console.warn("No se pudo cargar la estructura organizacional de localStorage:", e);
       if (!isDemoOrg) {
@@ -401,10 +405,9 @@ export function useOrgStructure() {
         setPositions(DEMO_POSITIONS);
         setUsers(DEMO_USERS);
       }
-    } finally {
       setIsLoaded(true);
     }
-  }, [storageKey, orgId, preferences?.organizationSector]);
+  }, [storageKey, orgId, preferences?.organizationSector, currentUser?.email, currentUser?.id, currentUser?.name]);
 
   useEffect(() => {
     loadOrgData();

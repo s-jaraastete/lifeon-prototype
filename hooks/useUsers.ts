@@ -37,6 +37,7 @@ export function useUsers() {
   const storageKey = useMemo(() => getScopedStorageKey(PLATFORM_USERS_STORAGE_KEY, orgId), [orgId]);
 
   const loadUsers = useCallback(() => {
+    setIsLoaded(false);
     try {
       const stored = typeof window !== "undefined" ? window.localStorage.getItem(storageKey) : null;
       if (stored) {
@@ -49,25 +50,31 @@ export function useUsers() {
       setUsers([]);
     }
 
-    if (isSupabaseConfigured()) {
-      void fetchMembersByOrganization(orgId).then((cloudUsers) => {
-        if (cloudUsers.length > 0) {
-          setUsers(cloudUsers);
-          try {
-            if (typeof window !== "undefined") {
-              window.localStorage.setItem(
-                storageKey,
-                JSON.stringify({ users: cloudUsers, lastUpdated: new Date().toISOString() })
-              );
-            }
-          } catch {
-            /* noop */
+    const finish = (cloudUsers?: PlatformUser[]) => {
+      if (cloudUsers) {
+        setUsers(cloudUsers);
+        try {
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem(
+              storageKey,
+              JSON.stringify({ users: cloudUsers, lastUpdated: new Date().toISOString() })
+            );
           }
+        } catch {
+          /* noop */
         }
-      });
+      }
+      setIsLoaded(true);
+    };
+
+    if (isSupabaseConfigured()) {
+      void fetchMembersByOrganization(orgId)
+        .then((cloudUsers) => finish(cloudUsers))
+        .catch(() => finish());
+      return;
     }
 
-    setIsLoaded(true);
+    finish();
   }, [storageKey, orgId]);
 
   useEffect(() => {

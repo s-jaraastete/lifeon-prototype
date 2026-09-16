@@ -1,0 +1,5 @@
+# Supabase CLI — proyecto personal LifeOn
+project_id = "gezcblnyteijkckabkyh"
+
+[db]
+major_version = 15

@@ -35,7 +35,7 @@ const STEP_META = [
     id: "users" as const,
     title: "Configurar usuarios",
     description:
-      "Agrega las personas que tendrán acceso a LifeOn y define sus roles y permisos.",
+      "Ya tienes tu usuario administrador. Agrega al menos una persona más con acceso a LifeOn y define roles y permisos.",
     icon: LuUsers,
     actionLabel: "Ir a Usuarios",
     menu: "users" as const,

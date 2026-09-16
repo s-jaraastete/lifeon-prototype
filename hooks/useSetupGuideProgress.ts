@@ -12,9 +12,9 @@ export interface SetupGuideStepProgress {
 }
 
 export function useSetupGuideProgress() {
-  const { preferences, currentUser } = useLifeOnPreferences();
-  const { users } = useUsers();
-  const { workCenters, areas, positions } = useOrgStructure();
+  const { preferences, currentUser, isLoaded: preferencesLoaded } = useLifeOnPreferences();
+  const { users, isLoaded: usersLoaded } = useUsers();
+  const { workCenters, areas, positions, isLoaded: structureLoaded } = useOrgStructure();
 
   const hasPhoto = Boolean(
     preferences.profilePhoto || currentUser?.avatarUrl
@@ -27,7 +27,8 @@ export function useSetupGuideProgress() {
 
   const profileComplete = hasPhoto && hasLogo && hasOrgName && hasEmail;
 
-  const usersComplete = users.length >= 1;
+  const activeUsers = users.filter((u) => u.status !== "Inactivo");
+  const usersComplete = activeUsers.length >= 2;
 
   const hasWorkCenter = workCenters.filter((w) => w.status !== "Inactivo").length >= 1;
   const activeAreas = areas.filter((a) => a.status !== "Inactivo");
@@ -56,7 +57,12 @@ export function useSetupGuideProgress() {
       {
         id: "users",
         complete: usersComplete,
-        subChecks: [{ label: "Al menos un usuario creado", done: usersComplete }],
+        subChecks: [
+          {
+            label: "Al menos un usuario adicional (mín. 2 en total)",
+            done: usersComplete,
+          },
+        ],
       },
       {
         id: "structure",
@@ -86,5 +92,7 @@ export function useSetupGuideProgress() {
 
   const allComplete = steps.every((s) => s.complete);
 
-  return { steps, allComplete };
+  const isProgressReady = preferencesLoaded && usersLoaded && structureLoaded;
+
+  return { steps, allComplete, isProgressReady };
 }

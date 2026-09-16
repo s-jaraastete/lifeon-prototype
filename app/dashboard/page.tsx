@@ -141,8 +141,11 @@ export default function DashboardPage() {
   }, [isLoaded, preferences.onboardingCompleted, preferences.tourCompleted]);
 
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false);
-  const { steps: setupGuideSteps, allComplete: setupGuideAllComplete } =
-    useSetupGuideProgress();
+  const {
+    steps: setupGuideSteps,
+    allComplete: setupGuideAllComplete,
+    isProgressReady: setupGuideProgressReady,
+  } = useSetupGuideProgress();
   const setupGuideDoneCount = setupGuideSteps.filter((s) => s.complete).length;
 
   const patchSetupGuide = (patch: Partial<SetupGuidePreferences>) => {
@@ -179,27 +182,26 @@ export default function DashboardPage() {
     setTimeout(() => openSetupGuideModal(), 400);
   };
 
-  // Rehabilitar guía si se cerró por error (p. ej. al ir a un paso) o quedó completed sin userFinalized
+  // Reabrir guía solo si ya se finalizó pero vuelven a faltar pasos (datos ya cargados)
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !setupGuideProgressReady) return;
     const sg = preferences.setupGuide;
-    if (!sg) return;
+    if (!sg?.userFinalized) return;
+    if (setupGuideAllComplete) return;
 
-    if (sg.userFinalized && !setupGuideAllComplete) {
-      patchSetupGuide({
-        userFinalized: false,
-        completed: false,
-        completedAt: null,
-        companionCollapsed: false,
-      });
-      return;
-    }
-
-    if (sg.completed && !sg.userFinalized) {
-      patchSetupGuide({ completed: false, completedAt: null });
-    }
+    patchSetupGuide({
+      userFinalized: false,
+      completed: false,
+      completedAt: null,
+      companionCollapsed: false,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, setupGuideAllComplete, preferences.setupGuide?.userFinalized, preferences.setupGuide?.completed]);
+  }, [
+    isLoaded,
+    setupGuideProgressReady,
+    setupGuideAllComplete,
+    preferences.setupGuide?.userFinalized,
+  ]);
 
   const handleFinishTour = () => {
     setIsTourOpen(false);

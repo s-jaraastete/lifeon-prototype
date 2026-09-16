@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "supabase:sql-bundle": "node scripts/build-sql-bundle.mjs",
+    "supabase:bootstrap": "node scripts/apply-supabase-bootstrap.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",

@@ -106,6 +106,15 @@ export default function LifeOnPreferencesProvider({
           ...cloudPrefs,
           onboardingCompleted: cloudPrefs.onboardingCompleted ?? basePrefs.onboardingCompleted,
           tourCompleted: cloudPrefs.tourCompleted ?? basePrefs.tourCompleted,
+          setupGuide: {
+            ...(defaultPrefs.setupGuide || EMPTY_ORGANIZATION_PREFERENCES.setupGuide!),
+            ...basePrefs.setupGuide,
+            ...(cloudPrefs.setupGuide || {}),
+            userFinalized:
+              cloudPrefs.setupGuide?.userFinalized ??
+              basePrefs.setupGuide?.userFinalized ??
+              false,
+          },
           organizationLogo: cloudPrefs.organizationLogo ?? basePrefs.organizationLogo ?? null,
           profilePhoto: cloudPrefs.profilePhoto ?? basePrefs.profilePhoto ?? null,
           preventiveActivities: cloudPrefs.preventiveActivities ?? basePrefs.preventiveActivities,
@@ -232,6 +241,12 @@ export default function LifeOnPreferencesProvider({
         const next: OrganizationPreferences = {
           ...prev,
           ...partial,
+          setupGuide: partial.setupGuide
+            ? {
+                ...(prev.setupGuide || EMPTY_ORGANIZATION_PREFERENCES.setupGuide!),
+                ...partial.setupGuide,
+              }
+            : prev.setupGuide,
           modules: {
             ...prev.modules,
             ...(partial.modules || {}),
