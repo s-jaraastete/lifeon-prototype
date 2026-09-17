@@ -5,6 +5,7 @@ import SubscriptionsTable from "./components/SubscriptionsTable";
 import SubscriptionDetailProvider from "./components/detail/SubscriptionDetailProvider";
 import SubscriptionPaymentRetryProvider from "./components/SubscriptionPaymentRetryProvider";
 import TableFilters from "./components/TableFilters";
+import ExportTableButton from "../components/ExportTableButton";
 
 
 type PageProps = {
@@ -25,8 +26,19 @@ type PageProps = {
   }>;
 };
 
+const buildSubscriptionsExportFilename = () => {
+  const date = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  return `suscripciones_${date}.xlsx`;
+};
+
 const SuscripcionesPage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
+  const exportFilename = buildSubscriptionsExportFilename();
   let data: SubscriptionDashboardOverview | null = null;
 
   try {
@@ -51,6 +63,11 @@ const SuscripcionesPage = async ({ searchParams }: PageProps) => {
                 <h2 className="text-2xl font-semibold text-neutral-primary">
                   Todas las suscripciones
                 </h2>
+                <ExportTableButton
+                  endpoint="/admin-overview/subscriptions/export/"
+                  queryParams={params}
+                  downloadFilename={exportFilename}
+                />
               </div>
               <TableFilters />
               <SubscriptionsTable params={params} />
