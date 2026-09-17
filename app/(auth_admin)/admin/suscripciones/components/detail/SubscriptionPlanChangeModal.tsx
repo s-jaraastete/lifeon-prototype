@@ -383,7 +383,7 @@ const SubscriptionPlanChangeModal = ({ open, subscription, onClose, onSuccess }:
             </label>
             <label className="mt-2 flex items-center gap-2 text-sm text-neutral-secondary opacity-50">
               <input type="radio" disabled />
-              Aplicar cambio de inmediato (próximamente)
+              Aplicar cambio de inmediato (por definir)
             </label>
           </div>
 
