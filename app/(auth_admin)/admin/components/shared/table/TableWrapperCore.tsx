@@ -31,12 +31,12 @@ const TableWrapperCore = <T, >(props: TableWrapperCoreProps<T>) => {
               <th
                 key={typeof(header) === 'string' ? header : header.label}
                 className={clsx(
-                'h-12.5 whitespace-nowrap border-b border-gray-300 px-5 py-2.5 text-left text-body-sm font-medium leading-5.5 text-gray-950',
-                !props.stickyLastColumns
-                  && idx === props.headers.length - 1
-                  && (typeof header === 'string' || !header.className)
-                  && 'w-1',
-                typeof(header) === 'string' ? '' : header.className ?? ''
+                  'h-12.5 whitespace-nowrap border-b border-gray-300 px-5 py-2.5 text-left text-body-sm font-medium leading-5.5 text-gray-950',
+                  !props.stickyLastColumns
+                    && idx === props.headers.length - 1
+                    && (typeof header === 'string' || !header.className)
+                    && 'w-1',
+                  typeof(header) === 'string' ? '' : header.className ?? ''
                 )}
               >
                 {typeof(header) === 'string' ? header: header.label}
@@ -60,7 +60,10 @@ const TableWrapperCore = <T, >(props: TableWrapperCoreProps<T>) => {
           ) : (
             props.data.map((item, index) => (
               <Fragment key={index}>
-                <tr className='whitespace-nowrap border-b border-gray-300 align-middle last:border-none hover:bg-gray-100 [&>td]:min-h-12.5 [&>td]:px-5 [&>td]:py-2.5 [&>td]:text-body-sm [&>td]:leading-5.5 [&>td]:text-gray-800'>
+                <tr className={clsx(
+                  'whitespace-nowrap border-b border-gray-300 align-middle last:border-none hover:bg-gray-100',
+                  '[&>td]:min-h-12.5 [&>td]:px-5 [&>td]:py-2.5 [&>td]:text-body-sm [&>td]:leading-5.5 [&>td]:text-gray-800'
+                )}>
                   {props.row(item, index)}
                 </tr>
                 {props.extraRow?.(item, index)}
