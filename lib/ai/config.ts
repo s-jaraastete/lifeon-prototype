@@ -8,7 +8,7 @@ export const AI_LIMITS = {
   maxHistoryContentChars: 800,
   maxChatOutputTokens: 700,
   maxSuggestionOutputTokens: 500,
-  maxTechnicalDocOutputTokens: 2800,
+  maxTechnicalDocOutputTokens: 8000,
   suggestionTemperature: 0.3,
   chatTemperature: 0.5,
   requestsPerMinute: 8,

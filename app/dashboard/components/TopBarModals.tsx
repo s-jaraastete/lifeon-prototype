@@ -56,7 +56,8 @@ import {
 } from "@/types/preferences";
 import { OrgWorkCenter } from "@/types/orgStructure";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabaseClient";
-import { uploadFileToSupabaseStorage } from "@/lib/services/supabaseService";
+import { uploadToStorage, STORAGE_BUCKETS } from "@/lib/repositories/storageRepository";
+import { getSupabaseAuthUserId } from "@/lib/auth/lifeonAuth";
 
 export interface NotificationItem {
   id: string;
@@ -418,6 +419,7 @@ export function AccountModal({
   // Foto de perfil y Logo de empresa
   const [profilePhoto, setProfilePhoto] = useState<string | null>(preferences.profilePhoto || null);
   const [orgLogo, setOrgLogo] = useState<string | null>(preferences.organizationLogo || null);
+  const [mediaUploadError, setMediaUploadError] = useState<string | null>(null);
 
   // Estados de cambio de contraseña
   const [currentPassword, setCurrentPassword] = useState("");
@@ -440,37 +442,45 @@ export function AccountModal({
   const handleProfilePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setMediaUploadError(null);
     if (!file.type.match(/^image\/(png|jpeg|jpg|webp)$/i)) {
-      alert("Formato no compatible. Por favor selecciona una imagen JPG, PNG o WEBP.");
+      setMediaUploadError("Formato no compatible. Usa JPG, PNG o WEBP.");
       return;
     }
     if (file.size > 3 * 1024 * 1024) {
-      alert("La imagen excede el límite recomendado de 3MB.");
+      setMediaUploadError("La imagen excede el límite de 3MB.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      const dataUrl = evt.target?.result as string;
-      setProfilePhoto(dataUrl);
-
-      const userId = currentUser?.id || "user_demo";
-      const ext = file.name.split(".").pop() || "png";
-      const storageUrl = await uploadFileToSupabaseStorage("avatars", `${userId}/avatar.${ext}`, file);
-      const finalUrl = storageUrl || dataUrl;
-
-      setProfilePhoto(finalUrl);
-      updatePreferences({ profilePhoto: finalUrl });
-      try {
-        localStorage.setItem(`lifeon_user_photo_${userId}`, finalUrl);
-        const rawUser = localStorage.getItem("lifeon_active_user");
-        if (rawUser) {
-          const u = JSON.parse(rawUser);
-          u.avatarUrl = finalUrl;
-          localStorage.setItem("lifeon_active_user", JSON.stringify(u));
-        }
-      } catch (err) {}
-    };
-    reader.readAsDataURL(file);
+    const authId = await getSupabaseAuthUserId();
+    if (!authId) {
+      setMediaUploadError("Inicia sesión con Supabase Auth para guardar la foto en la nube.");
+      return;
+    }
+    const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+    const { publicUrl, error } = await uploadToStorage(
+      STORAGE_BUCKETS.avatars,
+      `${authId}/avatar.${ext}`,
+      file
+    );
+    if (!publicUrl) {
+      setMediaUploadError(error || "No se pudo subir la foto. Revisa permisos de Storage.");
+      return;
+    }
+    setProfilePhoto(publicUrl);
+    updatePreferences({ profilePhoto: publicUrl });
+    try {
+      const legacyId = currentUser?.id || "user_demo";
+      localStorage.setItem(`lifeon_user_photo_${legacyId}`, publicUrl);
+      const rawUser = localStorage.getItem("lifeon_active_user");
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        u.avatarUrl = publicUrl;
+        localStorage.setItem("lifeon_active_user", JSON.stringify(u));
+      }
+    } catch {
+      /* noop */
+    }
+    e.target.value = "";
   };
 
   const handleDeleteProfilePhoto = () => {
@@ -491,28 +501,29 @@ export function AccountModal({
   const handleOrgLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setMediaUploadError(null);
     if (!file.type.match(/^image\/(png|jpeg|jpg|webp|svg\+xml)$/i)) {
-      alert("Formato no compatible. Por favor selecciona un logo PNG, JPG, WEBP o SVG.");
+      setMediaUploadError("Formato no compatible. Usa PNG, JPG, WEBP o SVG.");
       return;
     }
     if (file.size > 3 * 1024 * 1024) {
-      alert("El logo excede el límite de 3MB.");
+      setMediaUploadError("El logo excede el límite de 3MB.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      const dataUrl = evt.target?.result as string;
-      setOrgLogo(dataUrl);
-
-      const orgId = currentUser?.orgId || "org_demo";
-      const ext = file.name.split(".").pop() || "png";
-      const storageUrl = await uploadFileToSupabaseStorage("organization-logos", `${orgId}/logo.${ext}`, file);
-      const finalUrl = storageUrl || dataUrl;
-
-      setOrgLogo(finalUrl);
-      updatePreferences({ organizationLogo: finalUrl });
-    };
-    reader.readAsDataURL(file);
+    const orgId = currentUser?.orgId || "org_demo";
+    const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+    const { publicUrl, error } = await uploadToStorage(
+      STORAGE_BUCKETS.organizationLogos,
+      `${orgId}/logo.${ext}`,
+      file
+    );
+    if (!publicUrl) {
+      setMediaUploadError(error || "No se pudo subir el logo. Revisa permisos de Storage.");
+      return;
+    }
+    setOrgLogo(publicUrl);
+    updatePreferences({ organizationLogo: publicUrl });
+    e.target.value = "";
   };
 
   const handleDeleteOrgLogo = () => {
@@ -587,19 +598,22 @@ export function AccountModal({
 
     const authId = await getSupabaseAuthUserId();
     if (authId) {
+      const avatarForDb =
+        profilePhoto && !profilePhoto.startsWith("data:") ? profilePhoto : null;
       await upsertProfile(authId, {
         first_name: firstName,
         last_name: lastName || null,
         phone: phone.trim() || null,
-        avatar_path: profilePhoto,
+        avatar_path: avatarForDb,
       });
     }
 
     if (currentUser?.orgId) {
+      const logoForDb = orgLogo && !orgLogo.startsWith("data:") ? orgLogo : null;
       await updateOrganization(currentUser.orgId, {
         name: company.trim(),
-        logo_url: orgLogo,
-        logo_path: orgLogo,
+        logo_url: logoForDb,
+        logo_path: logoForDb,
       });
     }
 
@@ -728,6 +742,12 @@ export function AccountModal({
             )}
           </div>
         </div>
+
+        {mediaUploadError && (
+          <p className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2 mb-2">
+            {mediaUploadError}
+          </p>
+        )}
 
         {/* Formulario de Datos Personales */}
         <form onSubmit={handleSave} className="flex flex-col gap-4">

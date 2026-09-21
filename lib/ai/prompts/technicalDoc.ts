@@ -30,6 +30,8 @@ export function buildTechnicalDocUserPrompt(params: {
     `Organización (referencia): ${orgName}`,
     `Rubro/sector: ${sector}`,
     `Adapta el lenguaje al rubro cuando sea pertinente, sin inventar procesos específicos no indicados.`,
+    `Profundidad: cada sección debe ser extensa y útil (varios párrafos cuando corresponda), con contexto operativo, responsabilidades, criterios de cumplimiento y referencias normativas chilenas de SST cuando aplique (DS 44, DS 594, DS 40, protocolos Minsal, etc.) sin afirmar cumplimiento legal.`,
+    `Formato: usa saltos de línea reales (\\n). Para listas numeradas o con viñetas, coloca cada ítem en su propia línea (ej. "1. ...\\n2. ..." o "- ...\\n- ..."). Separa párrafos con una línea en blanco.`,
     `NO incluyas RUT, DNI, emails, teléfonos ni datos personales. Usa marcadores como [COMPLETAR] donde corresponda.`,
     `Responde SOLO JSON con las claves exactas listadas (una propiedad string por sección).`,
     `Secciones:\n${sectionList}`,

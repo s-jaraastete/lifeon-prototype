@@ -284,9 +284,15 @@ export default function OrgStructureView() {
     setIsAddPositionModalOpen(true);
   };
 
-  const isStaffValid = useMemo(() => {
-    return posFormMenCount + posFormWomenCount + posFormOtherCount <= posFormTotalStaff;
-  }, [posFormTotalStaff, posFormMenCount, posFormWomenCount, posFormOtherCount]);
+  const computedTotalStaff = useMemo(() => {
+    return (
+      (Number(posFormMenCount) || 0) +
+      (Number(posFormWomenCount) || 0) +
+      (Number(posFormOtherCount) || 0)
+    );
+  }, [posFormMenCount, posFormWomenCount, posFormOtherCount]);
+
+  const isStaffValid = computedTotalStaff >= 1;
 
   const handleCreatePosition = (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,7 +303,7 @@ export default function OrgStructureView() {
       undefined,
       posFormDesc.trim(),
       {
-        totalStaff: Number(posFormTotalStaff) || 1,
+        totalStaff: computedTotalStaff,
         menCount: Number(posFormMenCount) || 0,
         womenCount: Number(posFormWomenCount) || 0,
         otherCount: Number(posFormOtherCount) || 0,
@@ -331,7 +337,7 @@ export default function OrgStructureView() {
       name: posFormName.trim(),
       code: posFormCode.trim(),
       description: posFormDesc.trim(),
-      totalStaff: Number(posFormTotalStaff) || 1,
+      totalStaff: computedTotalStaff,
       menCount: Number(posFormMenCount) || 0,
       womenCount: Number(posFormWomenCount) || 0,
       otherCount: Number(posFormOtherCount) || 0,
@@ -1807,24 +1813,10 @@ export default function OrgStructureView() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">
-                      Dotación Total *
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={posFormTotalStaff}
-                      onChange={(e) => setPosFormTotalStaff(Math.max(1, parseInt(e.target.value) || 1))}
-                      required
-                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white font-bold text-gray-900"
-                    />
-                  </div>
-
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <div>
                     <label className="block text-[11px] font-semibold text-blue-700 mb-1">
-                      Hombres
+                      Hombre
                     </label>
                     <input
                       type="number"
@@ -1837,7 +1829,7 @@ export default function OrgStructureView() {
 
                   <div>
                     <label className="block text-[11px] font-semibold text-pink-700 mb-1">
-                      Mujeres
+                      Mujer
                     </label>
                     <input
                       type="number"
@@ -1847,12 +1839,34 @@ export default function OrgStructureView() {
                       className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-violet-700 mb-1">
+                      Otro
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={posFormOtherCount}
+                      onChange={(e) => setPosFormOtherCount(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">
+                      Dotación total
+                    </label>
+                    <div className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-gray-100 font-bold text-gray-900">
+                      {computedTotalStaff}
+                    </div>
+                  </div>
                 </div>
 
                 {!isStaffValid && (
                   <p className="text-[11px] text-red-600 font-semibold flex items-center gap-1">
                     <LuTriangleAlert className="w-3.5 h-3.5" />
-                    La suma de hombres ({posFormMenCount}) y mujeres ({posFormWomenCount}) no puede superar la dotación total ({posFormTotalStaff}).
+                    Ingresa al menos una persona en Hombre, Mujer u Otro.
                   </p>
                 )}
               </div>
@@ -1992,23 +2006,10 @@ export default function OrgStructureView() {
               {/* SECCIÓN DOTACIÓN */}
               <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-3">
                 <span className="text-xs font-bold text-gray-800">Dotación de Trabajadores</span>
-                <div className="grid grid-cols-3 gap-2.5">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">
-                      Dotación Total *
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={posFormTotalStaff}
-                      onChange={(e) => setPosFormTotalStaff(Math.max(1, parseInt(e.target.value) || 1))}
-                      required
-                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white font-bold"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <div>
                     <label className="block text-[11px] font-semibold text-blue-700 mb-1">
-                      Hombres
+                      Hombre
                     </label>
                     <input
                       type="number"
@@ -2020,7 +2021,7 @@ export default function OrgStructureView() {
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-pink-700 mb-1">
-                      Mujeres
+                      Mujer
                     </label>
                     <input
                       type="number"
@@ -2030,12 +2031,32 @@ export default function OrgStructureView() {
                       className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white"
                     />
                   </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-violet-700 mb-1">
+                      Otro
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={posFormOtherCount}
+                      onChange={(e) => setPosFormOtherCount(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">
+                      Dotación total
+                    </label>
+                    <div className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-gray-100 font-bold">
+                      {computedTotalStaff}
+                    </div>
+                  </div>
                 </div>
 
                 {!isStaffValid && (
                   <p className="text-[11px] text-red-600 font-semibold flex items-center gap-1">
                     <LuTriangleAlert className="w-3.5 h-3.5" />
-                    La suma de hombres ({posFormMenCount}) y mujeres ({posFormWomenCount}) no puede superar la dotación total ({posFormTotalStaff}).
+                    Ingresa al menos una persona en Hombre, Mujer u Otro.
                   </p>
                 )}
               </div>

@@ -17,7 +17,9 @@ import {
   LuMail,
   LuPhone,
   LuUser,
+  LuFileText,
 } from "react-icons/lu";
+import UserPreventiveDocsModal from "./UserPreventiveDocsModal";
 import { useUsers } from "@/hooks/useUsers";
 import { useOrgStructure } from "@/hooks/useOrgStructure";
 import {
@@ -260,6 +262,7 @@ export default function UsersView() {
   const [editingUser, setEditingUser] = useState<PlatformUser | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDeleteConfirmId, setIsDeleteConfirmId] = useState<string | null>(null);
+  const [preventiveDocsUser, setPreventiveDocsUser] = useState<PlatformUser | null>(null);
 
   const [importReport, setImportReport] = useState<UserImportReport | null>(null);
   const [importFeedback, setImportFeedback] = useState<string | null>(null);
@@ -624,6 +627,14 @@ export default function UsersView() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
+                            onClick={() => setPreventiveDocsUser(usr)}
+                            className="p-1.5 rounded-lg text-teal-700 bg-teal-50 hover:bg-teal-100 transition"
+                            title="Ver documentación preventiva personal"
+                          >
+                            <LuFileText className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleOpenEdit(usr)}
                             className="p-1.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition"
                             title="Editar usuario"
@@ -907,6 +918,13 @@ export default function UsersView() {
             )}
           </div>
         </div>
+      )}
+
+      {preventiveDocsUser && (
+        <UserPreventiveDocsModal
+          user={preventiveDocsUser}
+          onClose={() => setPreventiveDocsUser(null)}
+        />
       )}
     </div>
   );

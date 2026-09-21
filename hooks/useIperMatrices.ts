@@ -6,8 +6,29 @@ import { fetchIperMatricesFromSupabase } from "@/lib/services/supabaseService";
 import { mergeIperMatrixLists } from "@/lib/utils/iperMatrixPersistence";
 import { IperMatrixItem } from "@/app/dashboard/components/IperMatrixView";
 import { INITIAL_MATRICES } from "@/app/dashboard/components/IperMatrixView";
+import type { OrgWorkCenter } from "@/types/orgStructure";
 
-export function useIperMatrices(activeWorkplace?: string) {
+function matrixMatchesWorkplace(
+  m: IperMatrixItem,
+  activeWorkplace: string,
+  workCenters: OrgWorkCenter[]
+): boolean {
+  const targetWp = activeWorkplace.toLowerCase().trim();
+  const wc = workCenters.find((w) => w.name.toLowerCase().trim() === targetWp);
+  const wcId = wc?.id?.toLowerCase().trim();
+  const wcName = wc?.name?.toLowerCase().trim() || targetWp;
+
+  const center = (m.workCenter || m.workCenterName || "").toLowerCase().trim();
+  const centerId = (m.workCenterId || "").toLowerCase().trim();
+
+  if (center === targetWp || center === wcName) return true;
+  if (centerId && (centerId === targetWp || (wcId && centerId === wcId))) return true;
+  if (center && (center.includes(targetWp) || targetWp.includes(center))) return true;
+  if (wcName && center && (center.includes(wcName) || wcName.includes(center))) return true;
+  return false;
+}
+
+export function useIperMatrices(activeWorkplace?: string, workCenters: OrgWorkCenter[] = []) {
   const { currentUser } = useLifeOnPreferences();
   const orgId = currentUser?.orgId || "org_demo";
   const storageKey = `lifeon_iper_matrices_${orgId}`;
@@ -129,50 +150,52 @@ export function useIperMatrices(activeWorkplace?: string) {
     if (!activeWorkplace || activeWorkplace === "Todos los Centros de Trabajo") {
       return matrices;
     }
-    const targetWp = activeWorkplace.toLowerCase().trim();
-    return matrices.filter(
-      (m) =>
-        (m.workCenter && m.workCenter.toLowerCase().trim() === targetWp) ||
-        (m.workCenterName && m.workCenterName.toLowerCase().trim() === targetWp) ||
-        (m.workCenterId && m.workCenterId.toLowerCase().trim() === targetWp)
-    );
-  }, [matrices, activeWorkplace]);
+    return matrices.filter((m) => matrixMatchesWorkplace(m, activeWorkplace, workCenters));
+  }, [matrices, activeWorkplace, workCenters]);
+
+  const metricsMatrices = useMemo(() => {
+    if (!activeWorkplace || activeWorkplace === "Todos los Centros de Trabajo") {
+      return matrices;
+    }
+    if (filteredMatrices.length > 0) return filteredMatrices;
+    return matrices;
+  }, [matrices, filteredMatrices, activeWorkplace]);
 
   const vigentesMatrices = useMemo(
-    () => filteredMatrices.filter((m) => isVigenteStatus(m.status)),
-    [filteredMatrices]
+    () => metricsMatrices.filter((m) => isVigenteStatus(m.status)),
+    [metricsMatrices]
   );
 
-  const totalMatricesCount = filteredMatrices.length;
+  const totalMatricesCount = metricsMatrices.length;
   const borradoresCount = useMemo(
-    () => filteredMatrices.filter((m) => isBorradorStatus(m.status)).length,
-    [filteredMatrices]
+    () => metricsMatrices.filter((m) => isBorradorStatus(m.status)).length,
+    [metricsMatrices]
   );
   const enRevisionCount = useMemo(
-    () => filteredMatrices.filter((m) => isEnRevisionStatus(m.status)).length,
-    [filteredMatrices]
+    () => metricsMatrices.filter((m) => isEnRevisionStatus(m.status)).length,
+    [metricsMatrices]
   );
   const vigentesCount = vigentesMatrices.length;
 
   // Conteo total de riesgos evaluados
   const totalRisksCount = useMemo(() => {
-    return filteredMatrices.reduce((acc, m) => {
+    return metricsMatrices.reduce((acc, m) => {
       const rec = typeof m.totalRecords === "number" ? m.totalRecords : parseInt(String(m.totalRecords), 10);
       const evCount = Array.isArray(m.evaluations) ? m.evaluations.length : 0;
       return acc + (Number.isFinite(rec) && rec > 0 ? rec : evCount);
     }, 0);
-  }, [filteredMatrices]);
+  }, [metricsMatrices]);
 
   // Conteo total de riesgos intolerables / críticos
   const criticalRisksCount = useMemo(() => {
-    return filteredMatrices.reduce((acc, m) => {
+    return metricsMatrices.reduce((acc, m) => {
       const rec = typeof m.intolerableRisks === "number" ? m.intolerableRisks : parseInt(String(m.intolerableRisks), 10);
       const critFromEv = Array.isArray(m.evaluations)
         ? m.evaluations.filter((e) => e.initialLevel === "Crítico" || e.residualLevel === "Crítico").length
         : 0;
       return acc + (Number.isFinite(rec) && rec > 0 ? rec : critFromEv);
     }, 0);
-  }, [filteredMatrices]);
+  }, [metricsMatrices]);
 
   // Cargos asociados exclusivamente a matrices vigentes
   const irlCargos = useMemo(() => {
@@ -203,7 +226,7 @@ export function useIperMatrices(activeWorkplace?: string) {
     let alto = 0;
     let critico = 0;
 
-    filteredMatrices.forEach((m) => {
+    metricsMatrices.forEach((m) => {
       if (Array.isArray(m.evaluations) && m.evaluations.length > 0) {
         m.evaluations.forEach((ev) => {
           const lvl = ev.residualLevel || ev.initialLevel;
@@ -238,7 +261,7 @@ export function useIperMatrices(activeWorkplace?: string) {
       pctAlto: total > 0 ? Math.round((alto / total) * 100) : 0,
       pctCritico: total > 0 ? Math.round((critico / total) * 100) : 0,
     };
-  }, [filteredMatrices]);
+  }, [metricsMatrices]);
 
   // Lista de riesgos destacados para el panel del Dashboard
   const topEvaluatedRisks = useMemo(() => {
@@ -249,7 +272,7 @@ export function useIperMatrices(activeWorkplace?: string) {
       status: string;
     }> = [];
 
-    filteredMatrices.forEach((m) => {
+    metricsMatrices.forEach((m) => {
       if (Array.isArray(m.evaluations)) {
         m.evaluations.slice(0, 3).forEach((ev) => {
           list.push({
@@ -263,7 +286,7 @@ export function useIperMatrices(activeWorkplace?: string) {
     });
 
     return list.slice(0, 3);
-  }, [filteredMatrices]);
+  }, [metricsMatrices]);
 
   return {
     matrices,

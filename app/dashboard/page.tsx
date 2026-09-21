@@ -302,7 +302,7 @@ export default function DashboardPage() {
     totalRisksCount,
     riskDistribution,
     topEvaluatedRisks,
-  } = useIperMatrices(activeWorkplace);
+  } = useIperMatrices(activeWorkplace, workCenters);
 
   const { activities, metrics: programMetrics } = usePreventiveProgram();
   const isProgramConfigured =

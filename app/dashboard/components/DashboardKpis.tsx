@@ -51,7 +51,7 @@ export default function DashboardKpis({ onSelectMetric, activeWorkplace }: Dashb
     criticalRisksCount,
     cargosWithIrlCount,
     enRevisionCount,
-  } = useIperMatrices(activeWorkplace);
+  } = useIperMatrices(activeWorkplace, workCenters);
 
   const isProgramConfigured =
     preferences.moduleConfigurations?.preventivePlanning?.configured && activities.length > 0;

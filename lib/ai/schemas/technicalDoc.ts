@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formatTechnicalDocSectionText } from "@/lib/ai/formatTechnicalDocText";
 
 export function buildTechnicalDocSectionsSchema(sectionKeys: string[]) {
   const shape: Record<string, z.ZodString> = {};
@@ -32,7 +33,7 @@ export function parseTechnicalDocSections(
   const parsed = schema.parse(raw);
   const out: Record<string, string> = {};
   for (const key of sectionKeys) {
-    out[key] = parsed[key].trim();
+    out[key] = formatTechnicalDocSectionText(parsed[key].trim());
   }
   return out;
 }

@@ -622,7 +622,7 @@ export async function fetchIperMatricesFromSupabase(orgId?: string): Promise<any
     if (currentOrg === "org_demo") {
       query = query.or("id.like.org_demo_%,id.like.MA-%,id.in.(1,2,3,4,5,6,7)");
     } else {
-      query = query.like("id", `${currentOrg}_%`);
+      query = query.or(`id.like.${currentOrg}_%,organization_id.eq.${currentOrg}`);
     }
 
     const { data, error } = await query.order("created_at", { ascending: true });

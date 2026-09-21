@@ -20,6 +20,18 @@ export interface PreventivePlanningModuleConfig {
   configuredAt?: string | null;
 }
 
+export type UserPreventiveDocKind = "reglamento_interno" | "epp_entrega";
+
+export type UserPreventiveDocStatus = "Pendiente" | "Firmado";
+
+export interface UserPreventiveDocAcknowledgement {
+  userId: string;
+  kind: UserPreventiveDocKind;
+  status: UserPreventiveDocStatus;
+  signedAt?: string | null;
+  updatedAt: string;
+}
+
 export interface SetupGuidePreferences {
   completed: boolean;
   dismissed: boolean;
@@ -59,6 +71,7 @@ export interface OrganizationPreferences {
   onboardingStep: number;
   tourCompleted?: boolean;
   setupGuide?: SetupGuidePreferences;
+  userPreventiveDocAcknowledgements?: UserPreventiveDocAcknowledgement[];
   organizationLogo?: string | null;
   profilePhoto?: string | null;
   preventiveActivities?: any[];

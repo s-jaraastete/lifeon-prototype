@@ -1615,21 +1615,23 @@ export function useOrgStructure() {
           const description = String(r["descripcion"] || "").trim();
           const status = String(r["estado"] || "Activo").trim() as EntityStatus;
 
-          const totalStaff = Number(r["dotacion total"] || r["total"] || 0);
           const menCount = Number(r["dotacion hombres"] || r["hombres"] || 0);
           const womenCount = Number(r["dotacion mujeres"] || r["mujeres"] || 0);
           const otherCount = Number(r["dotacion otro"] || r["dotacion otros"] || r["otro"] || r["otros"] || 0);
+          const genderSum = menCount + womenCount + otherCount;
+          const totalFromSheet = Number(r["dotacion total"] || r["total"] || 0);
+          const totalStaff = genderSum > 0 ? genderSum : totalFromSheet || 1;
           const disabledCount = Number(r["personas con discapacidad"] || r["discapacidad"] || 0);
           const sensitiveCount = Number(r["especialmente sensibles"] || r["sensibles"] || 0);
 
           if (!name) {
             errors.push({ sheet: "CARGOS", rowNumber: rowNum, item: "Cargo sin nombre", error: "El Nombre del Cargo es obligatorio." });
-          } else if (totalStaff > 0 && menCount + womenCount + otherCount > totalStaff) {
+          } else if (genderSum === 0 && totalFromSheet <= 0) {
             errors.push({
               sheet: "CARGOS",
               rowNumber: rowNum,
               item: name,
-              error: `La suma de dotaciones (Hombres: ${menCount}, Mujeres: ${womenCount}, Otro: ${otherCount}) supera la dotación total (${totalStaff}).`,
+              error: "Indica dotación por género (Hombre, Mujer, Otro) o dotación total.",
             });
           } else {
             validRecords++;

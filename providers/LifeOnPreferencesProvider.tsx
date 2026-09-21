@@ -11,9 +11,12 @@ import {
   IperMethodology,
 } from "@/types/preferences";
 import {
+  fetchOrganization,
   fetchOrganizationPreferences,
   saveOrganizationPreferences,
 } from "@/lib/repositories/organizationRepository";
+import { fetchProfileByAuthId } from "@/lib/repositories/profileRepository";
+import { getSupabaseAuthUserId } from "@/lib/auth/lifeonAuth";
 import { getActiveUser, getScopedStorageKey, AuthUser, SESSION_CHANGE_EVENT } from "@/lib/auth/authService";
 
 export const PREFERENCES_STORAGE_KEY = "lifeon_org_preferences";
@@ -117,6 +120,10 @@ export default function LifeOnPreferencesProvider({
           },
           organizationLogo: cloudPrefs.organizationLogo ?? basePrefs.organizationLogo ?? null,
           profilePhoto: cloudPrefs.profilePhoto ?? basePrefs.profilePhoto ?? null,
+          userPreventiveDocAcknowledgements:
+            cloudPrefs.userPreventiveDocAcknowledgements ??
+            basePrefs.userPreventiveDocAcknowledgements ??
+            [],
           preventiveActivities: cloudPrefs.preventiveActivities ?? basePrefs.preventiveActivities,
           modules: {
             ...basePrefs.modules,
@@ -140,12 +147,33 @@ export default function LifeOnPreferencesProvider({
           },
         };
 
-        setPreferences(merged);
+        let hydratedMedia = { ...merged };
+        try {
+          const authId = await getSupabaseAuthUserId();
+          if (authId && !hydratedMedia.profilePhoto?.startsWith("http")) {
+            const profile = await fetchProfileByAuthId(authId);
+            const avatar = profile?.avatar_path;
+            if (avatar && avatar.startsWith("http")) {
+              hydratedMedia = { ...hydratedMedia, profilePhoto: avatar };
+            }
+          }
+          if (!hydratedMedia.organizationLogo?.startsWith("http")) {
+            const orgRow = await fetchOrganization(user.orgId);
+            const logo = orgRow?.logo_url || orgRow?.logo_path;
+            if (logo && logo.startsWith("http")) {
+              hydratedMedia = { ...hydratedMedia, organizationLogo: logo };
+            }
+          }
+        } catch (mediaErr) {
+          console.warn("No se pudo hidratar foto/logo desde Supabase:", mediaErr);
+        }
+
+        setPreferences(hydratedMedia);
 
         // Actualizar caché de localStorage para que coincida con Supabase
         if (typeof window !== "undefined") {
           try {
-            window.localStorage.setItem(orgStorageKey, JSON.stringify(merged));
+            window.localStorage.setItem(orgStorageKey, JSON.stringify(hydratedMedia));
           } catch (_) {}
         }
       } else if (user.orgId === "org_sergio") {
