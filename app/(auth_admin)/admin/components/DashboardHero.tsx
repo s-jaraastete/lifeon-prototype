@@ -1,5 +1,5 @@
 import Image from "next/image";
-import StatCard from "./StatCard";
+import StatCard from "./shared/StatCard";
 
 const stats = [
   {

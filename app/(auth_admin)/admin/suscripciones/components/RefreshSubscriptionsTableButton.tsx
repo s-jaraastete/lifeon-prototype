@@ -1,3 +1,5 @@
+// TODO: Este componente no está importado en ningún lado. Puede eliminarse junto con
+// `refreshSubscriptionsTable` en subscriptionActions.ts si no se necesita en el futuro.
 "use client";
 
 import { useState } from "react";

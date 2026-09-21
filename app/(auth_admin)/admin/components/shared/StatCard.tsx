@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 export type StatTone = "default" | "success" | "danger";
 
-type StatCardProps = {
+export type StatCardProps = {
   label: string;
   value: string;
   note: ReactNode;
