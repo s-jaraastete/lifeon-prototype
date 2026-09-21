@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { LuArrowLeft, LuEye, LuEyeOff } from "react-icons/lu";
+import { LuArrowLeft, LuEye, LuEyeOff, LuLoader } from "react-icons/lu";
 import { setActiveUser, DEMO_USER } from "@/lib/auth/authService";
 import { signInLifeOn } from "@/lib/auth/lifeonAuth";
 import { syncLifeOnSessionCookie } from "@/lib/auth/lifeonSessionClient";
@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -43,35 +44,51 @@ export default function LoginPage() {
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSigningIn) return;
     setErrorMessage("");
+    setIsSigningIn(true);
 
-    const result = await signInLifeOn(email, password);
-    if (result.success) {
-      const sync = await syncLifeOnSessionCookie(email, password);
-      if (!sync.ok) {
-        setErrorMessage(
-          sync.message ||
-            "Acceso correcto, pero APR Virtual IA no pudo activarse en el servidor. Revisa GROQ_API_KEY y LIFEON_SESSION_SECRET en Vercel."
-        );
+    try {
+      const result = await signInLifeOn(email, password);
+      if (result.success) {
+        const sync = await syncLifeOnSessionCookie(email, password);
+        if (!sync.ok) {
+          setErrorMessage(
+            sync.message ||
+              "Acceso correcto, pero APR Virtual IA no pudo activarse en el servidor. Revisa GROQ_API_KEY y LIFEON_SESSION_SECRET en Vercel."
+          );
+          router.push("/dashboard");
+          return;
+        }
         router.push("/dashboard");
-        return;
+      } else {
+        setErrorMessage(result.message || "Credenciales incorrectas.");
+        setIsSigningIn(false);
       }
-      router.push("/dashboard");
-    } else {
-      setErrorMessage(result.message || "Credenciales incorrectas.");
+    } catch {
+      setErrorMessage("No se pudo completar el inicio de sesión. Intenta de nuevo.");
+      setIsSigningIn(false);
     }
   };
 
   const handleSocialLogin = async () => {
-    setActiveUser(DEMO_USER);
-    const sync = await syncLifeOnSessionCookie(DEMO_USER.email, "serg");
-    if (!sync.ok) {
-      setErrorMessage(
-        sync.message ||
-          "No se pudo activar APR Virtual IA en el servidor. Configura las variables en Vercel."
-      );
+    if (isSigningIn) return;
+    setIsSigningIn(true);
+    setErrorMessage("");
+    try {
+      setActiveUser(DEMO_USER);
+      const sync = await syncLifeOnSessionCookie(DEMO_USER.email, "serg");
+      if (!sync.ok) {
+        setErrorMessage(
+          sync.message ||
+            "No se pudo activar APR Virtual IA en el servidor. Configura las variables en Vercel."
+        );
+      }
+      router.push("/dashboard");
+    } catch {
+      setErrorMessage("No se pudo iniciar sesión. Intenta de nuevo.");
+      setIsSigningIn(false);
     }
-    router.push("/dashboard");
   };
 
   return (
@@ -125,7 +142,8 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={handleSocialLogin}
-                  className="w-full py-3.5 px-4 bg-white border border-gray-200 hover:border-gray-300 rounded-xl text-sm font-medium text-gray-700 flex items-center justify-center gap-3 transition shadow-xs hover:bg-gray-50 cursor-pointer"
+                  disabled={isSigningIn}
+                  className="w-full py-3.5 px-4 bg-white border border-gray-200 hover:border-gray-300 rounded-xl text-sm font-medium text-gray-700 flex items-center justify-center gap-3 transition shadow-xs hover:bg-gray-50 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
                     <path
@@ -152,7 +170,8 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={handleSocialLogin}
-                  className="w-full py-3.5 px-4 bg-white border border-gray-200 hover:border-gray-300 rounded-xl text-sm font-medium text-gray-700 flex items-center justify-center gap-3 transition shadow-xs hover:bg-gray-50 cursor-pointer"
+                  disabled={isSigningIn}
+                  className="w-full py-3.5 px-4 bg-white border border-gray-200 hover:border-gray-300 rounded-xl text-sm font-medium text-gray-700 flex items-center justify-center gap-3 transition shadow-xs hover:bg-gray-50 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 23 23">
                     <path fill="#f35325" d="M1 1h10v10H1z" />
@@ -201,7 +220,19 @@ export default function LoginPage() {
             </>
           ) : (
             /* Paso 2: Contraseña */
-            <form onSubmit={handlePasswordSubmit} className="w-full">
+            <form onSubmit={handlePasswordSubmit} className="w-full relative">
+              {isSigningIn && (
+                <div
+                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/85 backdrop-blur-[2px]"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <LuLoader className="w-8 h-8 text-teal-600 animate-spin" />
+                  <p className="text-sm font-medium text-gray-700">Iniciando sesión…</p>
+                  <p className="text-xs text-gray-500">Validando credenciales y preparando tu espacio</p>
+                </div>
+              )}
+
               {/* Información del correo seleccionado */}
               <div className="flex items-center justify-between bg-gray-50 border border-gray-200 px-4 py-2.5 rounded-xl mb-4">
                 <div className="text-left truncate">
@@ -210,12 +241,13 @@ export default function LoginPage() {
                 </div>
                 <button
                   type="button"
+                  disabled={isSigningIn}
                   onClick={() => {
                     setStep("email");
                     setPassword("");
                     setErrorMessage("");
                   }}
-                  className="text-xs text-primary font-medium hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-xs text-primary font-medium hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
                 >
                   <LuArrowLeft className="w-3.5 h-3.5" />
                   Cambiar
@@ -232,7 +264,8 @@ export default function LoginPage() {
                   }}
                   placeholder="Ingresa tu contraseña"
                   autoFocus
-                  className="w-full px-4 py-3.5 pr-12 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 text-gray-800 placeholder-gray-400 transition"
+                  disabled={isSigningIn}
+                  className="w-full px-4 py-3.5 pr-12 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 text-gray-800 placeholder-gray-400 transition disabled:opacity-60"
                 />
                 <button
                   type="button"
@@ -253,15 +286,22 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={!password.trim()}
+                disabled={!password.trim() || isSigningIn}
                 className={clsx(
-                  "w-full mt-4 py-3.5 rounded-xl text-sm font-medium transition duration-200",
-                  password.trim()
+                  "w-full mt-4 py-3.5 rounded-xl text-sm font-medium transition duration-200 flex items-center justify-center gap-2",
+                  password.trim() && !isSigningIn
                     ? "bg-[#D4D4D4] hover:bg-gray-400 text-gray-800 cursor-pointer"
                     : "bg-[#E0E0E0] text-gray-400 cursor-not-allowed"
                 )}
               >
-                Continuar
+                {isSigningIn ? (
+                  <>
+                    <LuLoader className="w-4 h-4 animate-spin" />
+                    Iniciando sesión…
+                  </>
+                ) : (
+                  "Continuar"
+                )}
               </button>
             </form>
           )}
