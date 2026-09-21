@@ -52,6 +52,30 @@ const TEST_ACCOUNTS: Record<string, TestAccountServer> = {
     orgName: "Beristain Prevención SpA",
     isDemo: false,
   },
+  "rene.ramos@safetyclub.cl": {
+    id: "user_rene",
+    name: "René Ramos",
+    email: "rene.ramos@safetyclub.cl",
+    orgId: "org_rene",
+    orgName: "Ramos Prevención SpA",
+    isDemo: false,
+  },
+  "alex.ordenes@safetyclub.cl": {
+    id: "user_alex",
+    name: "Alex Ordenes",
+    email: "alex.ordenes@safetyclub.cl",
+    orgId: "org_alex",
+    orgName: "Ordenes Construcción SpA",
+    isDemo: false,
+  },
+  "carlos.subiabre@safetyclub.cl": {
+    id: "user_carlos",
+    name: "Carlos Subiabre",
+    email: "carlos.subiabre@safetyclub.cl",
+    orgId: "org_carlos",
+    orgName: "Subiabre Ingeniería SpA",
+    isDemo: false,
+  },
   "sergio.jara@lifeon.cl": {
     id: "demo_sergio",
     name: "Sergio A. Jara Astete",
@@ -68,6 +92,9 @@ const DEV_PASSWORDS: Record<string, string[]> = {
   "aldo.berrios@safetyclub.cl": ["aldo"],
   "gonzalo.cabrera@safetyclub.cl": ["gonz"],
   "gonzalo.beristain@safetyclub.cl": ["gonz"],
+  "rene.ramos@safetyclub.cl": ["rene"],
+  "alex.ordenes@safetyclub.cl": ["alex"],
+  "carlos.subiabre@safetyclub.cl": ["carl"],
   "sergio.jara@lifeon.cl": ["serg"],
 };
 

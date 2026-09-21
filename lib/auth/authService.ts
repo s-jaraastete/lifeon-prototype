@@ -73,6 +73,33 @@ export const TEST_ACCOUNTS_CONFIG: Record<string, TestAccountConfig> = {
     isDemo: false,
     resetAllowed: true,
   },
+  "rene.ramos@safetyclub.cl": {
+    id: "user_rene",
+    name: "René Ramos",
+    email: "rene.ramos@safetyclub.cl",
+    orgId: "org_rene",
+    orgName: "Ramos Prevención SpA",
+    isDemo: false,
+    resetAllowed: true,
+  },
+  "alex.ordenes@safetyclub.cl": {
+    id: "user_alex",
+    name: "Alex Ordenes",
+    email: "alex.ordenes@safetyclub.cl",
+    orgId: "org_alex",
+    orgName: "Ordenes Construcción SpA",
+    isDemo: false,
+    resetAllowed: true,
+  },
+  "carlos.subiabre@safetyclub.cl": {
+    id: "user_carlos",
+    name: "Carlos Subiabre",
+    email: "carlos.subiabre@safetyclub.cl",
+    orgId: "org_carlos",
+    orgName: "Subiabre Ingeniería SpA",
+    isDemo: false,
+    resetAllowed: true,
+  },
   "sergio.jara@lifeon.cl": {
     id: "demo_sergio",
     name: "Sergio A. Jara Astete",
@@ -91,6 +118,9 @@ const DEV_PASSWORDS: Record<string, string[]> = {
   "aldo.berrios@safetyclub.cl": ["aldo"],
   "gonzalo.cabrera@safetyclub.cl": ["gonz"],
   "gonzalo.beristain@safetyclub.cl": ["gonz"],
+  "rene.ramos@safetyclub.cl": ["rene"],
+  "alex.ordenes@safetyclub.cl": ["alex"],
+  "carlos.subiabre@safetyclub.cl": ["carl"],
   "sergio.jara@lifeon.cl": ["serg"],
 };
 
@@ -179,7 +209,8 @@ export function authenticateUser(email: string, pass: string): { success: boolea
 
   return {
     success: false,
-    message: "Credenciales inválidas. Cuentas de prueba autorizadas: luis.godoy@safetyclub.cl (luis), sergio.jara@safetyclub.cl (serg), aldo.berrios@safetyclub.cl (aldo), gonzalo.cabrera@safetyclub.cl (gonz), gonzalo.beristain@safetyclub.cl (gonz).",
+    message:
+      "Credenciales inválidas. Usa tu email @safetyclub.cl con la contraseña de prueba asignada (luis, serg, aldo, gonz, rene, alex, carl).",
   };
 }
 

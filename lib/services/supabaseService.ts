@@ -333,6 +333,9 @@ const KNOWN_ORG_IDS = [
   "org_aldo",
   "org_gonzalo_c",
   "org_gonzalo_b",
+  "org_rene",
+  "org_alex",
+  "org_carlos",
 ];
 
 export function scopePreventiveDocId(docId: string, orgId?: string): string {
@@ -699,6 +702,9 @@ export async function resetSupabaseDataForOrg(orgId: string, userId?: string): P
     "org_aldo",
     "org_gonzalo_c",
     "org_gonzalo_b",
+    "org_rene",
+    "org_alex",
+    "org_carlos",
   ];
   if (!ALLOWED_ORGS.includes(orgId)) {
     console.error("Seguridad: Intento de reset no autorizado para la organización:", orgId);

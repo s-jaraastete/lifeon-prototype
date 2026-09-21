@@ -10,6 +10,9 @@ const TRACKED_ORGS = [
   "org_aldo",
   "org_gonzalo_c",
   "org_gonzalo_b",
+  "org_rene",
+  "org_alex",
+  "org_carlos",
   "org_demo",
 ];
 

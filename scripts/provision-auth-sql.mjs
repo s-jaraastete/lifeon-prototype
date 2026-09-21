@@ -37,8 +37,36 @@ const ACCOUNTS = [
   { email: "aldo.berrios@safetyclub.cl", password: "aldo", legacyId: "user_aldo", memberId: "mem_user_aldo", orgId: "org_aldo", name: "Aldo Berríos" },
   { email: "gonzalo.cabrera@safetyclub.cl", password: "gonz", legacyId: "user_gonzalo_c", memberId: "mem_user_gonzalo_c", orgId: "org_gonzalo_c", name: "Gonzalo Cabrera" },
   { email: "gonzalo.beristain@safetyclub.cl", password: "gonz", legacyId: "user_gonzalo_b", memberId: "mem_user_gonzalo_b", orgId: "org_gonzalo_b", name: "Gonzalo Beristain" },
-  { email: "sergio.jara@lifeon.cl", password: "serg", legacyId: "demo_sergio", memberId: "mem_demo_sergio", orgId: "org_demo", name: "Sergio A. Jara Astete" },
+  { email: "sergio.jara@lifeon.cl", password: "serg", legacyId: "demo_sergio", memberId: "mem_demo_sergio", orgId: "org_demo", name: "Sergio A. Jara Astete", orgName: "Constructora y Servicios Santiago SpA", industry: "Construcción", size: "51-200" },
+  { email: "rene.ramos@safetyclub.cl", password: "rene", legacyId: "user_rene", memberId: "mem_user_rene", orgId: "org_rene", name: "René Ramos", orgName: "Ramos Prevención SpA", industry: "Consultoría en Prevención", size: "1-20" },
+  { email: "alex.ordenes@safetyclub.cl", password: "alex", legacyId: "user_alex", memberId: "mem_user_alex", orgId: "org_alex", name: "Alex Ordenes", orgName: "Ordenes Construcción SpA", industry: "Construcción", size: "21-50" },
+  { email: "carlos.subiabre@safetyclub.cl", password: "carl", legacyId: "user_carlos", memberId: "mem_user_carlos", orgId: "org_carlos", name: "Carlos Subiabre", orgName: "Subiabre Ingeniería SpA", industry: "Construcción", size: "21-50" },
 ];
+
+async function ensureTenantBootstrap(client, acc) {
+  if (!acc.orgId || acc.orgId === "org_demo") return;
+  const orgName = acc.orgName || acc.name;
+  const industry = acc.industry || "Construcción";
+  const size = acc.size || "1-20";
+  await client.query(
+    `INSERT INTO organizations (id, name, industry, size, status)
+     VALUES ($1, $2, $3, $4, 'Activo')
+     ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, industry = EXCLUDED.industry, updated_at = NOW()`,
+    [acc.orgId, orgName, industry, size]
+  );
+  await client.query(
+    `INSERT INTO organization_preferences (id, organization_id, preferences)
+     VALUES ($1, $1, '{"onboardingCompleted":false}'::jsonb)
+     ON CONFLICT (id) DO UPDATE SET organization_id = EXCLUDED.organization_id, updated_at = NOW()`,
+    [acc.orgId]
+  );
+  await client.query(
+    `INSERT INTO preventive_plans (id, organization_id, name, status)
+     VALUES ($1, $2, 'Programa Anual', 'Activo')
+     ON CONFLICT (id) DO NOTHING`,
+    [`plan_${acc.orgId}`, acc.orgId]
+  );
+}
 
 const INSTANCE_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -78,6 +106,7 @@ async function main() {
   `);
 
   for (const acc of ACCOUNTS) {
+    await ensureTenantBootstrap(client, acc);
     const email = acc.email.toLowerCase();
     const parts = acc.name.split(" ");
     const firstName = parts[0] || "";

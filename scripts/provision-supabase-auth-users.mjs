@@ -47,6 +47,9 @@ const ACCOUNTS = [
   { email: "gonzalo.cabrera@safetyclub.cl", password: "gonz", legacyId: "user_gonzalo_c", memberId: "mem_user_gonzalo_c", orgId: "org_gonzalo_c", name: "Gonzalo Cabrera" },
   { email: "gonzalo.beristain@safetyclub.cl", password: "gonz", legacyId: "user_gonzalo_b", memberId: "mem_user_gonzalo_b", orgId: "org_gonzalo_b", name: "Gonzalo Beristain" },
   { email: "sergio.jara@lifeon.cl", password: "serg", legacyId: "demo_sergio", memberId: "mem_demo_sergio", orgId: "org_demo", name: "Sergio A. Jara Astete" },
+  { email: "rene.ramos@safetyclub.cl", password: "rene", legacyId: "user_rene", memberId: "mem_user_rene", orgId: "org_rene", name: "René Ramos" },
+  { email: "alex.ordenes@safetyclub.cl", password: "alex", legacyId: "user_alex", memberId: "mem_user_alex", orgId: "org_alex", name: "Alex Ordenes" },
+  { email: "carlos.subiabre@safetyclub.cl", password: "carl", legacyId: "user_carlos", memberId: "mem_user_carlos", orgId: "org_carlos", name: "Carlos Subiabre" },
 ];
 
 async function getPgClient() {
