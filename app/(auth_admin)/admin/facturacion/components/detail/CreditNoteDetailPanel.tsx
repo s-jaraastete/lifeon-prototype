@@ -2,26 +2,25 @@
 
 import clsx from "clsx";
 import { LuCreditCard, LuDownload, LuEllipsis, LuInfo, LuMail } from "react-icons/lu";
-import { Subscription } from "@/types/admin";
+import { Invoice } from "@/types/admin";
 import DetailPanel, {
   DetailActions,
   DetailSectionList,
   type DetailSectionConfig,
 } from "@/app/(auth_admin)/admin/components/shared/detail/DetailPanel";
 import {
-  BILLING_STATUS_LABELS,
-  BILLING_STATUS_STYLES,
   DISPLAY_FALLBACK,
-  formatBillingCreditNoteAmount,
-  formatBillingDate,
-  getBillingId,
+  INVOICE_STATUS_DISPLAY_LABELS,
+  INVOICE_STATUS_DISPLAY_STYLES,
+  formatInvoiceCreditNoteAmount,
+  formatInvoiceDate,
   getCreditNoteBreakdown,
   getCreditNoteId,
-} from "../../utils/billingDisplay";
+} from "../../utils/invoiceDisplay";
 
 type CreditNoteDetailPanelProps = {
   open: boolean;
-  subscription: Subscription | null;
+  invoice: Invoice | null;
   onClose: () => void;
 };
 
@@ -54,42 +53,37 @@ const PanelTitle = (
   </div>
 );
 
+// TODO: El backend no tiene modelo de nota de crédito. Este panel queda como
+// referencia futura: los IDs, montos, desglose, tipo de ajuste y motivo son
+// inventados a partir de la factura seleccionada.
 export default function CreditNoteDetailPanel({
   open,
-  subscription,
+  invoice,
   onClose,
 }: CreditNoteDetailPanelProps) {
-  if (!subscription) {
+  if (!invoice) {
     return <DetailPanel open={open} onClose={onClose} title={PanelTitle} />;
   }
 
-  const breakdown = getCreditNoteBreakdown(subscription.mrr_clp);
+  const breakdown = getCreditNoteBreakdown(invoice.total_amount_clp);
 
   const sections: DetailSectionConfig[] = [
     {
       title: "Información tributaria y cliente",
       rows: [
-        { label: "Cliente", value: subscription.client_name },
-        // TODO: El endpoint de suscripciones no expone RUT.
-        { label: "Rut", value: DISPLAY_FALLBACK },
-        { label: "ID Suscripción", value: subscription.subscription_id },
+        { label: "Cliente", value: invoice.company_name_snapshot },
+        { label: "Rut", value: invoice.company_rut_snapshot || DISPLAY_FALLBACK },
+        { label: "ID Suscripción", value: invoice.subscription_id },
       ],
     },
     {
       title: "Detalle Nota de crédito",
       rows: [
-        {
-          label: "Fecha de emisión",
-          value: formatBillingDate(subscription.created),
-        },
-        // TODO: Documento de referencia derivado mientras no exista el modelo de nota de crédito.
-        {
-          label: "Documento de modifica",
-          value: getBillingId(subscription),
-        },
-        // TODO: El endpoint de suscripciones no expone tipo de ajuste.
+        { label: "Fecha de emisión", value: formatInvoiceDate(invoice.issued_at) },
+        { label: "Documento de modifica", value: invoice.invoice_number },
+        // TODO: El backend no expone tipo de ajuste.
         { label: "Tipo de ajuste", value: DISPLAY_FALLBACK },
-        // TODO: El endpoint de suscripciones no expone motivo del ajuste.
+        // TODO: El backend no expone motivo del ajuste.
         { label: "Motivo", value: DISPLAY_FALLBACK },
       ],
     },
@@ -100,15 +94,15 @@ export default function CreditNoteDetailPanel({
         <>
           <CreditNoteChargeRow
             label="Subtotal neto"
-            value={formatBillingCreditNoteAmount(breakdown?.subtotal)}
+            value={formatInvoiceCreditNoteAmount(breakdown?.subtotal)}
           />
           <CreditNoteChargeRow
             label="IVA (19%)"
-            value={formatBillingCreditNoteAmount(breakdown?.iva)}
+            value={formatInvoiceCreditNoteAmount(breakdown?.iva)}
           />
           <CreditNoteChargeRow
             label="Total ajustado"
-            value={formatBillingCreditNoteAmount(breakdown?.total)}
+            value={formatInvoiceCreditNoteAmount(breakdown?.total)}
             highlight
           />
         </>
@@ -121,33 +115,31 @@ export default function CreditNoteDetailPanel({
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-2xl font-semibold text-neutral-primary">
-            Nota de Crédito • {getCreditNoteId(subscription)}
+            Nota de Crédito • {getCreditNoteId(invoice)}
           </h2>
-          {/* TODO: Estado real desde la API de facturación; se muestra "Emitida" por defecto. */}
           <span
             className={clsx(
               "inline-flex w-fit rounded-full px-2.5 py-0.5 text-xs font-medium",
-              BILLING_STATUS_STYLES.emitida
+              INVOICE_STATUS_DISPLAY_STYLES.emitida
             )}
           >
-            {BILLING_STATUS_LABELS.emitida}
+            {INVOICE_STATUS_DISPLAY_LABELS.emitida}
           </span>
         </div>
         <p className="text-sm text-neutral-secondary">
-          {formatBillingCreditNoteAmount(subscription.mrr_clp)}
+          {formatInvoiceCreditNoteAmount(invoice.total_amount_clp)}
         </p>
       </div>
 
-      {/* TODO: Documento de referencia real desde la API de facturación. */}
-      <div className="flex items-start gap-2 rounded-xl bg-surface-tertiary p-3 text-sm text-neutral-primary">
+      <div className="flex items-start gap-2 rounded-xl bg-info-subtle p-3 text-sm text-neutral-primary">
         <LuInfo className="mt-0.5 size-4 shrink-0 text-info" aria-hidden="true" />
         <span>
-          Este documento modifica/anula la Factura{" "}
-          {getBillingId(subscription)} emitida.
+          Este documento modifica/anula la Factura {invoice.invoice_number}{" "}
+          emitida.
         </span>
       </div>
 
-      {/* TODO: Acciones sin conectar — la API de facturación no existe aún (reenvío, descarga, más acciones). */}
+      {/* TODO: Acciones sin conectar — el backend no tiene notas de crédito. */}
       <DetailActions>
         <button
           type="button"

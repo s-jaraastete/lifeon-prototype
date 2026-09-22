@@ -1,6 +1,6 @@
-import BillingDashboard from "./components/BillingDashboard";
-import BillingTable from "./components/BillingTable";
-import BillingDetailProvider from "./components/detail/BillingDetailProvider";
+import InvoiceDashboard from "./components/InvoiceDashboard";
+import InvoicesTable from "./components/InvoicesTable";
+import InvoiceDetailProvider from "./components/detail/InvoiceDetailProvider";
 import TableFilters from "./components/TableFilters";
 
 type PageProps = {
@@ -9,22 +9,22 @@ type PageProps = {
     search?: string;
     status?: string;
     ordering?: string;
-    created__gte?: string;
-    created__lte?: string;
-    next_billing_at__gte?: string;
-    next_billing_at__lte?: string;
-    mrr_clp__gte?: string;
-    mrr_clp__lte?: string;
+    issued_at__gte?: string;
+    issued_at__lte?: string;
+    due_date__gte?: string;
+    due_date__lte?: string;
+    total_amount_clp__gte?: string;
+    total_amount_clp__lte?: string;
   }>;
 };
 
-const BillingPage = async ({ searchParams }: PageProps) => {
+const InvoicePage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
 
   return (
-    <BillingDetailProvider>
+    <InvoiceDetailProvider>
       <div className="w-full mx-auto flex flex-col gap-4">
-        <BillingDashboard />
+        <InvoiceDashboard />
         <div className="rounded-2xl bg-surface-primary p-6">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
@@ -33,12 +33,12 @@ const BillingPage = async ({ searchParams }: PageProps) => {
               </h2>
             </div>
             <TableFilters />
-            <BillingTable params={params} />
+            <InvoicesTable params={params} />
           </div>
         </div>
       </div>
-    </BillingDetailProvider>
+    </InvoiceDetailProvider>
   );
 };
 
-export default BillingPage;
+export default InvoicePage;

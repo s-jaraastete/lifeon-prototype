@@ -15,7 +15,7 @@ const CardNoteLink = ({ label, href }: { label: string; href: string }) => (
 );
 
 // TODO: Datos inventados mientras no exista el endpoint de facturación.
-const BillingDashboard = () => (
+const InvoiceDashboard = () => (
   <DashboardSection
     title="Facturación"
     description={
@@ -59,4 +59,4 @@ const BillingDashboard = () => (
   />
 );
 
-export default BillingDashboard;
+export default InvoiceDashboard;

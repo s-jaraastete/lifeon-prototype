@@ -30,6 +30,7 @@ export type FilterGroup = SelectGroup | RangeGroup;
 export type OrderingConfig = {
   options: FilterOption[];
   defaultDescFields?: string[];
+  defaultField?: string;
   paramName?: string;
 };
 
@@ -234,7 +235,8 @@ const FilterDropdown = ({
 
   const toggleOrderingDirection = () => {
     if (!orderingField) {
-      setParam(orderingParam, isDesc ? "created" : "-created");
+      const defaultField = orderingConfig?.defaultField ?? "created";
+      setParam(orderingParam, isDesc ? defaultField : `-${defaultField}`);
       return;
     }
     setParam(orderingParam, isDesc ? orderingField : `-${orderingField}`);
