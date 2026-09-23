@@ -1,3 +1,5 @@
+import { InvoiceDashboardOverview } from "@/types/admin";
+import { getServerData } from "@/lib/requests";
 import InvoiceDashboard from "./components/InvoiceDashboard";
 import InvoicesTable from "./components/InvoicesTable";
 import InvoiceDetailProvider from "./components/detail/InvoiceDetailProvider";
@@ -20,11 +22,25 @@ type PageProps = {
 
 const InvoicePage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
+  let data: InvoiceDashboardOverview | null = null;
+
+  try {
+    const dashboardResponse = await getServerData(
+      "/admin-overview/invoices/dashboard/",
+      {
+        useAccessToken: true,
+        cache: "no-store",
+      }
+    );
+    data = dashboardResponse?.data ?? null;
+  } catch {
+    data = null;
+  }
 
   return (
     <InvoiceDetailProvider>
       <div className="w-full mx-auto flex flex-col gap-4">
-        <InvoiceDashboard />
+        {data && <InvoiceDashboard data={data} />}
         <div className="rounded-2xl bg-surface-primary p-6">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">

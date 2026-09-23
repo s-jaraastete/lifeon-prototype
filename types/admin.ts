@@ -70,6 +70,18 @@ export type Subscription = {
   available_actions: SubscriptionAction[];
 };
 
+export type InvoiceMetric = {
+  value: number;
+  change_percentage?: number;
+};
+
+export type InvoiceDashboardOverview = {
+  billed_this_month: InvoiceMetric;
+  collected_this_month: InvoiceMetric;
+  pending_collection: InvoiceMetric;
+  overdue: InvoiceMetric;
+};
+
 export type InvoiceStatus =
   | "paid"
   | "pending"
