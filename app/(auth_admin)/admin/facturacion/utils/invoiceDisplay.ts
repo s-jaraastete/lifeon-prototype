@@ -41,6 +41,16 @@ export const getInvoiceDisplayStatus = (invoice: Invoice): InvoiceDisplayStatus 
 export const formatInvoiceDate = (value: string | null | undefined): string =>
   value ? formatDateShort(value) : DISPLAY_FALLBACK;
 
+
+export const formatRut = (value: string | null | undefined): string => {
+  if (!value) return DISPLAY_FALLBACK;
+  const match = value.replace(/\./g, "").toUpperCase().match(/^(\d{7,8})-([\dK])$/);
+  if (!match) return value;
+  const [, digits, dv] = match;
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${grouped}-${dv}`;
+};
+
 export const formatInvoiceAmount = (value: number | null | undefined): string => {
   const formatted = formatApiAmount(value);
   return formatted ? `CLP $${formatted}` : DISPLAY_FALLBACK;
@@ -48,8 +58,12 @@ export const formatInvoiceAmount = (value: number | null | undefined): string =>
 
 export const formatInvoicePaymentMethod = (invoice: Invoice): string => {
   const provider = invoice.payment_method?.provider;
-  if (!provider) return "Sin cobro";
-  return provider.charAt(0).toUpperCase() + provider.slice(1);
+  const method = provider
+    ? provider.charAt(0).toUpperCase() + provider.slice(1)
+    : "";
+  const card = invoice.payment_method?.card_type || "";
+  if (method && card) return `${method} - ${card}`;
+  return method || card || "Sin cobro";
 };
 
 export const formatInvoicePaymentDetail = (

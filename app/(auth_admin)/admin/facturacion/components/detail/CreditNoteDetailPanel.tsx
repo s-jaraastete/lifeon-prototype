@@ -16,6 +16,7 @@ import {
   formatInvoiceDate,
   getCreditNoteBreakdown,
   getCreditNoteId,
+  formatRut,
 } from "../../utils/invoiceDisplay";
 
 type CreditNoteDetailPanelProps = {
@@ -72,7 +73,7 @@ export default function CreditNoteDetailPanel({
       title: "Información tributaria y cliente",
       rows: [
         { label: "Cliente", value: invoice.company_name_snapshot },
-        { label: "Rut", value: invoice.company_rut_snapshot || DISPLAY_FALLBACK },
+        { label: "Rut", value: formatRut(invoice.company_rut_snapshot) },
         { label: "ID Suscripción", value: invoice.subscription_id },
       ],
     },
@@ -143,16 +144,16 @@ export default function CreditNoteDetailPanel({
       <DetailActions>
         <button
           type="button"
-          className="flex-1 rounded-lg border border-secondary px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-secondary/5"
+          className="flex items-center rounded-lg border border-secondary px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-secondary/5"
         >
-          <LuMail className="mr-2 inline-block h-4.5 w-4.5" />
+          <LuMail className="mr-1 inline-block size-4" />
           Reenviar Nota de crédito
         </button>
         <button
           type="button"
-          className="flex-1 rounded-lg border border-secondary px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-secondary/5"
+          className="flex items-center whitespace-nowrap rounded-lg border border-secondary px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-secondary/5"
         >
-          <LuDownload className="mr-2 inline-block h-4.5 w-4.5" />
+          <LuDownload className="mr-1 inline-block size-4" />
           Descargar Nota de crédito
         </button>
         <button

@@ -7,6 +7,7 @@ import {
   formatInvoiceAmount,
   formatInvoiceDate,
   formatInvoicePaymentMethod,
+  formatRut,
 } from "../utils/invoiceDisplay";
 
 type InvoicesTableProps = {
@@ -34,7 +35,7 @@ const RowContent = (invoice: Invoice) => (
     <td className="text-neutral-secondary">
       {invoice.company_name_snapshot || DISPLAY_FALLBACK}
       <span className="block text-sm text-neutral-tertiary">
-        {invoice.company_rut_snapshot || DISPLAY_FALLBACK}
+        {formatRut(invoice.company_rut_snapshot)}
       </span>
     </td>
     <td className="text-neutral-secondary">{invoice.subscription_id}</td>
