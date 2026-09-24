@@ -70,16 +70,14 @@ export type Subscription = {
   available_actions: SubscriptionAction[];
 };
 
-export type InvoiceMetric = {
-  value: number;
-  change_percentage?: number;
-};
-
 export type InvoiceDashboardOverview = {
-  billed_this_month: InvoiceMetric;
-  collected_this_month: InvoiceMetric;
-  pending_collection: InvoiceMetric;
-  overdue: InvoiceMetric;
+  billed_this_month: { value: number };
+  collected_this_month: {
+    value: number;
+    percentage_of_billed?: number;
+  };
+  pending_collection: { value: number };
+  overdue: { value: number };
 };
 
 export type InvoiceStatus =

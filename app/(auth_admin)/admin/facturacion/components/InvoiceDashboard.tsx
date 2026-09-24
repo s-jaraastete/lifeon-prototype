@@ -5,7 +5,6 @@ import Link from "next/link";
 import { InvoiceDashboardOverview } from "@/types/admin";
 import { formatReferenceAmount } from "@/utils/pricingHelpers";
 import DashboardSection from "../../components/shared/DashboardSection";
-import type { StatTone } from "../../components/shared/StatCard";
 
 type InvoiceDashboardProps = {
   data: InvoiceDashboardOverview;
@@ -24,14 +23,8 @@ const CardNoteLink = ({ label, href }: { label: string; href: string }) => (
   </Link>
 );
 
-const signedPercentage = (change: number): string =>
-  `${change > 0 ? "+" : ""}${formatDecimal(change)}%`;
-
 const snapshotNote = (change: number | undefined): string =>
-  change == null ? "" : `${signedPercentage(change)} vs mes anterior`;
-
-const snapshotTone = (change: number | undefined): StatTone =>
-  change == null ? "default" : change < 0 ? "danger" : change > 0 ? "success" : "default";
+  change == null ? "" : `${formatDecimal(change)}% del total`;
 
 const toCards = (data: InvoiceDashboardOverview) => {
   // TODO: El backend no contempla por ahora DTE
@@ -46,8 +39,7 @@ const toCards = (data: InvoiceDashboardOverview) => {
   {
     label: "Total recaudado mes",
     value: `$${formatReferenceAmount(data.collected_this_month.value)}`,
-    note: snapshotNote(data.collected_this_month.change_percentage),
-    tone: snapshotTone(data.collected_this_month.change_percentage),
+    note: snapshotNote(data.collected_this_month.percentage_of_billed),
   },
   {
     label: "Por cobrar",
