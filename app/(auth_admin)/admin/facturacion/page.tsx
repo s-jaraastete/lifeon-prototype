@@ -4,6 +4,7 @@ import InvoiceDashboard from "./components/InvoiceDashboard";
 import InvoicesTable from "./components/InvoicesTable";
 import InvoiceDetailProvider from "./components/detail/InvoiceDetailProvider";
 import TableFilters from "./components/TableFilters";
+import ExportTableButton from "../components/ExportTableButton";
 
 type PageProps = {
   searchParams: Promise<{
@@ -20,8 +21,19 @@ type PageProps = {
   }>;
 };
 
+const buildInvoicesExportFilename = () => {
+  const date = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  return `facturas_${date}.xlsx`;
+};
+
 const InvoicePage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
+  const exportFilename = buildInvoicesExportFilename();
   let data: InvoiceDashboardOverview | null = null;
 
   try {
@@ -47,6 +59,11 @@ const InvoicePage = async ({ searchParams }: PageProps) => {
               <h2 className="text-2xl font-semibold text-neutral-primary">
                 Todas las facturas
               </h2>
+              <ExportTableButton
+                endpoint="/admin-overview/invoices/export/"
+                queryParams={params}
+                downloadFilename={exportFilename}
+              />
             </div>
             <TableFilters />
             <InvoicesTable params={params} />
