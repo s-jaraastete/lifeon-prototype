@@ -24,10 +24,27 @@ export interface MemberRow {
   updated_at?: string;
 }
 
-function rowToPlatformUser(row: MemberRow, cargoName?: string, areaName?: string): PlatformUser {
+function relatedName(
+  rel: { name: string } | { name: string }[] | null | undefined
+): string | undefined {
+  if (!rel) return undefined;
+  if (Array.isArray(rel)) return rel[0]?.name;
+  return rel.name;
+}
+
+function rowToPlatformUser(
+  row: MemberRow & {
+    positions?: { name: string } | { name: string }[] | null;
+    areas?: { name: string } | { name: string }[] | null;
+  },
+  cargoName?: string,
+  areaName?: string
+): PlatformUser {
   const firstName = row.first_name || row.name.split(" ")[0] || "";
   const lastName =
     row.last_name || row.name.split(" ").slice(1).join(" ") || "";
+  const resolvedCargo = cargoName || relatedName(row.positions);
+  const resolvedArea = areaName || relatedName(row.areas);
   return {
     id: row.id,
     firstName,
@@ -40,9 +57,9 @@ function rowToPlatformUser(row: MemberRow, cargoName?: string, areaName?: string
     permissions: (row.permissions as UserPermissions) || undefined,
     status: row.status === "Invitado" ? "Inactivo" : (row.status as UserStatus),
     cargoId: row.cargo_id || undefined,
-    cargoName,
+    cargoName: resolvedCargo,
     areaId: row.area_id || undefined,
-    areaName,
+    areaName: resolvedArea,
     organizationId: row.organization_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -54,7 +71,13 @@ export async function fetchMembersByOrganization(orgId: string): Promise<Platfor
   if (!client) return [];
   const { data, error } = await client
     .from("organization_members")
-    .select("*")
+    .select(
+      `
+      *,
+      positions ( name ),
+      areas ( name )
+    `
+    )
     .eq("organization_id", orgId)
     .order("created_at", { ascending: true });
   if (error) {
@@ -109,12 +132,43 @@ export async function upsertMember(
 ): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
+
+  const { data: existing } = await client
+    .from("organization_members")
+    .select("auth_user_id, user_id")
+    .eq("organization_id", orgId)
+    .eq("id", user.id)
+    .maybeSingle();
+
+  let cargoId = user.cargoId ?? null;
+  let areaId = user.areaId ?? null;
+
+  if (cargoId) {
+    const { data: position } = await client
+      .from("positions")
+      .select("id")
+      .eq("organization_id", orgId)
+      .eq("id", cargoId)
+      .maybeSingle();
+    if (!position) cargoId = null;
+  }
+
+  if (areaId) {
+    const { data: area } = await client
+      .from("areas")
+      .select("id")
+      .eq("organization_id", orgId)
+      .eq("id", areaId)
+      .maybeSingle();
+    if (!area) areaId = null;
+  }
+
   const name = `${user.firstName} ${user.lastName}`.trim();
   const row = {
     id: user.id,
     organization_id: orgId,
-    auth_user_id: authUserId ?? null,
-    user_id: user.id,
+    auth_user_id: authUserId ?? existing?.auth_user_id ?? null,
+    user_id: existing?.user_id ?? user.id,
     email: user.email,
     name,
     first_name: user.firstName,
@@ -125,8 +179,8 @@ export async function upsertMember(
     role: user.role,
     status: user.status,
     permissions: user.permissions ?? {},
-    cargo_id: user.cargoId ?? null,
-    area_id: user.areaId ?? null,
+    cargo_id: cargoId,
+    area_id: areaId,
     updated_at: new Date().toISOString(),
   };
   const { error } = await client.from("organization_members").upsert(row);

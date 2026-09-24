@@ -13,9 +13,17 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 
 export async function fetchMyDeliveries(): Promise<DocumentDelivery[]> {
   const supabase = getSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from("document_deliveries")
     .select("*")
+    .eq("assignee_auth_user_id", user.id)
     .order("assigned_at", { ascending: false });
 
   if (error) {
@@ -26,10 +34,18 @@ export async function fetchMyDeliveries(): Promise<DocumentDelivery[]> {
 
 export async function fetchDeliveryById(id: string): Promise<DocumentDelivery | null> {
   const supabase = getSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("document_deliveries")
     .select("*")
     .eq("id", id)
+    .eq("assignee_auth_user_id", user.id)
     .maybeSingle();
 
   if (error) {
@@ -101,4 +117,14 @@ export function deliveryStatusLabel(status: DocumentDelivery["status"]): string 
     default:
       return status;
   }
+}
+
+export async function getSignatureSignedUrl(storagePath: string): Promise<string | null> {
+  const supabase = getSupabase();
+  if (!storagePath.trim()) return null;
+  const { data, error } = await supabase.storage
+    .from(ACK_EVIDENCE_BUCKET)
+    .createSignedUrl(storagePath, 3600);
+  if (error) return null;
+  return data?.signedUrl ?? null;
 }

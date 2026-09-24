@@ -301,13 +301,8 @@ export function useOrgStructure() {
             setPositions(parsed.positions || (isDemoOrg ? DEMO_POSITIONS : []));
             setUsers(parsed.users || (isDemoOrg ? DEMO_USERS : userSelf));
           }
-          setIsLoaded(true);
-          return;
         }
-      }
-
-      // Si no existe almacenamiento previo:
-      if (!isDemoOrg) {
+      } else if (!isDemoOrg) {
         // Cuentas de prueba u organizaciones reales no demo: inician vacías
         setWorkCenters([]);
         setAreas([]);
@@ -327,7 +322,6 @@ export function useOrgStructure() {
             : []
         );
       } else {
-        // Cuenta demo: inicializar con datos demo precargados
         const initAreas = getDefaultOrgStructure(preferences?.organizationSector);
         setWorkCenters(DEMO_WORK_CENTERS);
         setAreas(initAreas);
@@ -431,6 +425,7 @@ export function useOrgStructure() {
     if (typeof window !== "undefined") {
       window.addEventListener("lifeon-org-structure-change", handleOrgSync);
       window.addEventListener("lifeon-session-change", handleOrgSync);
+      window.addEventListener("lifeon-platform-users-change", handleOrgSync);
       window.addEventListener("storage", handleOrgSync);
     }
 
@@ -438,6 +433,7 @@ export function useOrgStructure() {
       if (typeof window !== "undefined") {
         window.removeEventListener("lifeon-org-structure-change", handleOrgSync);
         window.removeEventListener("lifeon-session-change", handleOrgSync);
+        window.removeEventListener("lifeon-platform-users-change", handleOrgSync);
         window.removeEventListener("storage", handleOrgSync);
       }
     };

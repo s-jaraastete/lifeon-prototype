@@ -5,7 +5,10 @@
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import dns from "dns";
 import pg from "pg";
+
+dns.setDefaultResultOrder("ipv6first");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
@@ -44,9 +47,9 @@ const poolerRegion = process.env.SUPABASE_POOLER_REGION || "sa-east-1";
 const encodedPassword = encodeURIComponent(password);
 const connectionCandidates = [
   process.env.DATABASE_URL,
+  `postgresql://postgres:${encodedPassword}@db.${projectRef}.supabase.co:5432/postgres`,
   `postgresql://postgres.${projectRef}:${encodedPassword}@aws-0-${poolerRegion}.pooler.supabase.com:5432/postgres`,
   `postgresql://postgres.${projectRef}:${encodedPassword}@aws-0-${poolerRegion}.pooler.supabase.com:6543/postgres`,
-  `postgresql://postgres:${encodedPassword}@db.${projectRef}.supabase.co:5432/postgres`,
 ].filter(Boolean);
 
 async function connectClient() {

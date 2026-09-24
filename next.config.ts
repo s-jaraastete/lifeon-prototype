@@ -9,11 +9,13 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return {
-      fallback: [
+      afterFiles: [
         {
           source: "/mobile",
           destination: "/mobile/index.html",
         },
+      ],
+      fallback: [
         {
           source: "/mobile/:path*",
           destination: "/mobile/index.html",

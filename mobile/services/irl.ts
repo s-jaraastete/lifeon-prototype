@@ -1,7 +1,34 @@
 import { getSupabase } from "@/services/supabase";
-import type { IrlMatrixEntry } from "@/types/models";
+import type { IrlMatrixEntry, MemberContext } from "@/types/models";
 
-export async function fetchMyIrl(): Promise<IrlMatrixEntry[]> {
+export type IrlMemberScope = {
+  memberId: string;
+  organizationId: string;
+};
+
+export function irlScopeFromMember(
+  member: MemberContext | null | undefined
+): IrlMemberScope | null {
+  if (!member?.memberId || !member.organizationId) {
+    return null;
+  }
+  return { memberId: member.memberId, organizationId: member.organizationId };
+}
+
+export function findIrlEntryByMatrixId(
+  entries: IrlMatrixEntry[],
+  matrixId: string
+): IrlMatrixEntry | undefined {
+  const target = matrixId.trim();
+  return entries.find(
+    (e) =>
+      e.matrixId === target ||
+      e.matrixId.endsWith(`_${target}`) ||
+      target.endsWith(`_${e.matrixId}`)
+  );
+}
+
+export async function fetchMyIrl(scope?: IrlMemberScope | null): Promise<IrlMatrixEntry[]> {
   const supabase = getSupabase();
   const { data, error } = await supabase.rpc("get_my_irl");
   if (error) {
@@ -10,7 +37,14 @@ export async function fetchMyIrl(): Promise<IrlMatrixEntry[]> {
   if (!data || !Array.isArray(data)) {
     return [];
   }
-  return data as IrlMatrixEntry[];
+  let list = data as IrlMatrixEntry[];
+  if (scope) {
+    list = list.filter(
+      (entry) =>
+        entry.memberId === scope.memberId && entry.organizationId === scope.organizationId
+    );
+  }
+  return list;
 }
 
 export function consequencesForLevel(level?: string): string {

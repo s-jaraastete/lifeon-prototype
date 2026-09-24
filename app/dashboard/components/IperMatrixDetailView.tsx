@@ -551,7 +551,7 @@ export default function IperMatrixDetailView({
               </span>
             </div>
             <p className="text-xs text-gray-600 mt-1 max-w-3xl leading-relaxed">
-              En cumplimiento del Artículo 21 del D.S. N° 40 y D.S. N° 44. Se alimenta directamente de los datos de esta matriz para informar los peligros, consecuencias, medidas de control y gestionar el registro de firmas.
+              En cumplimiento de la obligación de informar los riesgos laborales establecida en el Decreto Supremo N° 44 (Gestión de Riesgos en el trabajo). Se alimenta directamente de los datos de esta matriz para informar los peligros, consecuencias, medidas de control y gestionar el registro de firmas.
             </p>
           </div>
         </div>

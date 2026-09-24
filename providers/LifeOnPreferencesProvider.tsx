@@ -18,6 +18,7 @@ import {
 import { fetchProfileByAuthId } from "@/lib/repositories/profileRepository";
 import { getSupabaseAuthUserId } from "@/lib/auth/lifeonAuth";
 import { getActiveUser, getScopedStorageKey, AuthUser, SESSION_CHANGE_EVENT } from "@/lib/auth/authService";
+import { withMediaCacheBust } from "@/lib/media/cacheBust";
 
 export const PREFERENCES_STORAGE_KEY = "lifeon_org_preferences";
 
@@ -118,8 +119,8 @@ export default function LifeOnPreferencesProvider({
               basePrefs.setupGuide?.userFinalized ??
               false,
           },
-          organizationLogo: cloudPrefs.organizationLogo ?? basePrefs.organizationLogo ?? null,
-          profilePhoto: cloudPrefs.profilePhoto ?? basePrefs.profilePhoto ?? null,
+          organizationLogo: null,
+          profilePhoto: null,
           userPreventiveDocAcknowledgements:
             cloudPrefs.userPreventiveDocAcknowledgements ??
             basePrefs.userPreventiveDocAcknowledgements ??
@@ -150,19 +151,28 @@ export default function LifeOnPreferencesProvider({
         let hydratedMedia = { ...merged };
         try {
           const authId = await getSupabaseAuthUserId();
-          if (authId && !hydratedMedia.profilePhoto?.startsWith("http")) {
+          let avatarFromProfile: string | null = null;
+          if (authId) {
             const profile = await fetchProfileByAuthId(authId);
             const avatar = profile?.avatar_path;
             if (avatar && avatar.startsWith("http")) {
-              hydratedMedia = { ...hydratedMedia, profilePhoto: avatar };
+              avatarFromProfile = withMediaCacheBust(avatar, profile.updated_at);
             }
           }
-          if (!hydratedMedia.organizationLogo?.startsWith("http")) {
-            const orgRow = await fetchOrganization(user.orgId);
-            const logo = orgRow?.logo_url || orgRow?.logo_path;
-            if (logo && logo.startsWith("http")) {
-              hydratedMedia = { ...hydratedMedia, organizationLogo: logo };
-            }
+          hydratedMedia = {
+            ...hydratedMedia,
+            profilePhoto: avatarFromProfile,
+          };
+
+          const orgRow = await fetchOrganization(user.orgId);
+          const logo = orgRow?.logo_url || orgRow?.logo_path;
+          if (logo && logo.startsWith("http")) {
+            hydratedMedia = {
+              ...hydratedMedia,
+              organizationLogo: withMediaCacheBust(logo, orgRow?.logo_url ?? Date.now()),
+            };
+          } else {
+            hydratedMedia = { ...hydratedMedia, organizationLogo: null, profilePhoto: avatarFromProfile };
           }
         } catch (mediaErr) {
           console.warn("No se pudo hidratar foto/logo desde Supabase:", mediaErr);

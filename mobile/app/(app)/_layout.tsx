@@ -10,8 +10,9 @@ type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 export default function AppTabsLayout() {
   const layout = useDeviceLayout();
-  const tabBarCoreHeight = 52;
-  const tabBarHeight = tabBarCoreHeight + layout.tabBarBottomInset;
+  const tabBarCoreHeight = 56;
+  const frameTabExtra = layout.mode === "desktop-frame" ? 28 : 0;
+  const tabBarHeight = tabBarCoreHeight + layout.tabBarBottomInset + frameTabExtra;
   const headerHeight = 44 + layout.headerTopInset;
   const titleMaxWidth = Math.max(120, layout.viewportWidth - layout.logoSize - 56);
 
@@ -68,7 +69,7 @@ export default function AppTabsLayout() {
           minHeight: tabBarHeight,
           height: tabBarHeight,
           paddingTop: 2,
-          paddingBottom: layout.tabBarBottomInset,
+          paddingBottom: layout.tabBarBottomInset + frameTabExtra,
           ...(Platform.OS === "web"
             ? { boxShadow: "0 -4px 24px rgba(32,33,36,0.06)" as unknown as undefined }
             : {}),
@@ -96,7 +97,7 @@ export default function AppTabsLayout() {
             tabIcon(focused ? "shield-checkmark" : "shield-checkmark-outline", focused),
         }}
       />
-      <Tabs.Screen name="irl/[matrixId]" options={{ href: null, title: "Detalle IRL" }} />
+      <Tabs.Screen name="irl/[matrixId]" options={{ href: null, title: "IRL" }} />
       <Tabs.Screen
         name="documents/index"
         options={{

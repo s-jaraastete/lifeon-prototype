@@ -38,6 +38,7 @@ import {
 import { usePreventiveProgram } from "@/hooks/usePreventiveProgram";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import { useOrgStructure } from "@/hooks/useOrgStructure";
+import { useUsers } from "@/hooks/useUsers";
 import ProgramImportModal from "./ProgramImportModal";
 import {
   ProgramActivity,
@@ -97,6 +98,7 @@ export default function PreventiveDocsView() {
   } = usePreventiveProgram();
 
   const { workCenters, areas, positions, users } = useOrgStructure();
+  const { users: platformUsers } = useUsers();
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
@@ -1723,6 +1725,7 @@ export default function PreventiveDocsView() {
         areas={areas}
         positions={positions}
         users={users}
+        platformUsers={platformUsers}
         onConfirmImport={handleConfirmProgramImport}
         onDownloadTemplate={downloadProgramTemplateXlsx}
       />

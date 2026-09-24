@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import {
   LuX,
@@ -20,6 +20,20 @@ import {
   getUserPreventiveAck,
   upsertUserPreventiveAck,
 } from "@/lib/utils/userPreventiveDocs";
+import {
+  fetchDeliveriesForAssigneeMember,
+  type DocumentDeliveryDetail,
+} from "@/lib/repositories/documentDeliveriesRepository";
+import { getActiveUser } from "@/lib/auth/authService";
+import { IrlDeliveryPdfEmbed } from "./IrlDeliveryPdfEmbed";
+import { buildIrlDocumentCode, parseIrlSnapshot } from "@/lib/irl/irlDocumentCopy";
+import { buildIrlPreviewSnapshot } from "@/lib/irl/buildIrlPreviewSnapshot";
+import {
+  indexIrlDeliveriesByMatrix,
+  irlMatrixStorageKey,
+  matrixIdsMatch,
+} from "@/lib/utils/irlDeliveryGrouping";
+import type { IperMatrixItem } from "./IperMatrixView";
 
 type UserPreventiveDocsModalProps = {
   user: PlatformUser;
@@ -28,14 +42,65 @@ type UserPreventiveDocsModalProps = {
 
 type DocView =
   | null
-  | { type: "irl"; matrixTitle: string; matrixId: string; ack?: IrlAcknowledgement }
+  | {
+      type: "irl";
+      storageKey: string;
+      matrixId: string;
+      displayTitle: string;
+      ack?: IrlAcknowledgement;
+      delivery?: DocumentDeliveryDetail;
+      matrix?: IperMatrixItem;
+    }
   | { type: "reglamento" }
   | { type: "epp" };
+
+type IrlListEntry = {
+  storageKey: string;
+  matrixId: string;
+  displayTitle: string;
+  status: "Firmado" | "Pendiente";
+  ack?: IrlAcknowledgement;
+  delivery?: DocumentDeliveryDetail;
+  matrix?: IperMatrixItem;
+};
+
+function entryStatus(
+  delivery: DocumentDeliveryDetail | undefined,
+  ack: IrlAcknowledgement | undefined
+): "Firmado" | "Pendiente" {
+  if (delivery?.status === "firmado" || ack?.status === "Firmado") return "Firmado";
+  return "Pendiente";
+}
 
 export default function UserPreventiveDocsModal({ user, onClose }: UserPreventiveDocsModalProps) {
   const { preferences, updatePreferences } = useLifeOnPreferences();
   const { vigentesMatrices } = useIperMatrices();
   const [docView, setDocView] = useState<DocView>(null);
+  const [memberDeliveries, setMemberDeliveries] = useState<DocumentDeliveryDetail[]>([]);
+
+  const orgId = user.organizationId || getActiveUser().orgId;
+  const organizationName = preferences.organizationName?.trim() || "Empresa";
+  const organizationLogoUrl = preferences.organizationLogo ?? null;
+  const cargoLabel = user.cargoName?.trim() || "Cargo";
+
+  useEffect(() => {
+    if (!orgId || !user.id) {
+      setMemberDeliveries([]);
+      return;
+    }
+    let cancelled = false;
+    fetchDeliveriesForAssigneeMember(orgId, user.id).then((rows) => {
+      if (!cancelled) setMemberDeliveries(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId, user.id]);
+
+  const deliveryByMatrixKey = useMemo(
+    () => indexIrlDeliveriesByMatrix(memberDeliveries, orgId),
+    [memberDeliveries, orgId]
+  );
 
   const acks = preferences.userPreventiveDocAcknowledgements || [];
   const regAck = getUserPreventiveAck(acks, user.id, "reglamento_interno");
@@ -43,29 +108,76 @@ export default function UserPreventiveDocsModal({ user, onClose }: UserPreventiv
 
   const irlEntries = useMemo(() => {
     const cargo = user.cargoName?.trim().toLowerCase();
-    if (!cargo) return [];
-    return vigentesMatrices
-      .map((m) => {
-        const list = (m.acknowledgements || []) as IrlAcknowledgement[];
-        const ack = findIrlAckForUser(list, user, m.id);
-        const evals = m.evaluations || (m as { hazards?: { cargo?: string }[] }).hazards || [];
-        const hasCargoInMatrix = Array.isArray(evals)
-          ? evals.some((ev) =>
-              (ev.cargo || "")
-                .split(/[,/;•]/)
-                .map((c) => c.trim().toLowerCase())
-                .includes(cargo)
-            )
-          : false;
-        if (!hasCargoInMatrix && !ack) return null;
-        return {
-          matrixId: m.id,
-          matrixTitle: m.name || m.title || m.code,
-          ack,
-        };
-      })
-      .filter(Boolean) as Array<{ matrixId: string; matrixTitle: string; ack?: IrlAcknowledgement }>;
-  }, [vigentesMatrices, user]);
+    const map = new Map<string, IrlListEntry>();
+
+    const upsert = (key: string, patch: Partial<IrlListEntry> & { storageKey: string }) => {
+      const prev = map.get(key);
+      map.set(key, {
+        storageKey: key,
+        matrixId: patch.matrixId ?? prev?.matrixId ?? key,
+        displayTitle: patch.displayTitle ?? prev?.displayTitle ?? `IRL — ${cargoLabel}`,
+        status: patch.status ?? prev?.status ?? "Pendiente",
+        ack: patch.ack ?? prev?.ack,
+        delivery: patch.delivery ?? prev?.delivery,
+        matrix: patch.matrix ?? prev?.matrix,
+      });
+    };
+
+    for (const m of vigentesMatrices) {
+      const key = irlMatrixStorageKey(m.id, orgId);
+      const evals =
+        m.evaluations || (m as { hazards?: { cargo?: string }[] }).hazards || [];
+      const hasCargoInMatrix =
+        cargo &&
+        Array.isArray(evals) &&
+        evals.some((ev) =>
+          (ev.cargo || "")
+            .split(/[,/;•]/)
+            .map((c) => c.trim().toLowerCase())
+            .includes(cargo)
+        );
+      const ack = findIrlAckForUser((m.acknowledgements || []) as IrlAcknowledgement[], user, m.id);
+      const delivery = deliveryByMatrixKey.get(key);
+      if (!hasCargoInMatrix && !ack && !delivery) continue;
+
+      const mergedDelivery = delivery;
+      upsert(key, {
+        storageKey: key,
+        matrixId: m.id,
+        displayTitle: `IRL — ${cargoLabel}`,
+        matrix: m,
+        ack,
+        delivery: mergedDelivery,
+        status: entryStatus(mergedDelivery, ack),
+      });
+    }
+
+    for (const [key, delivery] of deliveryByMatrixKey) {
+      if (map.has(key)) {
+        const prev = map.get(key)!;
+        upsert(key, {
+          storageKey: key,
+          delivery,
+          status: entryStatus(delivery, prev.ack),
+        });
+        continue;
+      }
+      const snap = delivery.content_snapshot ?? {};
+      const snapCargo =
+        typeof snap.cargoName === "string" && snap.cargoName.trim()
+          ? snap.cargoName.trim()
+          : cargoLabel;
+      upsert(key, {
+        storageKey: key,
+        matrixId: delivery.source_id,
+        displayTitle: `IRL — ${snapCargo}`,
+        delivery,
+        status: entryStatus(delivery, undefined),
+      });
+    }
+
+    return Array.from(map.values());
+  }, [vigentesMatrices, user, orgId, deliveryByMatrixKey, cargoLabel]);
 
   const markSigned = (kind: "reglamento_interno" | "epp_entrega") => {
     const next = upsertUserPreventiveAck(acks, user.id, kind, "Firmado");
@@ -78,10 +190,17 @@ export default function UserPreventiveDocsModal({ user, onClose }: UserPreventiv
     if (typeof window !== "undefined") window.print();
   };
 
+  const viewingDocument = docView !== null;
+
   return (
-    <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-100 max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-3">
+    <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-2 sm:p-4">
+      <div
+        className={clsx(
+          "bg-white w-full rounded-2xl shadow-2xl border border-gray-100 max-h-[94vh] overflow-hidden flex flex-col",
+          viewingDocument ? "max-w-[min(100%,230mm)]" : "max-w-2xl"
+        )}
+      >
+        <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-3 print:hidden">
           <div>
             <h2 className="text-base font-bold text-gray-900">Documentación preventiva personal</h2>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -100,22 +219,25 @@ export default function UserPreventiveDocsModal({ user, onClose }: UserPreventiv
                 icon={LuShieldCheck}
                 title="Información de Riesgos Laborales (IRL)"
                 status="Pendiente"
-                hint="Requiere matriz vigente con el cargo del trabajador."
+                hint="Requiere matriz IPER vigente con el cargo del trabajador."
                 disabled
               />
             ) : (
               irlEntries.map((entry) => (
                 <DocCard
-                  key={entry.matrixId}
+                  key={entry.storageKey}
                   icon={LuShieldCheck}
-                  title={`IRL — ${entry.matrixTitle}`}
-                  status={entry.ack?.status === "Firmado" ? "Firmado" : "Pendiente"}
+                  title={entry.displayTitle}
+                  status={entry.status}
                   onOpen={() =>
                     setDocView({
                       type: "irl",
+                      storageKey: entry.storageKey,
                       matrixId: entry.matrixId,
-                      matrixTitle: entry.matrixTitle,
+                      displayTitle: entry.displayTitle,
                       ack: entry.ack,
+                      delivery: entry.delivery,
+                      matrix: entry.matrix,
                     })
                   }
                 />
@@ -137,7 +259,7 @@ export default function UserPreventiveDocsModal({ user, onClose }: UserPreventiv
             />
           </div>
         ) : (
-          <div className="p-5 overflow-y-auto flex flex-col gap-4 print:p-8">
+          <div className="p-3 sm:p-5 overflow-y-auto flex flex-col gap-4 print:p-0">
             <button
               type="button"
               onClick={() => setDocView(null)}
@@ -147,14 +269,14 @@ export default function UserPreventiveDocsModal({ user, onClose }: UserPreventiv
             </button>
 
             {docView.type === "irl" && (
-              <>
-                <h3 className="text-sm font-bold text-gray-900">IRL — {docView.matrixTitle}</h3>
-                <PrintBlock
-                  title="Constancia de entrega y toma de conocimiento"
-                  body={`Yo, ${fullName}, RUT/ID ${user.identificationNumber || "[COMPLETAR]"}, cargo ${user.cargoName || "[COMPLETAR]"}, declaro haber recibido la Información de Riesgos Laborales asociada a la matriz IPER vigente "${docView.matrixTitle}", conforme al Art. 21 del D.S. N° 40 y gestión de riesgos del D.S. N° 44.`}
-                />
-                <StatusRow status={docView.ack?.status === "Firmado" ? "Firmado" : "Pendiente"} />
-              </>
+              <IrlPersonalDocumentView
+                docView={docView}
+                user={user}
+                organizationName={organizationName}
+                organizationLogoUrl={organizationLogoUrl}
+                vigentesMatrices={vigentesMatrices}
+                orgId={orgId}
+              />
             )}
 
             {docView.type === "reglamento" && (
@@ -212,6 +334,113 @@ export default function UserPreventiveDocsModal({ user, onClose }: UserPreventiv
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function IrlPersonalDocumentView({
+  docView,
+  user,
+  organizationName,
+  organizationLogoUrl,
+  vigentesMatrices,
+  orgId,
+}: {
+  docView: Extract<DocView, { type: "irl" }>;
+  user: PlatformUser;
+  organizationName: string;
+  organizationLogoUrl?: string | null;
+  vigentesMatrices: IperMatrixItem[];
+  orgId: string;
+}) {
+  const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email;
+  const cargoName = user.cargoName?.trim() || "—";
+
+  const matrix =
+    docView.matrix ??
+    vigentesMatrices.find((m) => matrixIdsMatch(m.id, docView.matrixId, orgId));
+
+  const delivery = docView.delivery;
+  const signedDelivery = delivery?.status === "firmado" ? delivery : undefined;
+  const pendingDelivery =
+    delivery && delivery.status !== "firmado" ? delivery : undefined;
+  const activeDelivery = signedDelivery ?? pendingDelivery;
+
+  const snapFromDelivery = parseIrlSnapshot(activeDelivery?.content_snapshot ?? {});
+
+  const matrixCode = snapFromDelivery.matrixCode || matrix?.code || "—";
+
+  const previewSnapshot = useMemo(() => {
+    if (activeDelivery?.id) return null;
+    if (!matrix) return null;
+    return buildIrlPreviewSnapshot({
+      matrix: {
+        id: matrix.id,
+        code: matrix.code,
+        title: matrix.title,
+        name: matrix.name,
+        responsible: matrix.responsible,
+        workCenterName: matrix.workCenterName,
+        workCenter: matrix.workCenter,
+        evaluations: matrix.evaluations,
+        hazards: (matrix as { hazards?: unknown[] }).hazards,
+      },
+      cargoName,
+      organizationName: snapFromDelivery.organizationName || organizationName,
+      organizationLogoUrl: snapFromDelivery.organizationLogoUrl ?? organizationLogoUrl,
+      assigneeFullName: fullName,
+      assigneeIdentificationNumber: user.identificationNumber ?? null,
+    });
+  }, [
+    activeDelivery?.id,
+    matrix,
+    cargoName,
+    organizationName,
+    organizationLogoUrl,
+    fullName,
+    user.identificationNumber,
+    snapFromDelivery.organizationName,
+    snapFromDelivery.organizationLogoUrl,
+  ]);
+
+  const preview = useMemo(() => {
+    if (!previewSnapshot) return undefined;
+    return {
+      organizationId: orgId,
+      snapshot: previewSnapshot,
+      documentCode:
+        (typeof previewSnapshot.documentCode === "string"
+          ? previewSnapshot.documentCode
+          : null) ?? buildIrlDocumentCode(matrixCode, cargoName),
+      signedAt: null as string | null,
+    };
+  }, [previewSnapshot, orgId, matrixCode, cargoName]);
+
+  const status = entryStatus(signedDelivery ?? pendingDelivery, docView.ack);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="print:hidden flex flex-wrap items-center gap-2 justify-between">
+        <h3 className="text-sm font-bold text-gray-900">{docView.displayTitle}</h3>
+        <StatusRow status={status} />
+      </div>
+      {signedDelivery?.signed_at ? (
+        <p className="text-[11px] text-gray-600 print:hidden">
+          Firmado el{" "}
+          <strong>{new Date(signedDelivery.signed_at).toLocaleString("es-CL")}</strong>
+          {signedDelivery.document_code ? ` · Código ${signedDelivery.document_code}` : null}
+        </p>
+      ) : null}
+
+      <IrlDeliveryPdfEmbed
+        deliveryId={activeDelivery?.id}
+        preview={preview}
+        minHeight={720}
+      />
+
+      <p className="text-[10px] text-gray-500 text-center leading-snug print:mt-2">
+        Documento IRL del cargo · Referencia técnica: Matriz IPER {matrixCode}
+      </p>
     </div>
   );
 }

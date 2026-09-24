@@ -59,6 +59,16 @@ export async function fetchOrganizationPreferences(
   return data.preferences as OrganizationPreferences;
 }
 
+/** Las imágenes viven en profiles / organizations; no duplicar URLs en JSON de preferencias. */
+function preferencesForCloud(prefs: OrganizationPreferences): OrganizationPreferences {
+  const { profilePhoto: _p, organizationLogo: _l, ...rest } = prefs;
+  return {
+    ...rest,
+    profilePhoto: null,
+    organizationLogo: null,
+  };
+}
+
 export async function saveOrganizationPreferences(
   orgId: string,
   prefs: OrganizationPreferences
@@ -69,7 +79,7 @@ export async function saveOrganizationPreferences(
   const { error } = await client.from("organization_preferences").upsert({
     id: targetId,
     organization_id: orgId === "org_demo" ? "org_demo" : orgId,
-    preferences: prefs,
+    preferences: preferencesForCloud(prefs),
   });
   if (error) {
     logPersistenceError("organization.preferences.save", error);

@@ -28,6 +28,12 @@ import { isSupabaseConfigured } from "@/lib/supabaseClient";
 export const PLATFORM_USERS_STORAGE_KEY = "lifeon_platform_users";
 export const USERS_CHANGE_EVENT = "lifeon-platform-users-change";
 
+function notifyUsersChanged(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(USERS_CHANGE_EVENT));
+  }
+}
+
 export function useUsers() {
   const { currentUser } = useLifeOnPreferences();
   const [users, setUsers] = useState<PlatformUser[]>([]);
@@ -87,64 +93,146 @@ export function useUsers() {
     return () => window.removeEventListener(USERS_CHANGE_EVENT, handler);
   }, [loadUsers]);
 
-  const persistUsers = useCallback(
+  const writeLocalUsers = useCallback(
     (updated: PlatformUser[]) => {
       const data: UsersStorageData = { users: updated, lastUpdated: new Date().toISOString() };
       try {
         if (typeof window !== "undefined") {
           window.localStorage.setItem(storageKey, JSON.stringify(data));
-          window.dispatchEvent(new CustomEvent(USERS_CHANGE_EVENT, { detail: updated }));
         }
-      } catch { /* noop */ }
+      } catch {
+        /* noop */
+      }
       setUsers(updated);
+    },
+    [storageKey]
+  );
+
+  const persistUsers = useCallback(
+    async (updated: PlatformUser[]) => {
+      writeLocalUsers(updated);
       if (isSupabaseConfigured()) {
-        void Promise.all(updated.map((u) => upsertMember(orgId, u))).then((results) => {
-          if (results.some((r) => !r)) {
-            console.warn("Algunos usuarios no se guardaron en Supabase.");
-          }
-        });
+        const results = await Promise.all(updated.map((u) => upsertMember(orgId, u)));
+        if (results.some((r) => !r)) {
+          console.warn("Algunos usuarios no se guardaron en Supabase.");
+        }
       }
     },
-    [storageKey, orgId]
+    [writeLocalUsers, orgId]
   );
 
   const addUser = useCallback(
-    (userData: Omit<PlatformUser, "id" | "organizationId" | "createdAt" | "updatedAt">) => {
+    async (
+      userData: Omit<PlatformUser, "id" | "organizationId" | "createdAt" | "updatedAt">,
+      options?: { appendTo?: PlatformUser[] }
+    ): Promise<PlatformUser> => {
+      const base = options?.appendTo ?? users;
+      const draftId = `usr-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+
+      if (isSupabaseConfigured()) {
+        const { getSupabaseClient } = await import("@/lib/supabaseClient");
+        const client = getSupabaseClient();
+        if (!client) {
+          throw new Error("Supabase no está configurado.");
+        }
+        const {
+          data: { session },
+        } = await client.auth.getSession();
+        if (!session?.access_token) {
+          throw new Error("Inicia sesión con tu cuenta para crear usuarios.");
+        }
+
+        const res = await fetch("/api/users/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            organizationId: orgId,
+            member: { ...userData, id: draftId },
+          }),
+        });
+        const json = (await res.json()) as { error?: string; member?: PlatformUser };
+        if (!res.ok || !json.member) {
+          throw new Error(json.error || "No se pudo crear el usuario.");
+        }
+        writeLocalUsers([...base, json.member]);
+        notifyUsersChanged();
+        return json.member;
+      }
+
       const newUser: PlatformUser = {
         ...userData,
-        id: `usr-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        id: draftId,
         organizationId: orgId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      persistUsers([...users, newUser]);
+      await persistUsers([...base, newUser]);
       return newUser;
     },
-    [users, persistUsers, orgId]
+    [users, persistUsers, writeLocalUsers, orgId]
   );
 
   const updateUser = useCallback(
-    (userId: string, updates: Partial<PlatformUser>) => {
-      const updated = users.map((u) =>
-        u.id === userId ? { ...u, ...updates, updatedAt: new Date().toISOString() } : u
-      );
-      persistUsers(updated);
+    async (userId: string, updates: Partial<PlatformUser>) => {
+      const previous = users.find((u) => u.id === userId);
+      if (!previous) return;
+
+      const merged: PlatformUser = {
+        ...previous,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+      const updated = users.map((u) => (u.id === userId ? merged : u));
+      writeLocalUsers(updated);
+
+      if (isSupabaseConfigured()) {
+        const { getSupabaseClient } = await import("@/lib/supabaseClient");
+        const client = getSupabaseClient();
+        if (!client) {
+          throw new Error("Supabase no está configurado.");
+        }
+        const {
+          data: { session },
+        } = await client.auth.getSession();
+        if (!session?.access_token) {
+          throw new Error("Inicia sesión con tu cuenta para guardar cambios.");
+        }
+
+        const res = await fetch("/api/users/update", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            organizationId: orgId,
+            memberId: userId,
+            updates,
+          }),
+        });
+        const json = (await res.json()) as { error?: string; member?: PlatformUser };
+        if (!res.ok || !json.member) {
+          writeLocalUsers(users);
+          throw new Error(json.error || "No se pudo actualizar el usuario.");
+        }
+        writeLocalUsers(users.map((u) => (u.id === userId ? json.member! : u)));
+        notifyUsersChanged();
+      }
     },
-    [users, persistUsers]
+    [users, writeLocalUsers, orgId]
   );
 
   const toggleUserStatus = useCallback(
-    (userId: string) => {
-      const updated = users.map((u) => {
-        if (u.id === userId) {
-          const nextStatus: UserStatus = u.status === "Inactivo" ? "Activo" : "Inactivo";
-          return { ...u, status: nextStatus, updatedAt: new Date().toISOString() };
-        }
-        return u;
-      });
-      persistUsers(updated);
+    async (userId: string) => {
+      const target = users.find((u) => u.id === userId);
+      if (!target) return;
+      const nextStatus: UserStatus = target.status === "Inactivo" ? "Activo" : "Inactivo";
+      await updateUser(userId, { status: nextStatus });
     },
-    [users, persistUsers]
+    [users, updateUser]
   );
 
   const deleteUser = useCallback(
@@ -362,26 +450,28 @@ export function useUsers() {
   );
 
   const applyImport = useCallback(
-    (parsedData: UserXlsxRow[]) => {
-      const newUsers: PlatformUser[] = parsedData.map((row) => ({
-        id: `usr-imp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        firstName: row.firstName,
-        lastName: row.lastName,
-        identificationType: row.identificationType,
-        identificationNumber: row.identificationNumber,
-        email: row.email,
-        phone: row.phone,
-        role: row.role,
-        status: row.status || "Activo",
-        organizationId: orgId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }));
+    async (parsedData: UserXlsxRow[]) => {
       const existingEmails = new Set(users.map((u) => u.email.toLowerCase()));
-      const toAdd = newUsers.filter((u) => !existingEmails.has(u.email.toLowerCase()));
-      persistUsers([...users, ...toAdd]);
+      const rows = parsedData.filter((row) => !existingEmails.has(row.email.toLowerCase()));
+      let next = [...users];
+      for (const row of rows) {
+        const created = await addUser(
+          {
+            firstName: row.firstName,
+            lastName: row.lastName,
+            identificationType: row.identificationType,
+            identificationNumber: row.identificationNumber,
+            email: row.email,
+            phone: row.phone,
+            role: row.role,
+            status: row.status || "Activo",
+          },
+          { appendTo: next }
+        );
+        next = [...next, created];
+      }
     },
-    [users, persistUsers, orgId]
+    [users, addUser]
   );
 
   const totalUsersCount = users.length;

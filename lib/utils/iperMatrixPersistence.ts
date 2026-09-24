@@ -3,14 +3,31 @@ import type { IperMatrixItem } from "@/app/dashboard/components/IperMatrixView";
 /** ID de matriz con prefijo de organización, alineado con supabaseService. */
 export function scopedIperMatrixId(id: string, orgId: string): string {
   const currentOrg = orgId || "org_demo";
+  const trimmed = id.trim();
   if (
-    id.startsWith("org_") ||
-    id.startsWith("m-") ||
-    id.startsWith("MA-")
+    trimmed.startsWith("org_") ||
+    trimmed.startsWith("m-") ||
+    trimmed.startsWith("MA-")
   ) {
-    return id.startsWith(`${currentOrg}_`) ? id : `${currentOrg}_${id}`;
+    return trimmed.startsWith(`${currentOrg}_`) ? trimmed : `${currentOrg}_${trimmed}`;
   }
-  return `${currentOrg}_${id}`;
+  return `${currentOrg}_${trimmed}`;
+}
+
+export function iperMatrixIdCandidates(rawId: string, orgId: string): string[] {
+  const trimmed = rawId.trim();
+  if (!trimmed) return [];
+
+  const scoped = scopedIperMatrixId(trimmed, orgId);
+  const out = new Set<string>([trimmed, scoped]);
+  const prefix = `${orgId}_`;
+  if (trimmed.startsWith(prefix)) {
+    out.add(trimmed.slice(prefix.length));
+  }
+  if (scoped.startsWith(prefix)) {
+    out.add(scoped.slice(prefix.length));
+  }
+  return [...out];
 }
 
 function matrixTimestamp(m: IperMatrixItem): number {

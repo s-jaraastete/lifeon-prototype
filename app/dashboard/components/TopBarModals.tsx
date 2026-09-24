@@ -56,8 +56,10 @@ import {
 } from "@/types/preferences";
 import { OrgWorkCenter } from "@/types/orgStructure";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabaseClient";
-import { uploadToStorage, STORAGE_BUCKETS } from "@/lib/repositories/storageRepository";
+import { uploadToStorage, removeStoragePaths, STORAGE_BUCKETS } from "@/lib/repositories/storageRepository";
+import { withMediaCacheBust } from "@/lib/media/cacheBust";
 import { getSupabaseAuthUserId } from "@/lib/auth/lifeonAuth";
+import { getActiveUser, setActiveUser } from "@/lib/auth/authService";
 
 export interface NotificationItem {
   id: string;
@@ -407,13 +409,14 @@ export function AccountModal({
   organizationName?: string;
 }) {
   const { preferences, updatePreferences, currentUser } = useLifeOnPreferences();
-  const [name, setName] = useState(userDisplayName || "Sergio A. Jara Astete");
-  const [rut, setRut] = useState("15.842.190-K");
-  const [seremiCode, setSeremiCode] = useState("REG-SEREMI-45291 (DS 40)");
-  const [email, setEmail] = useState(userEmail || "sergio.jara@lifeon.cl");
-  const [phone, setPhone] = useState("+56 9 8765 4321");
-  const [company, setCompany] = useState(organizationName || "Constructora y Servicios Santiago SpA");
-  const [position, setPosition] = useState("Jefe de Prevención de Riesgos y Medio Ambiente");
+  const [name, setName] = useState(userDisplayName || "");
+  const [rut, setRut] = useState("");
+  const [seremiCode, setSeremiCode] = useState("");
+  const [email, setEmail] = useState(userEmail || "");
+  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState(organizationName || "");
+  const [position, setPosition] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Foto de perfil y Logo de empresa
@@ -430,12 +433,43 @@ export function AccountModal({
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
+    if (!isOpen) return;
     if (userDisplayName) setName(userDisplayName);
     if (userEmail) setEmail(userEmail);
     if (organizationName) setCompany(organizationName);
     setProfilePhoto(preferences.profilePhoto || null);
     setOrgLogo(preferences.organizationLogo || null);
-  }, [userDisplayName, userEmail, organizationName, preferences.profilePhoto, preferences.organizationLogo]);
+    setSaveError(null);
+
+    void (async () => {
+      const authId = await getSupabaseAuthUserId();
+      if (!authId) return;
+      const { fetchProfileByAuthId } = await import("@/lib/repositories/profileRepository");
+      const { fetchMemberByAuthUser } = await import("@/lib/repositories/memberRepository");
+      const profile = await fetchProfileByAuthId(authId);
+      const member = await fetchMemberByAuthUser(authId);
+      if (profile) {
+        const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(" ").trim();
+        if (fullName) setName(fullName);
+        if (profile.phone) setPhone(profile.phone);
+        const ps = profile.personal_settings as Record<string, string> | undefined;
+        if (ps?.seremiCode) setSeremiCode(ps.seremiCode);
+        if (ps?.jobTitle) setPosition(ps.jobTitle);
+      }
+      if (member) {
+        if (member.identification_number) setRut(member.identification_number);
+        if (member.email) setEmail(member.email);
+        if (!profile?.phone && member.phone) setPhone(member.phone);
+      }
+    })();
+  }, [
+    isOpen,
+    userDisplayName,
+    userEmail,
+    organizationName,
+    preferences.profilePhoto,
+    preferences.organizationLogo,
+  ]);
 
   if (!isOpen) return null;
 
@@ -456,6 +490,10 @@ export function AccountModal({
       setMediaUploadError("Inicia sesión con Supabase Auth para guardar la foto en la nube.");
       return;
     }
+    await removeStoragePaths(
+      STORAGE_BUCKETS.avatars,
+      ["png", "jpg", "jpeg", "webp", "gif"].map((ext) => `${authId}/avatar.${ext}`)
+    );
     const ext = file.name.split(".").pop()?.toLowerCase() || "png";
     const { publicUrl, error } = await uploadToStorage(
       STORAGE_BUCKETS.avatars,
@@ -466,16 +504,18 @@ export function AccountModal({
       setMediaUploadError(error || "No se pudo subir la foto. Revisa permisos de Storage.");
       return;
     }
-    setProfilePhoto(publicUrl);
-    updatePreferences({ profilePhoto: publicUrl });
+    const version = Date.now();
+    const displayUrl = withMediaCacheBust(publicUrl, version)!;
+    const { upsertProfile } = await import("@/lib/repositories/profileRepository");
+    await upsertProfile(authId, { avatar_path: displayUrl });
+    setProfilePhoto(displayUrl);
+    updatePreferences({ profilePhoto: displayUrl });
     try {
       const legacyId = currentUser?.id || "user_demo";
-      localStorage.setItem(`lifeon_user_photo_${legacyId}`, publicUrl);
-      const rawUser = localStorage.getItem("lifeon_active_user");
-      if (rawUser) {
-        const u = JSON.parse(rawUser);
-        u.avatarUrl = publicUrl;
-        localStorage.setItem("lifeon_active_user", JSON.stringify(u));
+      localStorage.setItem(`lifeon_user_photo_${legacyId}`, displayUrl);
+      const active = getActiveUser();
+      if (active?.email) {
+        setActiveUser({ ...active, avatarUrl: displayUrl });
       }
     } catch {
       /* noop */
@@ -483,17 +523,24 @@ export function AccountModal({
     e.target.value = "";
   };
 
-  const handleDeleteProfilePhoto = () => {
+  const handleDeleteProfilePhoto = async () => {
+    const authId = await getSupabaseAuthUserId();
+    if (authId) {
+      await removeStoragePaths(
+        STORAGE_BUCKETS.avatars,
+        ["png", "jpg", "jpeg", "webp", "gif"].map((ext) => `${authId}/avatar.${ext}`)
+      );
+      const { upsertProfile } = await import("@/lib/repositories/profileRepository");
+      await upsertProfile(authId, { avatar_path: null });
+    }
     setProfilePhoto(null);
     updatePreferences({ profilePhoto: null });
     try {
       const userId = currentUser?.id || "user_demo";
       localStorage.removeItem(`lifeon_user_photo_${userId}`);
-      const rawUser = localStorage.getItem("lifeon_active_user");
-      if (rawUser) {
-        const u = JSON.parse(rawUser);
-        u.avatarUrl = null;
-        localStorage.setItem("lifeon_active_user", JSON.stringify(u));
+      const active = getActiveUser();
+      if (active?.email) {
+        setActiveUser({ ...active, avatarUrl: null });
       }
     } catch (err) {}
   };
@@ -511,6 +558,10 @@ export function AccountModal({
       return;
     }
     const orgId = currentUser?.orgId || "org_demo";
+    await removeStoragePaths(
+      STORAGE_BUCKETS.organizationLogos,
+      ["png", "jpg", "jpeg", "webp", "svg"].map((ext) => `${orgId}/logo.${ext}`)
+    );
     const ext = file.name.split(".").pop()?.toLowerCase() || "png";
     const { publicUrl, error } = await uploadToStorage(
       STORAGE_BUCKETS.organizationLogos,
@@ -521,12 +572,25 @@ export function AccountModal({
       setMediaUploadError(error || "No se pudo subir el logo. Revisa permisos de Storage.");
       return;
     }
-    setOrgLogo(publicUrl);
-    updatePreferences({ organizationLogo: publicUrl });
+    const displayUrl = withMediaCacheBust(publicUrl, Date.now())!;
+    const { updateOrganization } = await import("@/lib/repositories/organizationRepository");
+    await updateOrganization(orgId, {
+      logo_url: displayUrl,
+      logo_path: displayUrl,
+    });
+    setOrgLogo(displayUrl);
+    updatePreferences({ organizationLogo: displayUrl });
     e.target.value = "";
   };
 
-  const handleDeleteOrgLogo = () => {
+  const handleDeleteOrgLogo = async () => {
+    const orgId = currentUser?.orgId || "org_demo";
+    await removeStoragePaths(
+      STORAGE_BUCKETS.organizationLogos,
+      ["png", "jpg", "jpeg", "webp", "svg"].map((ext) => `${orgId}/logo.${ext}`)
+    );
+    const { updateOrganization } = await import("@/lib/repositories/organizationRepository");
+    await updateOrganization(orgId, { logo_url: null, logo_path: null });
     setOrgLogo(null);
     updatePreferences({ organizationLogo: null });
   };
@@ -582,9 +646,11 @@ export function AccountModal({
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaveError(null);
     const nameParts = name.trim().split(/\s+/).filter(Boolean);
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ");
+    const displayName = `${firstName} ${lastName}`.trim() || name.trim();
 
     updatePreferences({
       profilePhoto,
@@ -592,20 +658,34 @@ export function AccountModal({
       organizationName: company,
     });
 
-    const { getSupabaseAuthUserId } = await import("@/lib/auth/lifeonAuth");
     const { upsertProfile } = await import("@/lib/repositories/profileRepository");
     const { updateOrganization } = await import("@/lib/repositories/organizationRepository");
+    const { fetchMemberByAuthUser } = await import("@/lib/repositories/memberRepository");
+    const client = getSupabaseClient();
 
     const authId = await getSupabaseAuthUserId();
-    if (authId) {
-      const avatarForDb =
-        profilePhoto && !profilePhoto.startsWith("data:") ? profilePhoto : null;
-      await upsertProfile(authId, {
-        first_name: firstName,
-        last_name: lastName || null,
-        phone: phone.trim() || null,
-        avatar_path: avatarForDb,
-      });
+    if (!authId) {
+      setSaveError("Inicia sesión con Supabase Auth para guardar tu perfil.");
+      return;
+    }
+
+    const avatarForDb =
+      profilePhoto && !profilePhoto.startsWith("data:") ? profilePhoto : null;
+
+    const profileOk = await upsertProfile(authId, {
+      first_name: firstName,
+      last_name: lastName || null,
+      phone: phone.trim() || null,
+      avatar_path: avatarForDb,
+      personal_settings: {
+        seremiCode: seremiCode.trim(),
+        jobTitle: position.trim(),
+      },
+    });
+
+    if (!profileOk) {
+      setSaveError("No se pudo guardar el perfil en la base de datos.");
+      return;
     }
 
     if (currentUser?.orgId) {
@@ -614,6 +694,50 @@ export function AccountModal({
         name: company.trim(),
         logo_url: logoForDb,
         logo_path: logoForDb,
+      });
+    }
+
+    const member = await fetchMemberByAuthUser(authId);
+    if (member && client && currentUser?.orgId) {
+      const {
+        data: { session },
+      } = await client.auth.getSession();
+      if (session?.access_token) {
+        const res = await fetch("/api/users/update", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            organizationId: currentUser.orgId,
+            memberId: member.id,
+            updates: {
+              firstName,
+              lastName,
+              email: email.trim().toLowerCase(),
+              phone: phone.trim() || undefined,
+              identificationType: "RUT",
+              identificationNumber: rut.trim(),
+            },
+          }),
+        });
+        const json = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          setSaveError(json.error || "No se pudo sincronizar con el módulo Usuarios.");
+          return;
+        }
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("lifeon-platform-users-change"));
+        }
+      }
+    }
+
+    if (currentUser?.email) {
+      setActiveUser({
+        ...currentUser,
+        name: displayName,
+        orgName: company.trim() || currentUser.orgName,
       });
     }
 
@@ -746,6 +870,11 @@ export function AccountModal({
         {mediaUploadError && (
           <p className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2 mb-2">
             {mediaUploadError}
+          </p>
+        )}
+        {saveError && (
+          <p className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2 mb-2">
+            {saveError}
           </p>
         )}
 
@@ -1822,7 +1951,7 @@ export function ResetAccountConfirmModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<boolean> | void;
+  onConfirm: () => Promise<boolean | { ok: false; error: string }> | boolean | void;
 }) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -1843,10 +1972,13 @@ export function ResetAccountConfirmModal({
 
     try {
       const res = await onConfirm();
-      // If onConfirm returned boolean false explicitly, handle error
-      if (res === false) {
+      if (res === false || (typeof res === "object" && res && "ok" in res && !res.ok)) {
         setStatus("error");
-        setErrorMessage("No fue posible restablecer la información de la cuenta.");
+        setErrorMessage(
+          typeof res === "object" && res && "error" in res && res.error
+            ? String(res.error)
+            : "No fue posible restablecer la información de la cuenta."
+        );
       } else {
         setStatus("success");
       }

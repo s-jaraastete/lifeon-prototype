@@ -21,7 +21,13 @@ export async function fetchNormalizedStructure(orgId: string): Promise<OrgStruct
       client.from("processes").select("*").eq("organization_id", orgId),
       client.from("subprocesses").select("*").eq("organization_id", orgId),
       client.from("positions").select("*").eq("organization_id", orgId),
-      client.from("organization_members").select("*").eq("organization_id", orgId),
+      client.from("organization_members").select(
+        `
+      *,
+      positions ( name ),
+      areas ( name )
+    `
+      ).eq("organization_id", orgId),
     ]);
 
     if (wcRes.error) logPersistenceError("structure.work_centers", wcRes.error);
@@ -105,17 +111,31 @@ export async function fetchNormalizedStructure(orgId: string): Promise<OrgStruct
       createdAt: r.created_at,
     }));
 
-    const users: OrgUser[] = (memRes.data || []).map((r: any) => ({
-      id: r.id,
-      name: r.name,
-      email: r.email,
-      cargoId: r.cargo_id,
-      areaId: r.area_id,
-      role: r.role,
-      status: r.status === "Invitado" ? "Inactivo" : r.status,
-      organizationId: orgId,
-      createdAt: r.created_at,
-    }));
+    const users: OrgUser[] = (memRes.data || []).map((r: any) => {
+      const first = r.first_name?.trim() || "";
+      const last = r.last_name?.trim() || "";
+      const composed = [first, last].filter(Boolean).join(" ").trim();
+      const displayName = composed || r.name || r.email;
+      const posRel = r.positions;
+      const cargoName = Array.isArray(posRel)
+        ? posRel[0]?.name
+        : posRel?.name;
+      const areaRel = r.areas;
+      const areaName = Array.isArray(areaRel) ? areaRel[0]?.name : areaRel?.name;
+      return {
+        id: r.id,
+        name: displayName,
+        email: r.email,
+        cargoId: r.cargo_id,
+        cargoName: cargoName || undefined,
+        areaId: r.area_id,
+        areaName: areaName || undefined,
+        role: r.role,
+        status: r.status === "Invitado" ? "Inactivo" : r.status,
+        organizationId: orgId,
+        createdAt: r.created_at,
+      };
+    });
 
     if (
       workCenters.length === 0 &&

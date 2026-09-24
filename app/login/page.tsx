@@ -222,10 +222,10 @@ export default function LoginPage() {
             </>
           ) : (
             /* Paso 2: Contraseña */
-            <form onSubmit={handlePasswordSubmit} className="w-full relative">
+            <form onSubmit={handlePasswordSubmit} className="w-full relative overflow-hidden">
               {isSigningIn && (
                 <div
-                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/85 backdrop-blur-[2px]"
+                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white"
                   aria-live="polite"
                   aria-busy="true"
                 >

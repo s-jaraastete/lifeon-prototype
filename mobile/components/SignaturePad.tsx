@@ -62,12 +62,14 @@ export function SignaturePad({ onConfirm }: SignaturePadProps) {
   return (
     <View>
       <Text style={styles.hint}>Dibuja tu firma con el dedo</Text>
-      <View ref={padRef} style={styles.pad} {...pan.panHandlers} collapsable={false}>
-        <Svg height="100%" width="100%">
-          {paths.map((d, i) => (
-            <Path key={i} d={d} stroke={colors.text} strokeWidth={2.5} fill="none" />
-          ))}
-        </Svg>
+      <View style={styles.padFrame}>
+        <View ref={padRef} style={styles.padCapture} {...pan.panHandlers} collapsable={false}>
+          <Svg height="100%" width="100%">
+            {paths.map((d, i) => (
+              <Path key={i} d={d} stroke={colors.text} strokeWidth={2.5} fill="none" />
+            ))}
+          </Svg>
+        </View>
       </View>
       <View style={styles.actions}>
         <View style={styles.actionHalf}>
@@ -92,13 +94,17 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.sm,
   },
-  pad: {
+  padFrame: {
     height: 180,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    backgroundColor: colors.surface,
+    borderStyle: "dashed",
     overflow: "hidden",
+  },
+  padCapture: {
+    flex: 1,
+    backgroundColor: "transparent",
   },
   actions: {
     flexDirection: "row",

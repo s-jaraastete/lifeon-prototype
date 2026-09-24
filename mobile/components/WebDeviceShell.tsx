@@ -63,7 +63,7 @@ export function WebDeviceShell({ children }: { children: ReactNode }) {
             styles.homeIndicator,
             {
               width: homeW,
-              bottom: BEZEL + Math.round(10 * scale),
+              bottom: BEZEL + 4,
             },
           ]}
         />

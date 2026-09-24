@@ -2,7 +2,7 @@
  * Exporta LifeOn Mobile (Expo Web) a public/mobile para servir en /mobile en Vercel.
  * Uso: node scripts/build-mobile-web.mjs
  */
-import { readFileSync, rmSync, existsSync, mkdirSync } from "fs";
+import { readFileSync, rmSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { spawnSync } from "child_process";
@@ -58,6 +58,25 @@ const result = spawnSync(
 
 if (result.status !== 0) {
   process.exit(result.status ?? 1);
+}
+
+if (process.env.MOBILE_AUTO_RELOAD === "1") {
+  const indexPath = join(outDir, "index.html");
+  if (existsSync(indexPath)) {
+    let html = readFileSync(indexPath, "utf8");
+    if (!html.includes("lifeon-mobile-live-reload")) {
+      const snippet = `<script id="lifeon-mobile-live-reload">
+(function(){var k="lifeon-mobile-bundle",last=sessionStorage.getItem(k);
+setInterval(function(){fetch("/mobile/index.html",{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){
+var m=t.match(/entry-[a-f0-9]+\\.js/);var h=m?m[0]:String(t.length);
+if(last&&last!==h){sessionStorage.setItem(k,h);location.reload();}
+if(!last)sessionStorage.setItem(k,h);
+});},2500);})();
+</script>`;
+      html = html.replace("</body>", `${snippet}\n</body>`);
+      writeFileSync(indexPath, html);
+    }
+  }
 }
 
 console.log("LifeOn Mobile web listo en public/mobile (URL: /mobile)");

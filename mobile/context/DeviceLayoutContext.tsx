@@ -57,7 +57,7 @@ function computeDesktopFrameMetrics(
 
   const scale = viewportWidth / BASE_PHONE_WIDTH;
   const headerTopInset = Math.round(12 + 34 * scale);
-  const tabBarBottomInset = Math.round(12 + 28 * scale);
+  const tabBarBottomInset = Math.round(12 + 28 * scale + 20);
 
   return {
     viewportWidth,
@@ -112,7 +112,7 @@ export function DeviceLayoutProvider({ children }: { children: ReactNode }) {
         viewportWidth: windowWidth,
         viewportHeight: windowHeight,
         headerTopInset: Math.max(insets.top, Platform.OS === "web" ? 8 : 0),
-        tabBarBottomInset: Math.max(insets.bottom, 12),
+        tabBarBottomInset: Math.max(insets.bottom, Platform.OS === "web" ? 20 : 12),
         ...typography,
       };
     }

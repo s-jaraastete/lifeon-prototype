@@ -24,8 +24,10 @@ export function OrgLogoHeader() {
         style={[
           styles.logoBox,
           {
-            width: logoSize,
-            height: logoSize,
+            minWidth: logoSize,
+            minHeight: logoSize,
+            maxWidth: logoSize + 16,
+            maxHeight: logoSize + 8,
             borderRadius: Math.max(radius.md, logoSize * 0.28),
           },
         ]}
@@ -33,7 +35,7 @@ export function OrgLogoHeader() {
         {logoUrl ? (
           <Image
             source={{ uri: logoUrl }}
-            style={{ width: logoSize, height: logoSize }}
+            style={{ width: logoSize + 12, height: logoSize + 4, maxWidth: logoSize + 16, maxHeight: logoSize + 8 }}
             resizeMode="contain"
           />
         ) : (
@@ -57,7 +59,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
   logoInitials: {
     fontFamily: "Poppins_700Bold",

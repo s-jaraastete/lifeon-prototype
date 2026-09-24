@@ -23,7 +23,19 @@ import {
   ActivityApplicability,
 } from "@/types/preventiveProgram";
 import { OrgWorkCenter, OrgArea, OrgPosition, OrgUser } from "@/types/orgStructure";
+import type { PlatformUser } from "@/types/users";
 import { normalizeImportedRows } from "@/lib/xlsx/lifeOnWorkbookTheme";
+import {
+  areaBelongsToWorkCenter,
+  buildPositionByName,
+  buildUserLookup,
+  buildWorkCenterByName,
+  mergeOrgUsersForImport,
+  resolveArea,
+  resolvePosition,
+  resolveUser,
+  resolveWorkCenter,
+} from "@/lib/preventive/programImportResolver";
 
 interface ProgramImportModalProps {
   isOpen: boolean;
@@ -32,6 +44,7 @@ interface ProgramImportModalProps {
   areas: OrgArea[];
   positions: OrgPosition[];
   users: OrgUser[];
+  platformUsers?: PlatformUser[];
   onConfirmImport: (activities: ProgramActivity[]) => void;
   onDownloadTemplate: () => void;
 }
@@ -49,6 +62,7 @@ export default function ProgramImportModal({
   areas,
   positions,
   users,
+  platformUsers = [],
   onConfirmImport,
   onDownloadTemplate,
 }: ProgramImportModalProps) {
@@ -123,11 +137,10 @@ export default function ProgramImportModal({
 
       setTotalRows(rows.length);
 
-      // Mapas de búsqueda rápida (en minúsculas)
-      const wcByName = new Map(workCenters.map((w) => [w.name.toLowerCase().trim(), w]));
-      const areaByName = new Map(areas.map((a) => [a.name.toLowerCase().trim(), a]));
-      const posByName = new Map(positions.map((p) => [p.name.toLowerCase().trim(), p]));
-      const userByName = new Map(users.map((u) => [u.name.toLowerCase().trim(), u]));
+      const mergedUsers = mergeOrgUsersForImport(users, platformUsers);
+      const wcByName = buildWorkCenterByName(workCenters);
+      const posByName = buildPositionByName(positions);
+      const userLookup = buildUserLookup(mergedUsers, platformUsers);
 
       const errorsList: ValidationErrorItem[] = [];
       const warningsList: string[] = [];
@@ -181,8 +194,10 @@ export default function ProgramImportModal({
         // 2. Validar Centro de Trabajo (si se informa, debe existir)
         let matchedWcId: string | undefined;
         let matchedWcName: string | undefined;
+        let matchedAreaId: string | undefined;
+        let matchedAreaName: string | undefined;
         if (wcVal) {
-          const foundWc = wcByName.get(wcVal.toLowerCase());
+          const foundWc = resolveWorkCenter(wcVal, wcByName);
           if (!foundWc) {
             errorsList.push({
               rowNumber: rowNum,
@@ -196,32 +211,35 @@ export default function ProgramImportModal({
           }
         }
 
-        // 3. Validar Área (si se informa, debe existir y coincidir con el centro si aplica)
-        let matchedAreaId: string | undefined;
-        let matchedAreaName: string | undefined;
         if (areaVal) {
-          const foundArea = areaByName.get(areaVal.toLowerCase());
-          if (!foundArea) {
+          const { area: foundArea, ambiguous } = resolveArea(areaVal, wcVal || matchedWcName, areas, wcByName);
+          if (ambiguous) {
             errorsList.push({
               rowNumber: rowNum,
               activity: activityName || `Fila ${rowNum}`,
-              message: `El Área '${areaVal}' no existe en la Estructura Organizacional.`,
+              message: `El Área '${areaVal}' existe en más de un centro; indique también el Centro de Trabajo.`,
+            });
+            rowHasError = true;
+          } else if (!foundArea) {
+            errorsList.push({
+              rowNumber: rowNum,
+              activity: activityName || `Fila ${rowNum}`,
+              message: `El Área '${areaVal}' no existe en la Estructura Organizacional (módulo Estructura / Usuarios).`,
             });
             rowHasError = true;
           } else {
             matchedAreaId = foundArea.id;
             matchedAreaName = foundArea.name;
 
-            // Si se informó centro y el área tiene centro asociado, validar coherencia
             if (
               matchedWcName &&
-              foundArea.workCenter &&
-              foundArea.workCenter.toLowerCase() !== matchedWcName.toLowerCase()
+              !areaBelongsToWorkCenter(foundArea, matchedWcName, wcByName)
             ) {
+              const wcLabel = foundArea.workCenterName || foundArea.workCenter || "otro centro";
               errorsList.push({
                 rowNumber: rowNum,
                 activity: activityName || `Fila ${rowNum}`,
-                message: `El Área '${areaVal}' pertenece al centro '${foundArea.workCenter}' y no a '${matchedWcName}'.`,
+                message: `El Área '${areaVal}' pertenece al centro '${wcLabel}' y no a '${matchedWcName}'.`,
               });
               rowHasError = true;
             }
@@ -235,12 +253,12 @@ export default function ProgramImportModal({
         let matchedPosName: string | undefined;
 
         if (respUserVal) {
-          const foundUser = userByName.get(respUserVal.toLowerCase());
+          const foundUser = resolveUser(respUserVal, userLookup);
           if (!foundUser) {
             errorsList.push({
               rowNumber: rowNum,
               activity: activityName || `Fila ${rowNum}`,
-              message: `El Responsable '${respUserVal}' no existe en los Usuarios de la organización.`,
+              message: `El Responsable '${respUserVal}' no coincide con ningún usuario activo (módulo Usuarios / Estructura). Prueba nombre completo o email.`,
             });
             rowHasError = true;
           } else {
@@ -250,7 +268,7 @@ export default function ProgramImportModal({
         }
 
         if (respPosVal) {
-          const foundPos = posByName.get(respPosVal.toLowerCase());
+          const foundPos = resolvePosition(respPosVal, posByName);
           if (!foundPos) {
             errorsList.push({
               rowNumber: rowNum,

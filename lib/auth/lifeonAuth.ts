@@ -10,6 +10,8 @@ import { fetchMemberByAuthUser, ensureBootstrapMember } from "@/lib/repositories
 import { fetchProfileByAuthId, upsertProfile } from "@/lib/repositories/profileRepository";
 import { fetchOrganization } from "@/lib/repositories/organizationRepository";
 import { logPersistenceError } from "@/lib/supabase/persistenceError";
+import { normalizeAppLoginPassword } from "@/lib/auth/defaultAppPassword";
+import { withMediaCacheBust } from "@/lib/media/cacheBust";
 
 export interface LifeOnSignInResult {
   success: boolean;
@@ -52,7 +54,9 @@ async function hydrateFromSupabaseSession(
       orgId: member.organization_id,
       orgName: org?.name || member.organization_id,
       isDemo: member.organization_id === "org_demo",
-      avatarUrl: profile?.avatar_path ?? null,
+      avatarUrl: profile?.avatar_path
+        ? withMediaCacheBust(profile.avatar_path, profile.updated_at)
+        : null,
     };
   }
 
@@ -78,9 +82,10 @@ export async function signInLifeOn(email: string, password: string): Promise<Lif
   const client = getSupabaseClient();
 
   if (client && isSupabaseConfigured()) {
+    const authPassword = normalizeAppLoginPassword(normalizedEmail, password);
     const { data, error } = await client.auth.signInWithPassword({
       email: normalizedEmail,
-      password: password.trim(),
+      password: authPassword,
     });
 
     if (!error && data.user) {

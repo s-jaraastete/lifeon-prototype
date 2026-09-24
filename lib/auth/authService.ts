@@ -1,6 +1,6 @@
-import { resetSupabaseDataForOrg } from "@/lib/services/supabaseService";
 import { clearLifeOnSessionCookie } from "@/lib/auth/lifeonSessionClient";
 import { clearOrgScopedLocalStorage } from "@/lib/dashboard/clearDashboardCaches";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabaseClient";
 
 export interface AuthUser {
   id: string;
@@ -271,27 +271,78 @@ export function logoutActiveUser(orgId?: string): void {
 }
 
 /**
- * Restablece la cuenta de prueba autorizada (exclusivamente luis.godoy@safetyclub.cl o sergio.jara@safetyclub.cl).
+ * Restablece la cuenta de prueba autorizada.
  * Elimina completamente de Supabase y localStorage toda la estructura, matrices, programa,
  * preferencias y archivos de la organización asociada, dejándola como una cuenta completamente nueva y vacía.
  */
-export async function resetTestAccount(userEmail: string): Promise<boolean> {
-  if (typeof window === "undefined") return false;
-  const normalized = (userEmail || "").trim().toLowerCase();
+export type ResetTestAccountResult = { ok: true } | { ok: false; error: string };
 
-  // Validación estricta en la capa de servicio
-  if (!isResetAllowedForUser(normalized)) {
-    console.error("Seguridad: Intento no autorizado de restablecimiento de cuenta para:", userEmail);
-    return false;
+export async function resetTestAccount(userEmail: string): Promise<ResetTestAccountResult> {
+  if (typeof window === "undefined") {
+    return { ok: false, error: "Solo disponible en el navegador" };
   }
 
-  const account = TEST_ACCOUNTS_CONFIG[normalized];
-  const orgId = account?.orgId || (normalized.includes("luis") ? "org_luis" : "org_sergio");
-  const userId = account?.id || (normalized.includes("luis") ? "user_luis" : "user_sergio");
+  const client = isSupabaseConfigured() ? getSupabaseClient() : null;
+  const {
+    data: { user: authUser },
+  } = client ? await client.auth.getUser() : { data: { user: null } };
+
+  const sessionEmail = authUser?.email?.trim().toLowerCase() ?? "";
+  const hintedEmail = (userEmail || "").trim().toLowerCase();
+
+  const emailForReset = sessionEmail || hintedEmail;
+  if (!emailForReset) {
+    return { ok: false, error: "Inicia sesión para restablecer la cuenta." };
+  }
+
+  if (!isResetAllowedForUser(emailForReset)) {
+    console.error("Seguridad: restablecimiento no autorizado para:", emailForReset);
+    return { ok: false, error: "Restablecimiento no permitido para esta cuenta." };
+  }
+
+  if (sessionEmail && hintedEmail && sessionEmail !== hintedEmail) {
+    console.warn(
+      "Restablecimiento: email de UI distinto al de Supabase; se usa la sesión:",
+      sessionEmail
+    );
+  }
+
+  const account = TEST_ACCOUNTS_CONFIG[emailForReset];
+  const orgId = account?.orgId || (emailForReset.includes("luis") ? "org_luis" : "org_sergio");
+  const userId = account?.id || (emailForReset.includes("luis") ? "user_luis" : "user_sergio");
 
   try {
-    // 1. Limpiar base de datos Supabase respetando orden de dependencias
-    await resetSupabaseDataForOrg(orgId, userId);
+    if (isSupabaseConfigured()) {
+      if (!client) {
+        return { ok: false, error: "Cliente Supabase no disponible." };
+      }
+
+      const {
+        data: { session },
+      } = await client.auth.getSession();
+
+      if (!session?.access_token) {
+        return {
+          ok: false,
+          error: "Sesión expirada. Cierra sesión, vuelve a entrar e intenta de nuevo.",
+        };
+      }
+
+      const res = await fetch("/api/test-account/reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ email: emailForReset }),
+      });
+      const json = (await res.json()) as { error?: string; success?: boolean };
+      if (!res.ok || !json.success) {
+        const msg = json.error || "No se pudo restablecer la cuenta en el servidor.";
+        console.error("Restablecimiento remoto falló:", msg);
+        return { ok: false, error: msg };
+      }
+    }
 
     // 2. Limpiar todas las claves de localStorage vinculadas al usuario o su organización
     const keysToRemove: string[] = [];
@@ -301,7 +352,7 @@ export async function resetTestAccount(userEmail: string): Promise<boolean> {
         key &&
         (key.includes(orgId) ||
           key.includes(userId) ||
-          key.includes(normalized) ||
+          key.includes(emailForReset) ||
           key.includes(`lifeon_iper_draft_${orgId}`) ||
           key.includes(`lifeon_active_workplace_${orgId}`) ||
           key.includes(`lifeon_org_structure_${orgId}`) ||
@@ -309,6 +360,7 @@ export async function resetTestAccount(userEmail: string): Promise<boolean> {
           key.includes(`lifeon_preventive_program_${orgId}`) ||
           key.includes(`lifeon_preferences_${orgId}`) ||
           key.includes(`lifeon_platform_users_${orgId}`) ||
+          key.startsWith("lifeon_user_photo_") ||
           key.includes(`lifeon_technical_docs_${orgId}`) ||
           key === "lifeon_active_session")
       ) {
@@ -330,10 +382,13 @@ export async function resetTestAccount(userEmail: string): Promise<boolean> {
     window.dispatchEvent(new CustomEvent("lifeon-platform-users-change", { detail: null }));
     window.dispatchEvent(new CustomEvent("lifeon-technical-docs-change", { detail: null }));
 
-    return true;
+    return { ok: true };
   } catch (e) {
     console.error("Error al restablecer cuenta de prueba:", e);
-    return false;
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Error inesperado al restablecer la cuenta.",
+    };
   }
 }
 

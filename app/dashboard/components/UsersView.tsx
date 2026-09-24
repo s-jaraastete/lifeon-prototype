@@ -354,7 +354,7 @@ export default function UsersView() {
     alert("Acceso enviado. El trabajador recibirá un correo para establecer su contraseña.");
   };
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const emailExists = users.some((u) => u.email.toLowerCase() === form.email.toLowerCase());
     if (emailExists) {
@@ -363,25 +363,29 @@ export default function UsersView() {
     }
     const cargo = positions.find((p) => p.id === form.cargoId);
     const area = areas.find((a) => a.id === form.areaId);
-    addUser({
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      identificationType: form.identificationType,
-      identificationNumber: form.identificationNumber.trim(),
-      email: form.email.trim().toLowerCase(),
-      phone: form.phone.trim() || undefined,
-      role: form.role,
-      status: form.status,
-      cargoId: form.cargoId || undefined,
-      cargoName: cargo?.name || undefined,
-      areaId: form.areaId || undefined,
-      areaName: area?.name || undefined,
-    });
-    setIsAddModalOpen(false);
-    resetForm();
+    try {
+      await addUser({
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        identificationType: form.identificationType,
+        identificationNumber: form.identificationNumber.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim() || undefined,
+        role: form.role,
+        status: form.status,
+        cargoId: form.cargoId || undefined,
+        cargoName: cargo?.name || undefined,
+        areaId: form.areaId || undefined,
+        areaName: area?.name || undefined,
+      });
+      setIsAddModalOpen(false);
+      resetForm();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "No se pudo crear el usuario.");
+    }
   };
 
-  const handleUpdate = (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
     const emailExists = users.some(
@@ -393,22 +397,26 @@ export default function UsersView() {
     }
     const cargo = positions.find((p) => p.id === form.cargoId);
     const area = areas.find((a) => a.id === form.areaId);
-    updateUser(editingUser.id, {
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      identificationType: form.identificationType,
-      identificationNumber: form.identificationNumber.trim(),
-      email: form.email.trim().toLowerCase(),
-      phone: form.phone.trim() || undefined,
-      role: form.role,
-      status: form.status,
-      cargoId: form.cargoId || undefined,
-      cargoName: cargo?.name || undefined,
-      areaId: form.areaId || undefined,
-      areaName: area?.name || undefined,
-    });
-    setIsEditModalOpen(false);
-    setEditingUser(null);
+    try {
+      await updateUser(editingUser.id, {
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        identificationType: form.identificationType,
+        identificationNumber: form.identificationNumber.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim() || undefined,
+        role: form.role,
+        status: form.status,
+        cargoId: form.cargoId || undefined,
+        cargoName: cargo?.name || undefined,
+        areaId: form.areaId || undefined,
+        areaName: area?.name || undefined,
+      });
+      setIsEditModalOpen(false);
+      setEditingUser(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "No se pudo actualizar el usuario.");
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -422,16 +430,20 @@ export default function UsersView() {
     }
   };
 
-  const handleConfirmImport = () => {
+  const handleConfirmImport = async () => {
     if (!importReport || importReport.validRecords === 0) return;
-    applyImport(importReport.parsedData);
-    setImportFeedback(`¡Se importaron ${importReport.validRecords} usuarios correctamente!`);
-    setTimeout(() => {
-      setImportFeedback(null);
-      setIsImportModalOpen(false);
-      setImportReport(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }, 2200);
+    try {
+      await applyImport(importReport.parsedData);
+      setImportFeedback(`¡Se importaron ${importReport.validRecords} usuarios correctamente!`);
+      setTimeout(() => {
+        setImportFeedback(null);
+        setIsImportModalOpen(false);
+        setImportReport(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }, 2200);
+    } catch (err) {
+      setImportFeedback(err instanceof Error ? err.message : "Error al importar usuarios.");
+    }
   };
 
   const filteredUsers = useMemo(() => {

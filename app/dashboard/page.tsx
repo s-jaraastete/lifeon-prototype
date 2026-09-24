@@ -234,7 +234,10 @@ export default function DashboardPage() {
   // Dynamic user data with priority on active multi-tenant user or session
   const userDisplayName = currentUser?.name || session?.user?.name || "Sergio A. Jara Astete";
   const userFirstName = userDisplayName.split(" ")[0] || "Sergio";
-  const userEmail = currentUser?.email || session?.user?.email || "sergio.jara@lifeon.cl";
+  const userEmail =
+    session?.user?.email?.trim().toLowerCase() ||
+    currentUser?.email?.trim().toLowerCase() ||
+    "";
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeMenu, setActiveMenu] = useState<DashboardMenuKey>("dashboard");
@@ -1287,18 +1290,18 @@ export default function DashboardPage() {
         isOpen={isResetConfirmOpen}
         onClose={() => setIsResetConfirmOpen(false)}
         onConfirm={async () => {
-          if (!isResetAllowedForUser(userEmail)) {
-            return false;
+          if (!userEmail || !isResetAllowedForUser(userEmail)) {
+            return { ok: false, error: "Restablecimiento no permitido para esta cuenta." };
           }
-          const ok = await resetTestAccount(userEmail);
-          if (ok) {
+          const result = await resetTestAccount(userEmail);
+          if (result.ok) {
             setTimeout(() => {
               setIsResetConfirmOpen(false);
               router.push("/login");
             }, 1400);
             return true;
           }
-          return false;
+          return { ok: false, error: result.error };
         }}
       />
 

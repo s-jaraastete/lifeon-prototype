@@ -12,7 +12,9 @@ import { Card } from "@/components/Card";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { SignaturePad } from "@/components/SignaturePad";
+import { IrlDeliveryPdfViewer } from "@/components/IrlDeliveryPdfViewer";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgBranding } from "@/hooks/useOrgBranding";
 import { useNetworkOnline } from "@/hooks/useNetwork";
 import {
   confirmDocumentReview,
@@ -22,6 +24,9 @@ import {
   uploadSignatureAndRegister,
 } from "@/services/deliveries";
 import type { DocumentDelivery } from "@/types/models";
+import { useTabBarPadding } from "@/hooks/useTabBarPadding";
+import { isIrlDelivery, normalizeDeliverySnapshot } from "@/utils/deliverySnapshot";
+import { parseIrlSnapshot } from "@/utils/irlDocumentCopy";
 import { colors, spacing } from "@/theme/tokens";
 
 const DECLARATION =
@@ -30,6 +35,7 @@ const DECLARATION =
 export default function DocumentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { member } = useAuth();
+  const { branding } = useOrgBranding(member?.organizationId);
   const online = useNetworkOnline();
   const router = useRouter();
   const [delivery, setDelivery] = useState<DocumentDelivery | null>(null);
@@ -37,6 +43,7 @@ export default function DocumentDetailScreen() {
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const tabBarPad = useTabBarPadding();
 
   const load = useCallback(async () => {
     if (!online || !id) return;
@@ -104,21 +111,39 @@ export default function DocumentDetailScreen() {
     );
   }
 
-  const snapshot = delivery.content_snapshot;
+  const snapshot = normalizeDeliverySnapshot(delivery.content_snapshot);
+  const isIrl = isIrlDelivery(delivery);
+  const parsedIrl = isIrl ? parseIrlSnapshot(snapshot) : null;
+  const orgName = parsedIrl?.organizationName || branding?.name;
 
   return (
-    <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
-      <Card>
+    <ScrollView
+      style={styles.flex}
+      contentContainerStyle={[styles.content, { paddingBottom: tabBarPad }]}
+    >
+      <Card style={styles.docMeta}>
+        <Text style={styles.docMetaLabel}>Documento asignado</Text>
         <Text style={styles.title}>{delivery.title}</Text>
         <Text style={styles.meta}>Estado: {deliveryStatusLabel(delivery.status)}</Text>
         <Text style={styles.meta}>Código: {delivery.document_code ?? "—"}</Text>
         <Text style={styles.meta}>
           Asignado: {new Date(delivery.assigned_at).toLocaleDateString("es-CL")}
         </Text>
-        <Text style={styles.meta}>Hash versión: {delivery.content_hash.slice(0, 12)}…</Text>
       </Card>
 
-      <DocumentSnapshotBody snapshot={snapshot} />
+      {isIrl ? (
+        <IrlDeliveryPdfViewer deliveryId={delivery.id} minHeight={560} />
+      ) : (
+        <TechnicalSnapshotBody snapshot={snapshot} />
+      )}
+
+      {step === "sign" && delivery.status !== "firmado" && isIrl ? (
+        <View style={styles.block}>
+          <Text style={styles.section}>Firma del trabajador</Text>
+          <SignaturePad onConfirm={handleSignature} />
+          {loading ? <ActivityIndicator color={colors.primary} /> : null}
+        </View>
+      ) : null}
 
       {step === "read" && delivery.status !== "firmado" ? (
         <View style={styles.block}>
@@ -133,13 +158,13 @@ export default function DocumentDetailScreen() {
             loading={loading}
           />
           <Text style={styles.legalNote}>
-            Toma de conocimiento digital del prototipo LifeOn. No constituye firma
-            electrónica avanzada.
+            Toma de conocimiento digital registrada por {orgName ?? "la empresa"}. No constituye
+            firma electrónica avanzada.
           </Text>
         </View>
       ) : null}
 
-      {step === "sign" && delivery.status !== "firmado" ? (
+      {step === "sign" && delivery.status !== "firmado" && !isIrl ? (
         <View style={styles.block}>
           <SignaturePad onConfirm={handleSignature} />
           {loading ? <ActivityIndicator color={colors.primary} /> : null}
@@ -163,55 +188,41 @@ export default function DocumentDetailScreen() {
   );
 }
 
-function DocumentSnapshotBody({ snapshot }: { snapshot: Record<string, unknown> }) {
-  const kind = snapshot.kind as string | undefined;
-
-  if (kind === "irl") {
-    const evaluations = (snapshot.evaluations as Record<string, unknown>[]) ?? [];
+function TechnicalSnapshotBody({ snapshot }: { snapshot: Record<string, unknown> }) {
+  if (snapshot.kind !== "technical_document") {
     return (
-      <View style={styles.block}>
-        <Text style={styles.section}>Contenido IRL (versión enviada)</Text>
-        <Text style={styles.meta}>Matriz: {String(snapshot.matrixTitle ?? "")}</Text>
-        <Text style={styles.meta}>Cargo: {String(snapshot.cargoName ?? "")}</Text>
-        {evaluations.map((ev, idx) => (
-          <Card key={idx} style={styles.riskCard}>
-            <Text style={styles.riskTitle}>{String(ev.task ?? "")}</Text>
-            <Text style={styles.meta}>{String(ev.hazard ?? "")}</Text>
-            <Text style={styles.meta}>{String(ev.controls ?? "")}</Text>
-          </Card>
-        ))}
-      </View>
+      <Text style={styles.meta}>Contenido no disponible en formato reconocido.</Text>
     );
   }
-
-  if (kind === "technical_document") {
-    const content = (snapshot.content as Record<string, string>) ?? {};
-    const sections = Object.entries(content);
-    return (
-      <View style={styles.block}>
-        <Text style={styles.section}>Contenido del documento</Text>
-        {sections.map(([key, value]) => (
-          <Card key={key} style={styles.riskCard}>
-            <Text style={styles.riskTitle}>{key}</Text>
-            <Text style={styles.meta}>{value}</Text>
-          </Card>
-        ))}
-      </View>
-    );
-  }
-
+  const content = (snapshot.content as Record<string, string>) ?? {};
+  const sections = Object.entries(content);
   return (
-    <Text style={styles.meta}>Contenido no disponible en formato reconocido.</Text>
+    <View style={styles.block}>
+      <Text style={styles.section}>Contenido del documento</Text>
+      {sections.map(([key, value]) => (
+        <Card key={key} style={styles.riskCard}>
+          <Text style={styles.riskTitle}>{key}</Text>
+          <Text style={styles.meta}>{value}</Text>
+        </Card>
+      ))}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl },
+  content: { padding: spacing.md, gap: spacing.md },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  docMeta: { gap: 2 },
+  docMetaLabel: {
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 10,
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+  },
   title: {
     fontFamily: "Poppins_700Bold",
-    fontSize: 18,
+    fontSize: 17,
     color: colors.text,
   },
   meta: {

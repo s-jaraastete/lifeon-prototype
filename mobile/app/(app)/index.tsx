@@ -34,10 +34,12 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useOrgBranding } from "@/hooks/useOrgBranding";
 
 import { useDeviceLayout } from "@/context/DeviceLayoutContext";
+import { useTabBarPadding } from "@/hooks/useTabBarPadding";
 
 import { useNetworkOnline } from "@/hooks/useNetwork";
 
-import { fetchMyIrl } from "@/services/irl";
+import { fetchMyIrl, irlScopeFromMember } from "@/services/irl";
+import { pickPrimaryIrlEntry } from "@/utils/irlEntrySnapshot";
 
 import { fetchMyDeliveries, isPending } from "@/services/deliveries";
 
@@ -58,6 +60,7 @@ export default function HomeScreen() {
   const { branding } = useOrgBranding(member?.organizationId);
 
   const layout = useDeviceLayout();
+  const tabBarPad = useTabBarPadding();
 
   const online = useNetworkOnline();
 
@@ -75,15 +78,17 @@ export default function HomeScreen() {
 
   const load = useCallback(async () => {
 
-    if (!online) return;
+    if (!online || !member) return;
 
     setError(null);
 
     let loadError: string | null = null;
 
+    const scope = irlScopeFromMember(member);
+
     try {
 
-      setIrlEntries(await fetchMyIrl());
+      setIrlEntries(await fetchMyIrl(scope));
 
     } catch (e) {
 
@@ -113,7 +118,7 @@ export default function HomeScreen() {
 
     setError(loadError);
 
-  }, [online]);
+  }, [online, member?.memberId, member?.organizationId]);
 
 
 
@@ -161,7 +166,7 @@ export default function HomeScreen() {
 
       contentContainerStyle={[
         styles.content,
-        { paddingHorizontal: layout.contentHorizontalPadding },
+        { paddingHorizontal: layout.contentHorizontalPadding, paddingBottom: tabBarPad },
       ]}
 
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -218,9 +223,9 @@ export default function HomeScreen() {
 
           icon="shield-checkmark-outline"
 
-          label="Matrices IRL"
+          label="IRL"
 
-          value={String(irlEntries.length)}
+          value={irlEntries.length > 0 ? "Sí" : "—"}
 
           accent={colors.secondary}
 
@@ -254,7 +259,20 @@ export default function HomeScreen() {
 
         style={({ pressed }) => [styles.actionCard, styles.actionPrimary, pressed && styles.pressed]}
 
-        onPress={() => router.push("/(app)/irl")}
+        onPress={() => {
+          const scope = irlScopeFromMember(member);
+          void fetchMyIrl(scope).then((entries) => {
+            const primary = pickPrimaryIrlEntry(entries);
+            if (primary) {
+              router.push({
+                pathname: "/(app)/irl/[matrixId]",
+                params: { matrixId: primary.matrixId },
+              });
+            } else {
+              router.push("/(app)/irl");
+            }
+          });
+        }}
 
       >
 

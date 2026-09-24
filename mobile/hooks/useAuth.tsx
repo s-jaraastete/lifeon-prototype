@@ -17,6 +17,7 @@ import {
 } from "@/services/session";
 import type { MemberContext } from "@/types/models";
 import { translateSupabaseMessage, toUserFacingError } from "@/utils/userFacingError";
+import { normalizeAppLoginPassword } from "@/utils/defaultAppPassword";
 
 interface AuthState {
   loading: boolean;
@@ -134,9 +135,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     setGateError(null);
     const supabase = getSupabase();
+    const normalizedEmail = email.trim().toLowerCase();
+    const authPassword = normalizeAppLoginPassword(normalizedEmail, password);
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password: password.trim(),
+      email: normalizedEmail,
+      password: authPassword,
     });
     if (error) {
       return translateSupabaseMessage(error.message) ?? error.message;

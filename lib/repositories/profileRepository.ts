@@ -8,6 +8,7 @@ export interface ProfileRow {
   phone: string | null;
   avatar_path: string | null;
   personal_settings: Record<string, unknown>;
+  updated_at?: string | null;
 }
 
 export async function fetchProfileByAuthId(authUserId: string): Promise<ProfileRow | null> {
@@ -15,7 +16,7 @@ export async function fetchProfileByAuthId(authUserId: string): Promise<ProfileR
   if (!client) return null;
   const { data, error } = await client
     .from("profiles")
-    .select("id, first_name, last_name, phone, avatar_path, personal_settings")
+    .select("id, first_name, last_name, phone, avatar_path, personal_settings, updated_at")
     .eq("id", authUserId)
     .maybeSingle();
   if (error) {
