@@ -9,11 +9,10 @@ function detectMobileUserAgent(): boolean {
 }
 
 /**
- * En web: pantalla completa en teléfonos; marco tipo dispositivo en escritorio.
- * En iOS/Android nativo siempre compacto (sin marco).
+ * Pantalla completa en teléfonos/tablets; marco de escritorio solo en viewport ancho.
  */
 export function useCompactWebViewport(): boolean {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const [uaMobile, setUaMobile] = useState(false);
 
   useEffect(() => {
@@ -22,5 +21,7 @@ export function useCompactWebViewport(): boolean {
 
   if (Platform.OS !== "web") return true;
   if (uaMobile) return true;
-  return width < 768;
+  if (width < 768) return true;
+  if (height < 520) return true;
+  return false;
 }

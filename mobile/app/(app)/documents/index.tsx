@@ -16,6 +16,7 @@ import {
   fetchMyDeliveries,
   isPending,
 } from "@/services/deliveries";
+import { toUserFacingError } from "@/utils/userFacingError";
 import type { DocumentDelivery } from "@/types/models";
 import { colors, spacing } from "@/theme/tokens";
 
@@ -35,7 +36,7 @@ export default function DocumentsScreen() {
     try {
       setDeliveries(await fetchMyDeliveries());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar documentos");
+      setError(toUserFacingError(e, "Error al cargar documentos"));
     }
   }, [online]);
 

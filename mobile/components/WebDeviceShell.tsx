@@ -1,20 +1,20 @@
 import { ReactNode, useEffect } from "react";
-import { Platform, StyleSheet, View, type ViewStyle } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useCompactWebViewport } from "@/hooks/useCompactWebViewport";
 import { useWindowDimensions } from "react-native";
+import {
+  BASE_PHONE_HEIGHT,
+  BASE_PHONE_WIDTH,
+  useDeviceLayout,
+} from "@/context/DeviceLayoutContext";
 import { colors } from "@/theme/tokens";
 
-const PHONE_WIDTH = 390;
-const PHONE_HEIGHT = 844;
 const BEZEL = 10;
 
 export function WebDeviceShell({ children }: { children: ReactNode }) {
   const compact = useCompactWebViewport();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-
-  const phoneScale = compact
-    ? 1
-    : Math.min(1, (windowHeight - 48) / (PHONE_HEIGHT + BEZEL * 2), (windowWidth - 48) / (PHONE_WIDTH + BEZEL * 2));
+  const layout = useDeviceLayout();
 
   useEffect(() => {
     if (Platform.OS !== "web" || compact || typeof document === "undefined") return;
@@ -36,19 +36,37 @@ export function WebDeviceShell({ children }: { children: ReactNode }) {
     return <View style={styles.fullscreen}>{children}</View>;
   }
 
+  const scale = layout.viewportWidth / BASE_PHONE_WIDTH;
+  const islandW = Math.round(120 * scale);
+  const islandH = Math.round(34 * scale);
+  const outerW = layout.viewportWidth + BEZEL * 2;
+  const outerH = layout.viewportHeight + BEZEL * 2;
+  const homeW = Math.round(134 * scale);
+
   return (
-    <View style={styles.desktopRoot}>
-      <View
-        style={[
-          styles.phoneOuter,
-          {
-            transform: [{ scale: phoneScale }],
-          },
-        ]}
-      >
-        <View style={styles.dynamicIsland} />
+    <View style={[styles.desktopRoot, { padding: Math.min(24, windowWidth * 0.04) }]}>
+      <View style={[styles.phoneOuter, { width: outerW, height: outerH }]}>
+        <View
+          style={[
+            styles.dynamicIsland,
+            {
+              width: islandW,
+              height: islandH,
+              borderRadius: islandH / 2,
+              top: BEZEL + Math.round(8 * scale),
+            },
+          ]}
+        />
         <View style={styles.phoneScreen}>{children}</View>
-        <View style={styles.homeIndicator} />
+        <View
+          style={[
+            styles.homeIndicator,
+            {
+              width: homeW,
+              bottom: BEZEL + Math.round(10 * scale),
+            },
+          ]}
+        />
       </View>
     </View>
   );
@@ -64,11 +82,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#1a1a1e",
-    padding: 24,
-  } as ViewStyle,
+  },
   phoneOuter: {
-    width: PHONE_WIDTH + BEZEL * 2,
-    height: PHONE_HEIGHT + BEZEL * 2,
     borderRadius: 44,
     padding: BEZEL,
     backgroundColor: "#0d0d0f",
@@ -83,29 +98,24 @@ const styles = StyleSheet.create({
   },
   dynamicIsland: {
     position: "absolute",
-    top: BEZEL + 10,
     alignSelf: "center",
-    width: 120,
-    height: 34,
-    borderRadius: 20,
     backgroundColor: "#000",
     zIndex: 10,
+    pointerEvents: "none",
   },
   phoneScreen: {
     flex: 1,
     borderRadius: 36,
     overflow: "hidden",
     backgroundColor: colors.background,
-    marginBottom: 16,
   },
   homeIndicator: {
     position: "absolute",
-    bottom: BEZEL + 10,
     alignSelf: "center",
-    width: 134,
     height: 5,
     borderRadius: 3,
     backgroundColor: "rgba(255,255,255,0.35)",
     zIndex: 10,
+    pointerEvents: "none",
   },
 });

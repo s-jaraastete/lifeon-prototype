@@ -12,6 +12,7 @@ import {
   Poppins_800ExtraBold,
 } from "@expo-google-fonts/poppins";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { DeviceLayoutProvider } from "@/context/DeviceLayoutContext";
 import { WebDeviceShell } from "@/components/WebDeviceShell";
 import { colors } from "@/theme/tokens";
 
@@ -99,11 +100,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <AuthProvider>
-        <WebDeviceShell>
-          <RootNavigator />
-        </WebDeviceShell>
-      </AuthProvider>
+      <DeviceLayoutProvider>
+        <AuthProvider>
+          <WebDeviceShell>
+            <RootNavigator />
+          </WebDeviceShell>
+        </AuthProvider>
+      </DeviceLayoutProvider>
     </SafeAreaProvider>
   );
 }

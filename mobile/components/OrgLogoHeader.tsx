@@ -1,7 +1,8 @@
 import { View, Text, Image, StyleSheet } from "react-native";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgBranding } from "@/hooks/useOrgBranding";
-import { colors, radius, spacing } from "@/theme/tokens";
+import { useDeviceLayout } from "@/context/DeviceLayoutContext";
+import { colors, radius } from "@/theme/tokens";
 
 function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -10,28 +11,36 @@ function initialsFromName(name: string): string {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
-export function AppBrandHeader() {
+export function OrgLogoHeader() {
   const { member } = useAuth();
   const { branding } = useOrgBranding(member?.organizationId);
+  const { logoSize } = useDeviceLayout();
   const name = branding?.name ?? member?.organizationName ?? "Organización";
   const logoUrl = branding?.logoUrl;
 
   return (
-    <View style={styles.wrap}>
-      <View style={styles.logoBox}>
+    <View style={styles.wrap} accessibilityLabel={`Logo ${name}`}>
+      <View
+        style={[
+          styles.logoBox,
+          {
+            width: logoSize,
+            height: logoSize,
+            borderRadius: Math.max(radius.md, logoSize * 0.28),
+          },
+        ]}
+      >
         {logoUrl ? (
-          <Image source={{ uri: logoUrl }} style={styles.logoImage} resizeMode="contain" />
+          <Image
+            source={{ uri: logoUrl }}
+            style={{ width: logoSize, height: logoSize }}
+            resizeMode="contain"
+          />
         ) : (
-          <Text style={styles.logoInitials}>{initialsFromName(name)}</Text>
+          <Text style={[styles.logoInitials, { fontSize: logoSize * 0.32 }]}>
+            {initialsFromName(name)}
+          </Text>
         )}
-      </View>
-      <View style={styles.textCol}>
-        <Text style={styles.orgName} numberOfLines={1}>
-          {name}
-        </Text>
-        <Text style={styles.tagline} numberOfLines={1}>
-          LifeOn Mobile
-        </Text>
       </View>
     </View>
   );
@@ -39,15 +48,10 @@ export function AppBrandHeader() {
 
 const styles = StyleSheet.create({
   wrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    maxWidth: 260,
+    marginRight: 2,
+    flexShrink: 0,
   },
   logoBox: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
@@ -55,26 +59,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-  logoImage: {
-    width: 36,
-    height: 36,
-  },
   logoInitials: {
     fontFamily: "Poppins_700Bold",
-    fontSize: 12,
     color: colors.secondary,
-  },
-  textCol: {
-    flexShrink: 1,
-  },
-  orgName: {
-    fontFamily: "Poppins_600SemiBold",
-    fontSize: 15,
-    color: colors.text,
-  },
-  tagline: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: 11,
-    color: colors.textSecondary,
   },
 });

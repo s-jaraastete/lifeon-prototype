@@ -12,6 +12,7 @@ import { Card } from "@/components/Card";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { useNetworkOnline } from "@/hooks/useNetwork";
 import { fetchMyIrl } from "@/services/irl";
+import { toUserFacingError } from "@/utils/userFacingError";
 import type { IrlMatrixEntry } from "@/types/models";
 import { colors, spacing } from "@/theme/tokens";
 
@@ -28,7 +29,7 @@ export default function IrlListScreen() {
     try {
       setEntries(await fetchMyIrl());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar IRL");
+      setError(toUserFacingError(e, "Error al cargar IRL"));
     }
   }, [online]);
 

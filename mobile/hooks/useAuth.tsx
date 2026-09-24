@@ -16,6 +16,7 @@ import {
   saveSelectedMemberId,
 } from "@/services/session";
 import type { MemberContext } from "@/types/models";
+import { translateSupabaseMessage, toUserFacingError } from "@/utils/userFacingError";
 
 interface AuthState {
   loading: boolean;
@@ -138,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password: password.trim(),
     });
     if (error) {
-      return error.message;
+      return translateSupabaseMessage(error.message) ?? error.message;
     }
     try {
       const hydrated = await hydrateMemberships(data.user!.id, data.user!.email);
@@ -152,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(data.session);
     } catch (e) {
       await supabase.auth.signOut();
-      return e instanceof Error ? e.message : "Error al validar membresía";
+      return toUserFacingError(e, "Error al validar membresía");
     }
     return null;
   }, []);

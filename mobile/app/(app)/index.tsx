@@ -33,11 +33,15 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 
 import { useOrgBranding } from "@/hooks/useOrgBranding";
 
+import { useDeviceLayout } from "@/context/DeviceLayoutContext";
+
 import { useNetworkOnline } from "@/hooks/useNetwork";
 
 import { fetchMyIrl } from "@/services/irl";
 
 import { fetchMyDeliveries, isPending } from "@/services/deliveries";
+
+import { toUserFacingError } from "@/utils/userFacingError";
 
 import type { IrlMatrixEntry } from "@/types/models";
 
@@ -52,6 +56,8 @@ export default function HomeScreen() {
   const { profile } = useUserProfile(session?.user?.id);
 
   const { branding } = useOrgBranding(member?.organizationId);
+
+  const layout = useDeviceLayout();
 
   const online = useNetworkOnline();
 
@@ -73,19 +79,39 @@ export default function HomeScreen() {
 
     setError(null);
 
+    let loadError: string | null = null;
+
     try {
 
-      const [irl, deliveries] = await Promise.all([fetchMyIrl(), fetchMyDeliveries()]);
+      setIrlEntries(await fetchMyIrl());
 
-      setIrlEntries(irl);
+    } catch (e) {
+
+      loadError = toUserFacingError(e, "Error al cargar tu IRL");
+
+      setIrlEntries([]);
+
+    }
+
+    try {
+
+      const deliveries = await fetchMyDeliveries();
 
       setPendingCount(deliveries.filter((d) => isPending(d.status)).length);
 
     } catch (e) {
 
-      setError(e instanceof Error ? e.message : "Error al cargar datos");
+      setPendingCount(0);
+
+      if (!loadError) {
+
+        loadError = toUserFacingError(e, "Error al cargar documentos pendientes");
+
+      }
 
     }
+
+    setError(loadError);
 
   }, [online]);
 
@@ -133,7 +159,10 @@ export default function HomeScreen() {
 
       style={styles.flex}
 
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        { paddingHorizontal: layout.contentHorizontalPadding },
+      ]}
 
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
 
@@ -371,7 +400,11 @@ const styles = StyleSheet.create({
 
   flex: { flex: 1, backgroundColor: colors.background },
 
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl },
+  content: {
+    paddingVertical: spacing.lg,
+    gap: spacing.md,
+    paddingBottom: spacing.xl,
+  },
 
   hero: {
 
