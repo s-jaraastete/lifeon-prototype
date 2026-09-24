@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "crypto";
-import { getSupabaseClient } from "@/lib/supabaseClient";
+import { getSupabaseAdminClient } from "@/lib/supabase/adminClient";
 import { AI_LIMITS } from "@/lib/ai/config";
 import type { IperAiContextInput, IperSuggestionKind } from "@/types/ai";
 import type { AiSuggestionsResponse } from "@/types/ai";
@@ -24,7 +24,7 @@ export function buildSuggestionCacheKey(
 export async function getCachedSuggestions(
   cacheKey: string
 ): Promise<AiSuggestionsResponse | null> {
-  const client = getSupabaseClient();
+  const client = getSupabaseAdminClient();
   if (!client) return null;
 
   try {
@@ -47,7 +47,7 @@ export async function setCachedSuggestions(
   orgId: string,
   payload: AiSuggestionsResponse
 ): Promise<void> {
-  const client = getSupabaseClient();
+  const client = getSupabaseAdminClient();
   if (!client) return;
 
   const expires = new Date();
@@ -57,6 +57,7 @@ export async function setCachedSuggestions(
     await client.from("apr_ai_suggestion_cache").upsert({
       cache_key: cacheKey,
       org_id: orgId,
+      organization_id: orgId,
       payload,
       expires_at: expires.toISOString(),
     });

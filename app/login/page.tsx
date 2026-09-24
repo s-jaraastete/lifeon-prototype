@@ -9,6 +9,7 @@ import { LuArrowLeft, LuEye, LuEyeOff, LuLoader } from "react-icons/lu";
 import { setActiveUser, DEMO_USER } from "@/lib/auth/authService";
 import { signInLifeOn } from "@/lib/auth/lifeonAuth";
 import { syncLifeOnSessionCookie } from "@/lib/auth/lifeonSessionClient";
+import { getMobilePrototypeHref } from "@/lib/env/mobilePrototype";
 
 const PROFESSION_IMAGES = [
   "/images/login/prof-1.jpg",
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const mobilePrototypeHref = getMobilePrototypeHref();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -323,6 +325,15 @@ export default function LoginPage() {
               Política de privacidad
             </Link>{" "}
             de LifeOn.
+          </p>
+
+          <p className="mt-4 text-center">
+            <Link
+              href={mobilePrototypeHref}
+              className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-secondary hover:text-teal-800 transition"
+            >
+              Abrir LifeOn Mobile (prototipo web)
+            </Link>
           </p>
         </div>
       </div>

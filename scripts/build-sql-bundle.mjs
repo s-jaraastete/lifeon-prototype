@@ -7,19 +7,12 @@ const root = join(__dirname, "..");
 const supabaseDir = join(root, "supabase");
 const migDir = join(supabaseDir, "migrations");
 
-const skip = new Set([
-  "20260926_rls_membership.sql",
-  "20260927_apr_rls_and_fk.sql",
-  "20260928_storage_rls.sql",
-]);
-
 const parts = [
   join(supabaseDir, "schema.sql"),
   ...readdirSync(migDir)
-    .filter((f) => f.endsWith(".sql") && !skip.has(f))
+    .filter((f) => f.endsWith(".sql"))
     .sort()
     .map((f) => join(migDir, f)),
-  join(supabaseDir, "bootstrap_open_rls_new_tables.sql"),
   join(supabaseDir, "bootstrap_data.sql"),
 ];
 

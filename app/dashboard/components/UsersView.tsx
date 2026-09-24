@@ -29,6 +29,8 @@ import {
   UserStatus,
   UserImportReport,
 } from "@/types/users";
+import { getActiveUser } from "@/lib/auth/authService";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 const ROLES: UserRole[] = ["Lector", "Editor", "Administrador"];
 const ID_TYPES: UserIdentificationType[] = ["RUT", "Pasaporte", "DNI"];
@@ -316,6 +318,40 @@ export default function UsersView() {
       areaId: user.areaId || "",
     });
     setIsEditModalOpen(true);
+  };
+
+  const handleSendAccess = async (usr: PlatformUser) => {
+    const client = getSupabaseClient();
+    if (!client) {
+      alert("Supabase no está configurado.");
+      return;
+    }
+    const {
+      data: { session },
+    } = await client.auth.getSession();
+    if (!session?.access_token) {
+      alert("Inicia sesión con tu cuenta Supabase para enviar accesos.");
+      return;
+    }
+    const organizationId = usr.organizationId || getActiveUser().orgId;
+    const res = await fetch("/api/users/invite", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        organizationId,
+        memberId: usr.id,
+        email: usr.email,
+      }),
+    });
+    const json = (await res.json()) as { error?: string; success?: boolean };
+    if (!res.ok) {
+      alert(json.error || "No se pudo enviar el acceso.");
+      return;
+    }
+    alert("Acceso enviado. El trabajador recibirá un correo para establecer su contraseña.");
   };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -625,6 +661,15 @@ export default function UsersView() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleSendAccess(usr)}
+                            disabled={isInactive}
+                            className="p-1.5 rounded-lg text-violet-700 bg-violet-50 hover:bg-violet-100 transition disabled:opacity-40"
+                            title="Enviar acceso (email y contraseña)"
+                          >
+                            <LuMail className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             type="button"
                             onClick={() => setPreventiveDocsUser(usr)}

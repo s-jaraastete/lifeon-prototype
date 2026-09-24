@@ -4,11 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm install --prefix mobile --legacy-peer-deps && node scripts/build-mobile-web.mjs && next build",
+    "mobile:build:web": "node scripts/build-mobile-web.mjs",
     "start": "next start",
     "lint": "eslint",
     "supabase:sql-bundle": "node scripts/build-sql-bundle.mjs",
-    "supabase:bootstrap": "node scripts/apply-supabase-bootstrap.mjs"
+    "supabase:bootstrap": "node scripts/apply-supabase-bootstrap.mjs",
+    "supabase:security": "node scripts/apply-security-migrations.mjs",
+    "supabase:verify-anon": "node scripts/verify-anon-locked.mjs",
+    "supabase:verify-auth-read": "node scripts/verify-authenticated-tenant-read.mjs",
+    "supabase:link-auth": "node scripts/link-auth-users-from-db.mjs",
+    "supabase:advisors": "node scripts/diagnose-advisors.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",
@@ -35,6 +41,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16.3.1",
+    "pg": "^8.23.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

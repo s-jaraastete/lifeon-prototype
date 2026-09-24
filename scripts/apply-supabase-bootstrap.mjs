@@ -51,21 +51,14 @@ const connectionString =
   process.env.DATABASE_URL ||
   `postgresql://postgres.${projectRef}:${encodeURIComponent(password)}@aws-0-${poolerRegion}.pooler.supabase.com:5432/postgres`;
 
-const skipMigrations = new Set([
-  "20260926_rls_membership.sql",
-  "20260927_apr_rls_and_fk.sql",
-  "20260928_storage_rls.sql",
-]);
-
 function migrationFiles() {
   const migDir = join(root, "supabase", "migrations");
   return [
     join(root, "supabase", "schema.sql"),
     ...readdirSync(migDir)
-      .filter((f) => f.endsWith(".sql") && !skipMigrations.has(f))
+      .filter((f) => f.endsWith(".sql"))
       .sort()
       .map((f) => join(migDir, f)),
-    join(root, "supabase", "bootstrap_open_rls_new_tables.sql"),
     join(root, "supabase", "bootstrap_data.sql"),
     join(root, "supabase", "bootstrap_repair.sql"),
   ];

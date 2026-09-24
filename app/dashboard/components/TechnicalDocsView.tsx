@@ -17,8 +17,12 @@ import {
   LuScrollText,
   LuSparkles,
   LuAtom,
+  LuSend,
 } from "react-icons/lu";
 import { useTechnicalDocs, DOCUMENT_TYPE_DEFINITIONS } from "@/hooks/useTechnicalDocs";
+import { useUsers } from "@/hooks/useUsers";
+import { getActiveUser } from "@/lib/auth/authService";
+import { assignDocumentDelivery } from "@/lib/repositories/documentDeliveriesRepository";
 import { postGenerateTechnicalDocument } from "@/lib/ai/aprVirtualClient";
 import {
   DocumentType,
@@ -76,6 +80,11 @@ export default function TechnicalDocsView() {
     draftCount,
     vigentCount,
   } = useTechnicalDocs();
+  const { users } = useUsers();
+
+  const [sendDoc, setSendDoc] = useState<TechnicalDocument | null>(null);
+  const [sendSelected, setSendSelected] = useState<Set<string>>(new Set());
+  const [sendBusy, setSendBusy] = useState(false);
 
   const [activeType, setActiveType] = useState<DocumentType | "all">("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -99,6 +108,39 @@ export default function TechnicalDocsView() {
     if (activeType === "all") return documents;
     return documents.filter((d) => d.documentType === activeType);
   }, [documents, activeType]);
+
+  const activeWorkers = useMemo(
+    () => users.filter((u) => u.status === "Activo"),
+    [users]
+  );
+
+  const handleOpenSend = (doc: TechnicalDocument) => {
+    setSendDoc(doc);
+    setSendSelected(new Set());
+  };
+
+  const handleConfirmSend = async () => {
+    if (!sendDoc || sendSelected.size === 0) return;
+    setSendBusy(true);
+    const orgId = getActiveUser().orgId;
+    let errors = 0;
+    for (const memberId of sendSelected) {
+      const result = await assignDocumentDelivery({
+        organizationId: orgId,
+        sourceType: "technical_document",
+        sourceId: sendDoc.id,
+        assigneeMemberId: memberId,
+      });
+      if (result.error) errors += 1;
+    }
+    setSendBusy(false);
+    setSendDoc(null);
+    if (errors > 0) {
+      alert(`Envío completado con ${errors} error(es). Verifica Supabase y permisos.`);
+    } else {
+      alert("Documento enviado a los trabajadores seleccionados.");
+    }
+  };
 
   const handleOpenCreate = (type: DocumentType) => {
     setSelectedTypeForCreate(type);
@@ -380,6 +422,16 @@ export default function TechnicalDocsView() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {doc.status === "Vigente" ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenSend(doc)}
+                              className="p-1.5 rounded-lg text-teal-700 bg-teal-50 hover:bg-teal-100 transition"
+                              title="Enviar a trabajadores"
+                            >
+                              <LuSend className="w-3.5 h-3.5" />
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             onClick={() => openEditor("edit", doc)}
@@ -748,6 +800,53 @@ export default function TechnicalDocsView() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {sendDoc && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-gray-900">Enviar documento a trabajadores</h3>
+              <button type="button" onClick={() => setSendDoc(null)} className="p-1.5 text-gray-400">
+                <LuX className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-600 mb-3">{sendDoc.name}</p>
+            <div className="flex-1 overflow-y-auto border border-gray-100 rounded-xl divide-y">
+              {activeWorkers.map((u) => (
+                <label
+                  key={u.id}
+                  className="flex items-center gap-3 px-4 py-3 text-xs cursor-pointer hover:bg-gray-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={sendSelected.has(u.id)}
+                    onChange={(e) => {
+                      setSendSelected((prev) => {
+                        const next = new Set(prev);
+                        if (e.target.checked) next.add(u.id);
+                        else next.delete(u.id);
+                        return next;
+                      });
+                    }}
+                  />
+                  <span className="font-semibold text-gray-900">
+                    {u.firstName} {u.lastName}
+                  </span>
+                  <span className="text-gray-500">{u.email}</span>
+                </label>
+              ))}
+            </div>
+            <button
+              type="button"
+              disabled={sendBusy || sendSelected.size === 0}
+              onClick={handleConfirmSend}
+              className="mt-4 w-full py-3 rounded-xl bg-teal-600 text-white font-bold text-sm disabled:opacity-40"
+            >
+              {sendBusy ? "Enviando…" : `Enviar a ${sendSelected.size} trabajador(es)`}
+            </button>
           </div>
         </div>
       )}

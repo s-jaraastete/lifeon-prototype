@@ -715,6 +715,25 @@ export async function resetSupabaseDataForOrg(orgId: string, userId?: string): P
   if (!client) return true;
 
   try {
+    // 0. Entregas y evidencias de toma de conocimiento
+    try {
+      await client.from("document_deliveries").delete().eq("organization_id", orgId);
+      const { data: ackFiles } = await client.storage
+        .from("acknowledgement-evidence")
+        .list(orgId, { limit: 1000 });
+      if (ackFiles?.length) {
+        const paths = ackFiles.flatMap((folder) => {
+          if (folder.id) {
+            return [`${orgId}/${folder.name}`];
+          }
+          return [];
+        });
+        if (paths.length) {
+          await client.storage.from("acknowledgement-evidence").remove(paths);
+        }
+      }
+    } catch (_) {}
+
     // 1. Limpiar archivos de Storage de esta organización (evidencias, logos, avatares)
     try {
       if (userId) {

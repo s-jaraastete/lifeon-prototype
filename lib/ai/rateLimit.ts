@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getSupabaseClient } from "@/lib/supabaseClient";
+import { getSupabaseAdminClient } from "@/lib/supabase/adminClient";
 import { AI_LIMITS } from "@/lib/ai/config";
 import { AiServiceError } from "@/lib/ai/errors";
 
@@ -23,7 +23,7 @@ async function incrementWindow(
   windowStart: Date,
   limit: number
 ): Promise<boolean> {
-  const client = getSupabaseClient();
+  const client = getSupabaseAdminClient();
   if (!client) return true;
 
   const startIso = windowStart.toISOString();

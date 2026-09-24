@@ -7,6 +7,7 @@ export const STORAGE_BUCKETS = {
   organizationLogos: "organization-logos",
   programEvidence: "program-evidence",
   technicalDocuments: "technical-documents",
+  acknowledgementEvidence: "acknowledgement-evidence",
 } as const;
 
 export async function uploadToStorage(

@@ -20,6 +20,12 @@ import {
   IrlAcknowledgement,
   IrlAcknowledgementStatus,
 } from "@/types/irlAcknowledgements";
+import { getActiveUser } from "@/lib/auth/authService";
+import {
+  assignDocumentDelivery,
+  DocumentDeliveryRow,
+  fetchDeliveriesForSource,
+} from "@/lib/repositories/documentDeliveriesRepository";
 
 interface IrlDocumentModalProps {
   matrix: IperMatrixItem;
@@ -67,6 +73,28 @@ export default function IrlDocumentModal({
 
   const [activeTab, setActiveTab] = useState<"document" | "signatures">("document");
   const [searchTerm, setSearchTerm] = useState("");
+  const [deliveries, setDeliveries] = useState<DocumentDeliveryRow[]>([]);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  const organizationId = getActiveUser().orgId;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchDeliveriesForSource(organizationId, "irl", matrix.id).then((rows) => {
+      if (!cancelled) setDeliveries(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [organizationId, matrix.id]);
+
+  const getDeliveryForUser = (userId: string): DocumentDeliveryRow | undefined =>
+    deliveries.find(
+      (d) =>
+        d.assignee_member_id === userId &&
+        d.source_id === matrix.id &&
+        (d.cargo_name === selectedPosition || !d.cargo_name)
+    );
 
   const workersForCargo = useMemo(() => {
     if (!selectedPosition) return [];
@@ -98,7 +126,26 @@ export default function IrlDocumentModal({
     onAcknowledgementsChange?.(list);
   };
 
-  const handleSendIrlForUser = (userId: string, userName: string, rut?: string) => {
+  const handleSendIrlForUser = async (userId: string, userName: string, rut?: string) => {
+    setSendError(null);
+    const remote = await assignDocumentDelivery({
+      organizationId,
+      sourceType: "irl",
+      sourceId: matrix.id,
+      assigneeMemberId: userId,
+      cargoName: selectedPosition,
+    });
+
+    if (remote.id) {
+      const rows = await fetchDeliveriesForSource(organizationId, "irl", matrix.id);
+      setDeliveries(rows);
+      return;
+    }
+
+    if (remote.error) {
+      setSendError(remote.error);
+    }
+
     const id = getAckForUser(userId)?.id || `ack-${matrix.id}-${userId}-${Date.now()}`;
     upsertAck({
       id,
@@ -129,17 +176,24 @@ export default function IrlDocumentModal({
     });
   };
 
-  const handleSendAllPending = () => {
-    workersForCargo.forEach((u) => {
+  const handleSendAllPending = async () => {
+    for (const u of workersForCargo) {
+      const delivery = getDeliveryForUser(u.id);
       const ack = getAckForUser(u.id);
-      if (!ack || ack.status === "Pendiente") {
-        handleSendIrlForUser(
-          u.id,
-          `${u.firstName} ${u.lastName}`.trim(),
-          u.identificationNumber
-        );
+      const alreadySent =
+        delivery &&
+        (delivery.status === "pendiente_revision" ||
+          delivery.status === "pendiente_firma" ||
+          delivery.status === "firmado");
+      if (alreadySent || ack?.status === "Enviado" || ack?.status === "Firmado") {
+        continue;
       }
-    });
+      await handleSendIrlForUser(
+        u.id,
+        `${u.firstName} ${u.lastName}`.trim(),
+        u.identificationNumber
+      );
+    }
   };
 
   const handlePrint = () => {
@@ -159,19 +213,27 @@ export default function IrlDocumentModal({
 
   const workerRows = useMemo(() => {
     return workersForCargo.map((u) => {
+      const delivery = getDeliveryForUser(u.id);
       const ack = getAckForUser(u.id);
-      const status: IrlAcknowledgementStatus = ack?.status ?? "Pendiente";
+      let status: IrlAcknowledgementStatus = ack?.status ?? "Pendiente";
+      if (delivery?.status === "firmado") status = "Firmado";
+      else if (
+        delivery &&
+        (delivery.status === "pendiente_revision" || delivery.status === "pendiente_firma")
+      ) {
+        status = "Enviado";
+      }
       return {
         id: u.id,
         name: `${u.firstName} ${u.lastName}`.trim(),
         rut: u.identificationNumber || "—",
         position: u.cargoName || selectedPosition,
-        sentAt: ack?.sentAt,
-        acknowledgedAt: ack?.acknowledgedAt,
+        sentAt: delivery?.assigned_at ?? ack?.sentAt,
+        acknowledgedAt: delivery?.signed_at ?? ack?.acknowledgedAt,
         status,
       };
     });
-  }, [workersForCargo, acknowledgements, selectedPosition, matrix.id]);
+  }, [workersForCargo, acknowledgements, selectedPosition, matrix.id, deliveries]);
 
   const filteredSignatures = workerRows.filter(
     (w) =>
@@ -451,6 +513,11 @@ export default function IrlDocumentModal({
           ) : (
             /* PANEL DE CONTROL DE FIRMAS Y ENTREGAS */
             <div className="max-w-4xl mx-auto flex flex-col gap-4">
+              {sendError ? (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2">
+                  {sendError}
+                </p>
+              ) : null}
               {/* Tarjeta de Progreso de Firmas */}
               <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">

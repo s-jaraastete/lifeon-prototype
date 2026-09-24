@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "LifeOn Mobile",
+    "slug": "lifeon-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "lifeon",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "cl.lifeon.mobile"
+    },
+    "android": {
+      "package": "cl.lifeon.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "LifeOn necesita acceder a tus fotos para actualizar tu imagen de perfil."
+        }
+      ]
+    ],
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "LifeOn Mobile",
+      "shortName": "LifeOn",
+      "themeColor": "#FF3737",
+      "backgroundColor": "#FAFAFA"
+    },
+    "experiments": {
+      "typedRoutes": true,
+      "baseUrl": "/mobile"
+    }
+  }
+}
