@@ -17,10 +17,48 @@ import {
 } from "@/lib/repositories/organizationRepository";
 import { fetchProfileByAuthId } from "@/lib/repositories/profileRepository";
 import { getSupabaseAuthUserId } from "@/lib/auth/lifeonAuth";
-import { getActiveUser, getScopedStorageKey, AuthUser, SESSION_CHANGE_EVENT } from "@/lib/auth/authService";
+import {
+  getActiveUser,
+  getScopedStorageKey,
+  AuthUser,
+  SESSION_CHANGE_EVENT,
+} from "@/lib/auth/authService";
 import { withMediaCacheBust } from "@/lib/media/cacheBust";
+import {
+  isStorageEvent,
+  setLocalStorageJsonIfChanged,
+  storageEventIsActiveSessionChange,
+  storageEventMatchesKey,
+} from "@/lib/dashboard/localStorageSync";
+import { isSergioAutoSeedEnabled } from "@/lib/env/demoFlags";
 
 export const PREFERENCES_STORAGE_KEY = "lifeon_org_preferences";
+
+function mergeStoredPreferences(
+  parsed: Record<string, unknown>,
+  defaultPrefs: OrganizationPreferences
+): OrganizationPreferences {
+  const modules = (parsed.modules as OrganizationPreferences["modules"]) || {};
+  const moduleConfigurations = parsed.moduleConfigurations as OrganizationPreferences["moduleConfigurations"];
+  return {
+    ...defaultPrefs,
+    ...parsed,
+    modules: {
+      ...defaultPrefs.modules,
+      ...modules,
+    },
+    moduleConfigurations: {
+      miper: {
+        ...defaultPrefs.moduleConfigurations?.miper,
+        ...(moduleConfigurations?.miper || {}),
+      },
+      preventivePlanning: {
+        ...defaultPrefs.moduleConfigurations?.preventivePlanning,
+        ...(moduleConfigurations?.preventivePlanning || {}),
+      },
+    },
+  } as OrganizationPreferences;
+}
 
 export interface LifeOnPreferencesContextType {
   preferences: OrganizationPreferences;
@@ -182,12 +220,10 @@ export default function LifeOnPreferencesProvider({
 
         // Actualizar caché de localStorage para que coincida con Supabase
         if (typeof window !== "undefined") {
-          try {
-            window.localStorage.setItem(orgStorageKey, JSON.stringify(hydratedMedia));
-          } catch (_) {}
+          setLocalStorageJsonIfChanged(orgStorageKey, hydratedMedia);
         }
-      } else if (user.orgId === "org_sergio") {
-        // Auto-seed: si Sergio no tiene datos en Supabase, sembrar el dataset completo
+      } else if (user.orgId === "org_sergio" && isSergioAutoSeedEnabled()) {
+        // Auto-seed (opt-in): sembrar dataset de prueba solo si LIFEON_ALLOW_SERGIO_AUTO_SEED=true
         try {
           const { seedSergioConstructionDemo } = await import("@/lib/seeds/sergioConstructionDataset");
           await seedSergioConstructionDemo();
@@ -210,9 +246,7 @@ export default function LifeOnPreferencesProvider({
               },
             });
             if (typeof window !== "undefined") {
-              try {
-                window.localStorage.setItem(orgStorageKey, JSON.stringify(seededPrefs));
-              } catch (_) {}
+              setLocalStorageJsonIfChanged(orgStorageKey, seededPrefs);
             }
             // Notificar a otros módulos del cambio de datos
             if (typeof window !== "undefined") {
@@ -237,8 +271,46 @@ export default function LifeOnPreferencesProvider({
     const user = getActiveUser();
     loadPreferencesForUser(user);
 
-    const handleSessionChange = (e: any) => {
-      const newUser = e?.detail || getActiveUser();
+    const handleSessionChange = (e: Event) => {
+      const sessionEvt = storageEventIsActiveSessionChange(e);
+      if (sessionEvt) {
+        if (!sessionEvt.newValue) {
+          loadPreferencesForUser(getActiveUser());
+          return;
+        }
+        try {
+          const parsed = JSON.parse(sessionEvt.newValue) as AuthUser;
+          if (parsed?.email) {
+            loadPreferencesForUser(parsed);
+          } else {
+            loadPreferencesForUser(getActiveUser());
+          }
+        } catch {
+          loadPreferencesForUser(getActiveUser());
+        }
+        return;
+      }
+
+      if (isStorageEvent(e)) {
+        const user = getActiveUser();
+        const orgKey = getScopedStorageKey(PREFERENCES_STORAGE_KEY, user.orgId);
+        const prefsEvt = storageEventMatchesKey(e, orgKey);
+        if (prefsEvt?.newValue) {
+          const defaultPrefs =
+            user.orgId === "org_demo" ? DEFAULT_ORGANIZATION_PREFERENCES : EMPTY_ORGANIZATION_PREFERENCES;
+          try {
+            const parsed = JSON.parse(prefsEvt.newValue) as Record<string, unknown>;
+            setCurrentUser(user);
+            setPreferences(mergeStoredPreferences(parsed, defaultPrefs));
+          } catch {
+            /* noop */
+          }
+        }
+        return;
+      }
+
+      const custom = e as CustomEvent<AuthUser | null>;
+      const newUser = custom.detail ?? getActiveUser();
       loadPreferencesForUser(newUser);
     };
 
@@ -260,7 +332,7 @@ export default function LifeOnPreferencesProvider({
     try {
       const orgKey = getScopedStorageKey(PREFERENCES_STORAGE_KEY, currentUser.orgId);
       if (typeof window !== "undefined") {
-        window.localStorage.setItem(orgKey, JSON.stringify(newPrefs));
+        setLocalStorageJsonIfChanged(orgKey, newPrefs);
       }
     } catch (e) {
       console.warn("No se pudo persistir preferencias en localStorage:", e);

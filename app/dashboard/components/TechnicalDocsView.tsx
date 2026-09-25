@@ -20,6 +20,8 @@ import {
   LuSend,
 } from "react-icons/lu";
 import { useTechnicalDocs, DOCUMENT_TYPE_DEFINITIONS } from "@/hooks/useTechnicalDocs";
+import { fetchTechnicalDocumentById } from "@/lib/repositories/technicalDocumentsRepository";
+import { isSupabaseConfigured } from "@/lib/supabaseClient";
 import { useUsers } from "@/hooks/useUsers";
 import { getActiveUser } from "@/lib/auth/authService";
 import { assignDocumentDelivery } from "@/lib/repositories/documentDeliveriesRepository";
@@ -158,11 +160,19 @@ export default function TechnicalDocsView() {
     openEditor("create", doc);
   };
 
-  const openEditor = (mode: EditorMode, doc: TechnicalDocument) => {
+  const openEditor = async (mode: EditorMode, doc: TechnicalDocument) => {
+    let resolved = doc;
+    if (
+      isSupabaseConfigured() &&
+      (!doc.content || Object.keys(doc.content).length === 0)
+    ) {
+      const full = await fetchTechnicalDocumentById(doc.organizationId, doc.id);
+      if (full) resolved = full;
+    }
     setEditorMode(mode);
-    setEditingDoc(doc);
-    setEditorContent(doc.content || {});
-    setEditorStatus(doc.status);
+    setEditingDoc(resolved);
+    setEditorContent(resolved.content || {});
+    setEditorStatus(resolved.status);
     setOpenSectionKey(null);
     setIsEditorOpen(true);
   };

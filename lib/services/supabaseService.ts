@@ -11,6 +11,7 @@ import { PreventiveDoc } from "@/types/preventiveDocs";
 import { DEFAULT_PREVENTIVE_DOCS } from "@/data/defaultPreventiveDocs";
 import { getDefaultOrgStructure } from "@/hooks/useOrgStructure";
 import { INITIAL_MATRICES } from "@/app/dashboard/components/IperMatrixView";
+import { coalesceRequest } from "@/lib/supabase/coalesceRequest";
 
 export interface SupabaseConnectionStatus {
   isConfigured: boolean;
@@ -336,6 +337,7 @@ const KNOWN_ORG_IDS = [
   "org_rene",
   "org_alex",
   "org_carlos",
+  "org_pablo",
 ];
 
 export function scopePreventiveDocId(docId: string, orgId?: string): string {
@@ -612,14 +614,21 @@ export async function saveIperMatrixToSupabase(matrix: any, orgId?: string): Pro
   }
 }
 
+const IPER_MATRIX_LIST_COLUMNS =
+  "id, code, title, area, work_center, responsible, status, progress, total_risks, critical_risks, last_review, next_review, hazards, acknowledgements, organization_id, created_at";
+
 export async function fetchIperMatricesFromSupabase(orgId?: string): Promise<any[] | null> {
+  if (!orgId?.trim()) return null;
+  const currentOrg = orgId.trim();
+  return coalesceRequest(`iper:${currentOrg}`, () => fetchIperMatricesUncached(currentOrg));
+}
+
+async function fetchIperMatricesUncached(currentOrg: string): Promise<any[] | null> {
   const client = getSupabaseClient();
   if (!client) return null;
 
-  const currentOrg = orgId || "org_demo";
-
   try {
-    let query = client.from("iper_matrices").select("*");
+    let query = client.from("iper_matrices").select(IPER_MATRIX_LIST_COLUMNS);
 
     // Aislamiento estricto por tenant
     if (currentOrg === "org_demo") {
@@ -705,6 +714,7 @@ export async function resetSupabaseDataForOrg(orgId: string, userId?: string): P
     "org_rene",
     "org_alex",
     "org_carlos",
+    "org_pablo",
   ];
   if (!ALLOWED_ORGS.includes(orgId)) {
     console.error("Seguridad: Intento de reset no autorizado para la organización:", orgId);

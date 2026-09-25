@@ -36,7 +36,13 @@ import {
   fetchNormalizedStructure,
   saveNormalizedStructure,
 } from "@/lib/repositories/structureRepository";
+import { isDemoOrganizationId, resolveProductOrgId } from "@/lib/env/demoFlags";
 import { getScopedStorageKey } from "@/lib/auth/authService";
+import {
+  isStorageEvent,
+  setLocalStorageJsonIfChanged,
+  storageEventMatchesKey,
+} from "@/lib/dashboard/localStorageSync";
 
 export const ORG_STRUCTURE_STORAGE_KEY = "lifeon_org_structure";
 
@@ -266,12 +272,21 @@ export function useOrgStructure() {
   const [users, setUsers] = useState<OrgUser[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const orgId = currentUser?.orgId || "org_demo";
+  const productOrgId = resolveProductOrgId(currentUser?.orgId);
+  const orgId = productOrgId ?? "org_demo";
   const storageKey = useMemo(() => getScopedStorageKey(ORG_STRUCTURE_STORAGE_KEY, orgId), [orgId]);
 
   // Cargar estado inicial según organización
   const loadOrgData = useCallback(() => {
-    const isDemoOrg = orgId === "org_demo";
+    if (!productOrgId && currentUser?.orgId && currentUser.orgId !== "org_demo") {
+      setWorkCenters([]);
+      setAreas([]);
+      setPositions([]);
+      setUsers([]);
+      setIsLoaded(true);
+      return;
+    }
+    const isDemoOrg = isDemoOrganizationId(orgId);
     try {
       const stored = typeof window !== "undefined" ? window.localStorage.getItem(storageKey) : null;
       if (stored) {
@@ -334,7 +349,7 @@ export function useOrgStructure() {
           users: DEMO_USERS,
         };
         if (typeof window !== "undefined") {
-          window.localStorage.setItem(storageKey, JSON.stringify(demoData));
+          setLocalStorageJsonIfChanged(storageKey, demoData);
         }
       }
 
@@ -360,7 +375,7 @@ export function useOrgStructure() {
         };
 
         if (typeof window !== "undefined") {
-          window.localStorage.setItem(storageKey, JSON.stringify(payload));
+          setLocalStorageJsonIfChanged(storageKey, payload);
           window.dispatchEvent(
             new CustomEvent("lifeon-org-structure-change", {
               detail: { orgId, payload },
@@ -407,17 +422,61 @@ export function useOrgStructure() {
     loadOrgData();
 
     // Sincronización reactiva entre instancias del hook y cambio de sesión
-    const handleOrgSync = (e: any) => {
-      if (e?.detail?.payload) {
-        if (!e.detail.orgId || e.detail.orgId === orgId) {
-          const p = e.detail.payload;
+    const handleOrgSync = (e: Event) => {
+      const storageEvt = storageEventMatchesKey(e, storageKey);
+      if (storageEvt) {
+        if (!storageEvt.newValue) {
+          setWorkCenters([]);
+          setAreas([]);
+          setPositions([]);
+          setUsers([]);
+          setIsLoaded(true);
+          return;
+        }
+        try {
+          const parsed = JSON.parse(storageEvt.newValue);
+          const isDemoOrg = orgId === "org_demo";
+          const userSelf: OrgUser[] = currentUser?.email
+            ? [
+                {
+                  id: currentUser.id,
+                  organizationId: orgId,
+                  name: currentUser.name,
+                  email: currentUser.email,
+                  role: "Administrador",
+                  status: "Activo",
+                },
+              ]
+            : [];
+          if (Array.isArray(parsed)) {
+            setWorkCenters(isDemoOrg ? DEMO_WORK_CENTERS : []);
+            setAreas(parsed);
+            setPositions(isDemoOrg ? DEMO_POSITIONS : []);
+            setUsers(isDemoOrg ? DEMO_USERS : userSelf);
+          } else {
+            setWorkCenters(parsed.workCenters || (isDemoOrg ? DEMO_WORK_CENTERS : []));
+            setAreas(parsed.areas || []);
+            setPositions(parsed.positions || (isDemoOrg ? DEMO_POSITIONS : []));
+            setUsers(parsed.users || (isDemoOrg ? DEMO_USERS : userSelf));
+          }
+          setIsLoaded(true);
+        } catch {
+          /* noop */
+        }
+        return;
+      }
+
+      const custom = e as CustomEvent<{ orgId?: string; payload?: OrgStructureData }>;
+      if (custom.detail?.payload) {
+        if (!custom.detail.orgId || custom.detail.orgId === orgId) {
+          const p = custom.detail.payload;
           setWorkCenters(p.workCenters || []);
           setAreas(p.areas || []);
           setPositions(p.positions || []);
           setUsers(p.users || []);
           setIsLoaded(true);
         }
-      } else {
+      } else if (!isStorageEvent(e)) {
         loadOrgData();
       }
     };
@@ -437,7 +496,7 @@ export function useOrgStructure() {
         window.removeEventListener("storage", handleOrgSync);
       }
     };
-  }, [loadOrgData, orgId]);
+  }, [loadOrgData, orgId, storageKey, currentUser?.email, currentUser?.id, currentUser?.name]);
 
   // Guardar en localStorage y Supabase, y emitir evento reactivo a todos los componentes
   const persistState = useCallback(
@@ -462,7 +521,7 @@ export function useOrgStructure() {
 
       try {
         if (typeof window !== "undefined") {
-          window.localStorage.setItem(storageKey, JSON.stringify(payload));
+          setLocalStorageJsonIfChanged(storageKey, payload);
           // Notificar a otras instancias del hook (ej: TopBar selector en page.tsx)
           window.dispatchEvent(
             new CustomEvent("lifeon-org-structure-change", {

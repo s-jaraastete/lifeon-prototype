@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { coalesceRequest } from "@/lib/supabase/coalesceRequest";
 import { logPersistenceError } from "@/lib/supabase/persistenceError";
 import type {
   OrgArea,
@@ -11,6 +12,10 @@ import type {
 } from "@/types/orgStructure";
 
 export async function fetchNormalizedStructure(orgId: string): Promise<OrgStructureData | null> {
+  return coalesceRequest(`structure:${orgId}`, () => fetchNormalizedStructureUncached(orgId));
+}
+
+async function fetchNormalizedStructureUncached(orgId: string): Promise<OrgStructureData | null> {
   const client = getSupabaseClient();
   if (!client) return null;
 
@@ -167,21 +172,29 @@ export async function saveNormalizedStructure(
   if (!client) return false;
 
   try {
-    for (const wc of data.workCenters || []) {
-      const { error } = await client.from("work_centers").upsert({
-        id: wc.id,
-        organization_id: orgId,
-        name: wc.name,
-        code: wc.code ?? null,
-        description: wc.description ?? null,
-        address: wc.address ?? null,
-        status: wc.status || "Activo",
-      });
-      if (error) logPersistenceError("structure.wc.upsert", error);
+    const workCenterRows = (data.workCenters || []).map((wc) => ({
+      id: wc.id,
+      organization_id: orgId,
+      name: wc.name,
+      code: wc.code ?? null,
+      description: wc.description ?? null,
+      address: wc.address ?? null,
+      status: wc.status || "Activo",
+    }));
+    if (workCenterRows.length > 0) {
+      const { error } = await client.from("work_centers").upsert(workCenterRows);
+      if (error) {
+        logPersistenceError("structure.wc.upsert", error);
+        return false;
+      }
     }
 
+    const areaRows: Record<string, unknown>[] = [];
+    const processRows: Record<string, unknown>[] = [];
+    const subprocessRows: Record<string, unknown>[] = [];
+
     for (const area of data.areas || []) {
-      const { error } = await client.from("areas").upsert({
+      areaRows.push({
         id: area.id,
         organization_id: orgId,
         work_center_id: area.workCenterId ?? null,
@@ -190,10 +203,9 @@ export async function saveNormalizedStructure(
         description: area.description ?? null,
         status: area.status || "Activo",
       });
-      if (error) logPersistenceError("structure.area.upsert", error);
 
       for (const proc of area.processes || []) {
-        const { error: pErr } = await client.from("processes").upsert({
+        processRows.push({
           id: proc.id,
           organization_id: orgId,
           area_id: area.id,
@@ -202,10 +214,9 @@ export async function saveNormalizedStructure(
           description: proc.description ?? null,
           status: proc.status || "Activo",
         });
-        if (pErr) logPersistenceError("structure.process.upsert", pErr);
 
         for (const sp of proc.subprocesses || []) {
-          const { error: sErr } = await client.from("subprocesses").upsert({
+          subprocessRows.push({
             id: sp.id,
             organization_id: orgId,
             process_id: proc.id,
@@ -214,27 +225,52 @@ export async function saveNormalizedStructure(
             description: sp.description ?? null,
             status: sp.status || "Activo",
           });
-          if (sErr) logPersistenceError("structure.subprocess.upsert", sErr);
         }
       }
     }
 
-    for (const pos of data.positions || []) {
-      const { error } = await client.from("positions").upsert({
-        id: pos.id,
-        organization_id: orgId,
-        name: pos.name,
-        code: pos.code ?? null,
-        description: pos.description ?? null,
-        dotation_total: pos.totalStaff ?? 1,
-        dotation_male: pos.menCount ?? 0,
-        dotation_female: pos.womenCount ?? 0,
-        dotation_other: pos.otherCount ?? 0,
-        disabled_workers_count: pos.disabledCount ?? 0,
-        sensitive_workers_count: pos.sensitiveCount ?? 0,
-        status: pos.status || "Activo",
-      });
-      if (error) logPersistenceError("structure.position.upsert", error);
+    if (areaRows.length > 0) {
+      const { error } = await client.from("areas").upsert(areaRows);
+      if (error) {
+        logPersistenceError("structure.area.upsert", error);
+        return false;
+      }
+    }
+    if (processRows.length > 0) {
+      const { error } = await client.from("processes").upsert(processRows);
+      if (error) {
+        logPersistenceError("structure.process.upsert", error);
+        return false;
+      }
+    }
+    if (subprocessRows.length > 0) {
+      const { error } = await client.from("subprocesses").upsert(subprocessRows);
+      if (error) {
+        logPersistenceError("structure.subprocess.upsert", error);
+        return false;
+      }
+    }
+
+    const positionRows = (data.positions || []).map((pos) => ({
+      id: pos.id,
+      organization_id: orgId,
+      name: pos.name,
+      code: pos.code ?? null,
+      description: pos.description ?? null,
+      dotation_total: pos.totalStaff ?? 1,
+      dotation_male: pos.menCount ?? 0,
+      dotation_female: pos.womenCount ?? 0,
+      dotation_other: pos.otherCount ?? 0,
+      disabled_workers_count: pos.disabledCount ?? 0,
+      sensitive_workers_count: pos.sensitiveCount ?? 0,
+      status: pos.status || "Activo",
+    }));
+    if (positionRows.length > 0) {
+      const { error } = await client.from("positions").upsert(positionRows);
+      if (error) {
+        logPersistenceError("structure.position.upsert", error);
+        return false;
+      }
     }
 
     return true;

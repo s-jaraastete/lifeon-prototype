@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { coalesceRequest } from "@/lib/supabase/coalesceRequest";
 import { OrganizationPreferences } from "@/types/preferences";
 import { logPersistenceError } from "@/lib/supabase/persistenceError";
 
@@ -45,6 +46,12 @@ export async function updateOrganization(
 }
 
 export async function fetchOrganizationPreferences(
+  orgId: string
+): Promise<OrganizationPreferences | null> {
+  return coalesceRequest(`prefs:${orgId}`, () => fetchOrganizationPreferencesUncached(orgId));
+}
+
+async function fetchOrganizationPreferencesUncached(
   orgId: string
 ): Promise<OrganizationPreferences | null> {
   const client = getSupabaseClient();

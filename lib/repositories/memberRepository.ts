@@ -212,30 +212,41 @@ export async function ensureBootstrapMember(
   email: string,
   name: string,
   authUserId?: string | null
-): Promise<void> {
+): Promise<boolean> {
   const client = getSupabaseClient();
-  if (!client) return;
-  const existing = await fetchMemberByEmail(orgId, email);
-  if (existing) {
-    if (authUserId && !existing.auth_user_id) {
-      await client
-        .from("organization_members")
-        .update({ auth_user_id: authUserId, user_id: legacyUserId })
-        .eq("id", existing.id);
+  if (!client) return false;
+
+  const {
+    data: { session },
+  } = await client.auth.getSession();
+  const token = session?.access_token;
+  if (!token) return false;
+
+  try {
+    const res = await fetch("/api/users/bootstrap-member", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        organizationId: orgId,
+        legacyUserId,
+        email,
+        name,
+      }),
+    });
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      logPersistenceError(
+        "members.bootstrap",
+        new Error(payload.error || `HTTP ${res.status}`)
+      );
+      return false;
     }
-    return;
+    return true;
+  } catch (e) {
+    logPersistenceError("members.bootstrap", e);
+    return false;
   }
-  await client.from("organization_members").upsert({
-    id: `mem_${legacyUserId}`,
-    organization_id: orgId,
-    user_id: legacyUserId,
-    auth_user_id: authUserId ?? null,
-    email,
-    name,
-    first_name: name.split(" ")[0],
-    last_name: name.split(" ").slice(1).join(" "),
-    role: "Administrador",
-    status: "Activo",
-    permissions: {},
-  });
 }

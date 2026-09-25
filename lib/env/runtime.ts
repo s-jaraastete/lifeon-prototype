@@ -2,6 +2,8 @@
  * Runtime helpers for LifeOn dashboard / Supabase configuration.
  */
 
+import { isSupabaseConfigured } from "@/lib/supabaseClient";
+
 export function isBrowser(): boolean {
   return typeof window !== "undefined";
 }
@@ -25,4 +27,9 @@ export function mustUseSupabasePersistence(): boolean {
   if (isProductionBuild()) return true;
   if (isBrowser() && isDeployedLifeOnHost()) return true;
   return false;
+}
+
+/** Local dev with .env Supabase must use Auth JWT — otherwise RLS blocks all reads. */
+export function requiresSupabaseAuthSession(): boolean {
+  return isSupabaseConfigured();
 }

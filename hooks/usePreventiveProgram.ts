@@ -15,6 +15,11 @@ import {
   fetchPreventiveActivities,
   savePreventiveActivities,
 } from "@/lib/repositories/planningRepository";
+import {
+  isStorageEvent,
+  setLocalStorageJsonIfChanged,
+  storageEventMatchesKey,
+} from "@/lib/dashboard/localStorageSync";
 
 export const PREVENTIVE_PROGRAM_STORAGE_KEY = "lifeon_preventive_program";
 
@@ -713,9 +718,7 @@ export function usePreventiveProgram() {
         setActivities([]);
       } else {
         setActivities(DEMO_PREVENTIVE_ACTIVITIES);
-        try {
-          window.localStorage.setItem(storageKey, JSON.stringify(DEMO_PREVENTIVE_ACTIVITIES));
-        } catch (_) {}
+        setLocalStorageJsonIfChanged(storageKey, DEMO_PREVENTIVE_ACTIVITIES);
       }
     }
 
@@ -724,9 +727,7 @@ export function usePreventiveProgram() {
       .then((cloudActivities) => {
         if (cloudActivities && cloudActivities.length > 0) {
           setActivities(cloudActivities);
-          try {
-            window.localStorage.setItem(storageKey, JSON.stringify(cloudActivities));
-          } catch (_) {}
+          setLocalStorageJsonIfChanged(storageKey, cloudActivities);
         } else if (localActivities && localActivities.length > 0 && orgId !== "org_demo") {
           void savePreventiveActivities(orgId, localActivities);
           savePreventiveActivitiesToSupabase(localActivities, orgId);
@@ -739,10 +740,26 @@ export function usePreventiveProgram() {
         setIsLoaded(true);
       });
 
-    const handleProgSync = (e: any) => {
-      if (e?.detail?.activities) {
-        if (!e.detail.orgId || e.detail.orgId === orgId) {
-          setActivities(e.detail.activities);
+    const handleProgSync = (e: Event) => {
+      const storageEvt = storageEventMatchesKey(e, storageKey);
+      if (storageEvt) {
+        if (!storageEvt.newValue) {
+          setActivities(orgId !== "org_demo" ? [] : DEMO_PREVENTIVE_ACTIVITIES);
+          return;
+        }
+        try {
+          const parsed = JSON.parse(storageEvt.newValue);
+          if (Array.isArray(parsed)) setActivities(parsed);
+        } catch {
+          /* noop */
+        }
+        return;
+      }
+
+      const custom = e as CustomEvent<{ orgId?: string; activities?: ProgramActivity[] }>;
+      if (custom.detail?.activities) {
+        if (!custom.detail.orgId || custom.detail.orgId === orgId) {
+          setActivities(custom.detail.activities);
         }
       }
     };
@@ -767,7 +784,7 @@ export function usePreventiveProgram() {
     (newActivities: ProgramActivity[]) => {
       setActivities(newActivities);
       try {
-        window.localStorage.setItem(storageKey, JSON.stringify(newActivities));
+        setLocalStorageJsonIfChanged(storageKey, newActivities);
         if (typeof window !== "undefined") {
           window.dispatchEvent(
             new CustomEvent("lifeon-preventive-program-change", {

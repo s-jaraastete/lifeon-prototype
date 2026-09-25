@@ -7,6 +7,8 @@ import { resetTestOrganization } from "@/lib/server/testOrgReset";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
+const resetInFlight = new Set<string>();
+
 export async function POST(request: Request) {
   if (!supabaseUrl || !supabaseAnonKey) {
     return NextResponse.json({ error: "Supabase no configurado" }, { status: 503 });
@@ -59,10 +61,22 @@ export async function POST(request: Request) {
   const admin = getSupabaseAdminClient();
   if (!admin) {
     return NextResponse.json(
-      { error: "Servicio de administración no disponible (SUPABASE_SERVICE_ROLE_KEY)" },
+      {
+        error:
+          "Restablecimiento no disponible en este entorno. Configure SUPABASE_SERVICE_ROLE_KEY en las variables de entorno del servidor (p. ej. Vercel → Settings → Environment Variables) y vuelva a desplegar.",
+      },
       { status: 503 }
     );
   }
+
+  if (resetInFlight.has(email)) {
+    return NextResponse.json(
+      { error: "Ya hay un restablecimiento en curso para esta cuenta" },
+      { status: 429 }
+    );
+  }
+
+  resetInFlight.add(email);
 
   try {
     await resetTestOrganization(admin, account);
@@ -70,5 +84,7 @@ export async function POST(request: Request) {
   } catch (e) {
     const message = e instanceof Error ? e.message : "No se pudo restablecer la cuenta";
     return NextResponse.json({ error: message }, { status: 500 });
+  } finally {
+    resetInFlight.delete(email);
   }
 }

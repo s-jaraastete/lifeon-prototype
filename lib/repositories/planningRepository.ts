@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { coalesceRequest } from "@/lib/supabase/coalesceRequest";
 import { logPersistenceError } from "@/lib/supabase/persistenceError";
 import type { ProgramActivity, ActivityEvidence } from "@/types/preventiveProgram";
 
@@ -31,6 +32,10 @@ function rowToActivity(row: any): ProgramActivity {
 }
 
 export async function fetchPreventiveActivities(orgId: string): Promise<ProgramActivity[]> {
+  return coalesceRequest(`planning:${orgId}`, () => fetchPreventiveActivitiesUncached(orgId));
+}
+
+async function fetchPreventiveActivitiesUncached(orgId: string): Promise<ProgramActivity[]> {
   const client = getSupabaseClient();
   if (!client) return [];
 
@@ -107,47 +112,58 @@ export async function savePreventiveActivities(
 
   const planId = await ensurePreventivePlan(orgId);
 
-  for (const act of activities) {
-    const { error } = await client.from("preventive_activities").upsert({
-      id: act.id,
-      organization_id: orgId,
-      plan_id: planId,
-      code: act.code,
-      name: act.name,
-      description: act.description,
-      objective: act.objective,
-      category: act.category,
-      area_id: act.areaId,
-      area_name: act.areaName,
-      responsible_user_id: act.responsibleUserId,
-      responsible_user_name: act.responsibleUserName,
-      responsible_position_id: act.responsiblePositionId,
-      responsible_position_name: act.responsiblePositionName,
-      start_date: act.startDate,
-      end_date: act.endDate,
-      periodicity: act.periodicity,
-      applicability: act.applicability,
-      status: act.status,
-      progress: act.progress,
-      weight: act.weight ?? 1,
-      observations: act.observations,
-    });
+  const activityRows = activities.map((act) => ({
+    id: act.id,
+    organization_id: orgId,
+    plan_id: planId,
+    code: act.code,
+    name: act.name,
+    description: act.description,
+    objective: act.objective,
+    category: act.category,
+    area_id: act.areaId,
+    area_name: act.areaName,
+    responsible_user_id: act.responsibleUserId,
+    responsible_user_name: act.responsibleUserName,
+    responsible_position_id: act.responsiblePositionId,
+    responsible_position_name: act.responsiblePositionName,
+    start_date: act.startDate,
+    end_date: act.endDate,
+    periodicity: act.periodicity,
+    applicability: act.applicability,
+    status: act.status,
+    progress: act.progress,
+    weight: act.weight ?? 1,
+    observations: act.observations,
+  }));
+
+  if (activityRows.length > 0) {
+    const { error } = await client.from("preventive_activities").upsert(activityRows);
     if (error) {
       logPersistenceError("planning.activity.upsert", error);
       return false;
     }
+  }
 
-    for (const ev of act.evidences || []) {
-      await client.from("preventive_evidence").upsert({
-        id: ev.id,
-        organization_id: orgId,
-        activity_id: act.id,
-        name: ev.name,
-        type: ev.type,
-        storage_path: ev.url ?? null,
-      });
+  const evidenceRows = activities.flatMap((act) =>
+    (act.evidences || []).map((ev) => ({
+      id: ev.id,
+      organization_id: orgId,
+      activity_id: act.id,
+      name: ev.name,
+      type: ev.type,
+      storage_path: ev.url ?? null,
+    }))
+  );
+
+  if (evidenceRows.length > 0) {
+    const { error } = await client.from("preventive_evidence").upsert(evidenceRows);
+    if (error) {
+      logPersistenceError("planning.evidence.upsert", error);
+      return false;
     }
   }
+
   return true;
 }
 

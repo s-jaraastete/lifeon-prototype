@@ -40,16 +40,22 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+function defaultAppPasswordFromEmail(email) {
+  const prefix = email.trim().toLowerCase().slice(0, 4).padEnd(4, "0");
+  return prefix.padEnd(6, "0");
+}
+
 const ACCOUNTS = [
-  { email: "luis.godoy@safetyclub.cl", password: "luis", legacyId: "user_luis", memberId: "mem_user_luis", orgId: "org_luis", name: "Luis Godoy" },
-  { email: "sergio.jara@safetyclub.cl", password: "serg", legacyId: "user_sergio", memberId: "mem_user_sergio", orgId: "org_sergio", name: "Sergio Jara" },
-  { email: "aldo.berrios@safetyclub.cl", password: "aldo", legacyId: "user_aldo", memberId: "mem_user_aldo", orgId: "org_aldo", name: "Aldo Berríos" },
-  { email: "gonzalo.cabrera@safetyclub.cl", password: "gonz", legacyId: "user_gonzalo_c", memberId: "mem_user_gonzalo_c", orgId: "org_gonzalo_c", name: "Gonzalo Cabrera" },
-  { email: "gonzalo.beristain@safetyclub.cl", password: "gonz", legacyId: "user_gonzalo_b", memberId: "mem_user_gonzalo_b", orgId: "org_gonzalo_b", name: "Gonzalo Beristain" },
-  { email: "sergio.jara@lifeon.cl", password: "serg", legacyId: "demo_sergio", memberId: "mem_demo_sergio", orgId: "org_demo", name: "Sergio A. Jara Astete" },
-  { email: "rene.ramos@safetyclub.cl", password: "rene", legacyId: "user_rene", memberId: "mem_user_rene", orgId: "org_rene", name: "René Ramos" },
-  { email: "alex.ordenes@safetyclub.cl", password: "alex", legacyId: "user_alex", memberId: "mem_user_alex", orgId: "org_alex", name: "Alex Ordenes" },
-  { email: "carlos.subiabre@safetyclub.cl", password: "carl", legacyId: "user_carlos", memberId: "mem_user_carlos", orgId: "org_carlos", name: "Carlos Subiabre" },
+  { email: "luis.godoy@safetyclub.cl", legacyId: "user_luis", memberId: "mem_user_luis", orgId: "org_luis", name: "Luis Godoy" },
+  { email: "sergio.jara@safetyclub.cl", legacyId: "user_sergio", memberId: "mem_user_sergio", orgId: "org_sergio", name: "Sergio Jara" },
+  { email: "aldo.berrios@safetyclub.cl", legacyId: "user_aldo", memberId: "mem_user_aldo", orgId: "org_aldo", name: "Aldo Berríos" },
+  { email: "gonzalo.cabrera@safetyclub.cl", legacyId: "user_gonzalo_c", memberId: "mem_user_gonzalo_c", orgId: "org_gonzalo_c", name: "Gonzalo Cabrera" },
+  { email: "gonzalo.beristain@safetyclub.cl", legacyId: "user_gonzalo_b", memberId: "mem_user_gonzalo_b", orgId: "org_gonzalo_b", name: "Gonzalo Beristain" },
+  { email: "sergio.jara@lifeon.cl", legacyId: "demo_sergio", memberId: "mem_demo_sergio", orgId: "org_demo", name: "Sergio A. Jara Astete" },
+  { email: "rene.ramos@safetyclub.cl", legacyId: "user_rene", memberId: "mem_user_rene", orgId: "org_rene", name: "René Ramos" },
+  { email: "alex.ordenes@safetyclub.cl", legacyId: "user_alex", memberId: "mem_user_alex", orgId: "org_alex", name: "Alex Ordenes" },
+  { email: "carlos.subiabre@safetyclub.cl", legacyId: "user_carlos", memberId: "mem_user_carlos", orgId: "org_carlos", name: "Carlos Subiabre" },
+  { email: "pablo.yanez1@safetyclub.cl", legacyId: "user_pablo", memberId: "mem_user_pablo", orgId: "org_pablo", name: "Pablo Yañez" },
 ];
 
 async function getPgClient() {
@@ -85,9 +91,10 @@ async function linkMember(pgClient, account, authUserId) {
 }
 
 async function createViaAdmin(admin, account) {
+  const password = defaultAppPasswordFromEmail(account.email);
   const { data, error } = await admin.auth.admin.createUser({
     email: account.email,
-    password: account.password,
+    password,
     email_confirm: true,
     user_metadata: { full_name: account.name, legacy_user_id: account.legacyId, org_id: account.orgId },
   });
@@ -95,7 +102,10 @@ async function createViaAdmin(admin, account) {
     if (error.message?.includes("already") || error.status === 422) {
       const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
       const found = list?.users?.find((u) => u.email?.toLowerCase() === account.email.toLowerCase());
-      if (found) return found.id;
+      if (found) {
+        await admin.auth.admin.updateUserById(found.id, { password });
+        return found.id;
+      }
     }
     throw error;
   }
@@ -103,16 +113,17 @@ async function createViaAdmin(admin, account) {
 }
 
 async function createViaSignUp(anon, account) {
+  const password = defaultAppPasswordFromEmail(account.email);
   const { data, error } = await anon.auth.signUp({
     email: account.email,
-    password: account.password,
+    password,
     options: { data: { full_name: account.name, org_id: account.orgId } },
   });
   if (error) {
     if (error.message?.includes("already registered")) {
       const { data: signIn, error: signInErr } = await anon.auth.signInWithPassword({
         email: account.email,
-        password: account.password,
+        password,
       });
       if (signInErr) throw signInErr;
       return signIn.user.id;

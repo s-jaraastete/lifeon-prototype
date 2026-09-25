@@ -22,3 +22,14 @@ export function normalizeAppLoginPassword(email: string, password: string): stri
   }
   return trimmed;
 }
+
+/** Orden: contraseña canónica Auth, luego la ingresada (cuentas legacy con clave corta). */
+export function loginPasswordCandidates(email: string, password: string): string[] {
+  const trimmed = password.trim();
+  const normalized = normalizeAppLoginPassword(email, password);
+  const candidates: string[] = [];
+  for (const p of [normalized, trimmed]) {
+    if (p && !candidates.includes(p)) candidates.push(p);
+  }
+  return candidates;
+}

@@ -1,9 +1,27 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdminClient } from "@/lib/supabase/adminClient";
+import { findAuthUserIdByEmail } from "@/lib/server/memberProvisioning";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+
+function resolveInviteRedirectOrigin(request: Request): string | null {
+  const originHeader = request.headers.get("origin")?.replace(/\/$/, "") ?? "";
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+  const allowed = new Set<string>();
+  if (siteUrl) allowed.add(siteUrl);
+  if (process.env.NODE_ENV !== "production") {
+    allowed.add("http://localhost:3000");
+    allowed.add("http://127.0.0.1:3000");
+  }
+  if (originHeader && allowed.has(originHeader)) {
+    return originHeader;
+  }
+  if (siteUrl) return siteUrl;
+  if (process.env.NODE_ENV !== "production") return "http://localhost:3000";
+  return null;
+}
 
 export async function POST(request: Request) {
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -80,19 +98,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Servicio de administración no disponible" }, { status: 503 });
   }
 
-  const origin =
-    request.headers.get("origin") ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "http://localhost:3000";
+  const origin = resolveInviteRedirectOrigin(request);
+  if (!origin) {
+    return NextResponse.json(
+      { error: "Origen no permitido para el enlace de invitación" },
+      { status: 400 }
+    );
+  }
 
-  const redirectTo = `${origin.replace(/\/$/, "")}/auth/set-password`;
+  const redirectTo = `${origin}/auth/set-password`;
 
   let authUserId: string;
 
-  const { data: listed } = await admin.auth.admin.listUsers();
-  const existing = listed.users.find((u) => u.email?.toLowerCase() === email);
+  const existingAuthId = await findAuthUserIdByEmail(admin, email);
 
-  if (existing) {
+  if (existingAuthId) {
     const { error: linkErr } = await admin.auth.admin.generateLink({
       type: "recovery",
       email,
@@ -101,7 +121,7 @@ export async function POST(request: Request) {
     if (linkErr) {
       return NextResponse.json({ error: linkErr.message }, { status: 500 });
     }
-    authUserId = existing.id;
+    authUserId = existingAuthId;
   } else {
     const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
       redirectTo,

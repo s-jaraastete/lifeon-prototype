@@ -12,6 +12,7 @@ import { getScopedStorageKey } from "@/lib/auth/authService";
 import {
   deleteTechnicalDocument,
   fetchTechnicalDocuments,
+  fetchTechnicalDocumentById,
   upsertTechnicalDocument,
 } from "@/lib/repositories/technicalDocumentsRepository";
 import { isSupabaseConfigured } from "@/lib/supabaseClient";

@@ -7,12 +7,10 @@ import {
   LuFileCheck,
   LuFolderTree,
   LuFileText,
-  LuUsers,
 } from "react-icons/lu";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
-import { useOrgStructure } from "@/hooks/useOrgStructure";
-import { usePreventiveProgram } from "@/hooks/usePreventiveProgram";
 import { useIperMatrices } from "@/hooks/useIperMatrices";
+import { useDashboardOverviewCounts } from "@/hooks/useDashboardOverviewCounts";
 
 export interface KpiMetric {
   id: string;
@@ -34,15 +32,8 @@ interface DashboardKpisProps {
 
 export default function DashboardKpis({ onSelectMetric, activeWorkplace }: DashboardKpisProps) {
   const { preferences } = useLifeOnPreferences();
-  const {
-    workCenters,
-    areas,
-    totalProcessesCount,
-    totalPositionsCount,
-    totalUsersCount,
-  } = useOrgStructure();
+  const { counts } = useDashboardOverviewCounts();
 
-  const { metrics, activities } = usePreventiveProgram();
   const {
     totalMatricesCount,
     vigentesCount,
@@ -51,10 +42,11 @@ export default function DashboardKpis({ onSelectMetric, activeWorkplace }: Dashb
     criticalRisksCount,
     cargosWithIrlCount,
     enRevisionCount,
-  } = useIperMatrices(activeWorkplace, workCenters);
+  } = useIperMatrices(activeWorkplace, []);
 
   const isProgramConfigured =
-    preferences.moduleConfigurations?.preventivePlanning?.configured && activities.length > 0;
+    preferences.moduleConfigurations?.preventivePlanning?.configured &&
+    counts.preventiveTotal > 0;
 
   const kpis: KpiMetric[] = [
     {
@@ -94,12 +86,12 @@ export default function DashboardKpis({ onSelectMetric, activeWorkplace }: Dashb
     {
       id: "programa",
       label: "Programa Preventivo",
-      value: isProgramConfigured ? `${metrics.compliancePercentage}%` : "Sin configurar",
+      value: isProgramConfigured ? `${counts.compliancePercentage}%` : "Sin configurar",
       subtitle: isProgramConfigured
-        ? `${metrics.completedActivities}/${metrics.totalActivities} actividades al día`
+        ? `${counts.preventiveCompleted}/${counts.preventiveTotal} actividades al día`
         : "Programa de Trabajo no configurado",
       change: isProgramConfigured
-        ? `${metrics.inProgressActivities} en curso • ${metrics.pendingActivities} pendientes`
+        ? `${counts.preventiveInProgress} en curso • ${counts.preventivePending} pendientes`
         : "Configurar programa",
       isPositive: isProgramConfigured,
       color: isProgramConfigured ? "text-[#10B981]" : "text-gray-500",
@@ -126,9 +118,9 @@ export default function DashboardKpis({ onSelectMetric, activeWorkplace }: Dashb
     {
       id: "org",
       label: "Estructura Organizacional",
-      value: `${workCenters.length} ${workCenters.length === 1 ? "Centro" : "Centros"}`,
-      subtitle: `${areas.length} áreas • ${totalProcessesCount} procesos`,
-      change: `${totalPositionsCount} cargos • ${totalUsersCount} usuarios`,
+      value: `${counts.workCenters} ${counts.workCenters === 1 ? "Centro" : "Centros"}`,
+      subtitle: `${counts.areas} áreas • ${counts.processes} procesos`,
+      change: `${counts.positions} cargos • ${counts.members} usuarios`,
       isPositive: true,
       color: "text-teal-800",
       icon: LuFolderTree,

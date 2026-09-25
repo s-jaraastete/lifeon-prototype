@@ -21,7 +21,7 @@ export type ProvisionMemberInput = {
   areaName?: string;
 };
 
-async function findAuthUserIdByEmail(
+export async function findAuthUserIdByEmail(
   admin: SupabaseClient,
   email: string
 ): Promise<string | null> {
@@ -64,14 +64,8 @@ export async function provisionOrganizationMember(
       throw new Error(createErr?.message ?? "No se pudo crear el acceso de autenticación");
     }
     authUserId = created.user.id;
-  } else {
-    const { error: updateErr } = await admin.auth.admin.updateUserById(authUserId, {
-      password,
-    });
-    if (updateErr) {
-      throw new Error(updateErr.message);
-    }
   }
+  // Existing Auth users keep their password; only new users receive the default password.
 
   await admin.from("profiles").upsert({ id: authUserId });
 

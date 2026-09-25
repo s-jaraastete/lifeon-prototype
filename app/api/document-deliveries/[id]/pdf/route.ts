@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireDeliveryPdfAccess } from "@/lib/server/requireDeliveryAssigneeAccess";
 import { generateIrlDeliveryPdf } from "@/lib/server/generateIrlDeliveryPdf";
-import { getSupabaseAdminClient } from "@/lib/supabase/adminClient";
+import { fetchAckSignaturePngBytes } from "@/lib/server/fetchAckSignaturePng";
 
 export async function GET(
   request: Request,
@@ -31,15 +31,10 @@ export async function GET(
 
   let signaturePngBytes: Uint8Array | null = null;
   if (delivery.signature_path) {
-    const admin = getSupabaseAdminClient();
-    if (admin) {
-      const { data: file } = await admin.storage
-        .from("acknowledgement-evidence")
-        .download(delivery.signature_path);
-      if (file) {
-        signaturePngBytes = new Uint8Array(await file.arrayBuffer());
-      }
-    }
+    signaturePngBytes = await fetchAckSignaturePngBytes(
+      auth.ctx.userClient,
+      delivery.signature_path
+    );
   }
 
   const snapshot =

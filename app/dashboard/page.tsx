@@ -32,16 +32,35 @@ import {
   LuLock,
 } from "react-icons/lu";
 
+import dynamic from "next/dynamic";
+import { hasLifeOnAiSession } from "@/lib/auth/lifeonSessionClient";
+
 import DashboardKpis from "./components/DashboardKpis";
-import IperMatrixView from "./components/IperMatrixView";
-import PreventiveDocsView from "./components/PreventiveDocsView";
-import AprVirtualView from "./components/AprVirtualView";
 import AprVirtualAssistant from "./components/AprVirtualAssistant";
 import AprVirtualSessionPrompt from "./components/AprVirtualSessionPrompt";
-import { hasLifeOnAiSession } from "@/lib/auth/lifeonSessionClient";
-import OrgStructureView from "./components/OrgStructureView";
-import UsersView from "./components/UsersView";
-import TechnicalDocsView from "./components/TechnicalDocsView";
+
+const IperMatrixView = dynamic(() => import("./components/IperMatrixView"), {
+  loading: () => (
+    <div className="p-8 text-sm text-gray-500">Cargando Matriz IPER…</div>
+  ),
+});
+const PreventiveDocsView = dynamic(() => import("./components/PreventiveDocsView"), {
+  loading: () => (
+    <div className="p-8 text-sm text-gray-500">Cargando planificación…</div>
+  ),
+});
+const AprVirtualView = dynamic(() => import("./components/AprVirtualView"));
+const OrgStructureView = dynamic(() => import("./components/OrgStructureView"), {
+  loading: () => (
+    <div className="p-8 text-sm text-gray-500">Cargando estructura…</div>
+  ),
+});
+const UsersView = dynamic(() => import("./components/UsersView"));
+const TechnicalDocsView = dynamic(() => import("./components/TechnicalDocsView"), {
+  loading: () => (
+    <div className="p-8 text-sm text-gray-500">Cargando documentación…</div>
+  ),
+});
 import InitialOnboardingWizard from "./components/onboarding/InitialOnboardingWizard";
 import InteractivePlatformTour from "./components/onboarding/InteractivePlatformTour";
 import SupabaseSyncModal from "./components/SupabaseSyncModal";

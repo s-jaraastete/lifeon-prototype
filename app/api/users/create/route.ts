@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/adminClient";
-import { requireOrgEditor } from "@/lib/server/orgSessionGuard";
+import { canAssignMemberRole, requireOrgEditor } from "@/lib/server/orgSessionGuard";
 import {
   provisionOrganizationMember,
   type ProvisionMemberInput,
@@ -27,6 +27,13 @@ export async function POST(request: Request) {
   const auth = await requireOrgEditor(request, organizationId);
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  if (!canAssignMemberRole(auth.ctx.role, member.role)) {
+    return NextResponse.json(
+      { error: "Solo un Administrador puede crear usuarios con rol Administrador" },
+      { status: 403 }
+    );
   }
 
   const admin = getSupabaseAdminClient();

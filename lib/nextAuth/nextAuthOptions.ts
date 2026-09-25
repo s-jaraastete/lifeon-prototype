@@ -4,6 +4,14 @@ import CredentialsProvider from "next-auth/providers/credentials";
 
 const cookieNamePrefix = process.env.COOKIES_NAME_PREFIX ?? 'localhost_frontend'
 
+const nextAuthSecret =
+  process.env.NEXTAUTH_SECRET ??
+  (process.env.NODE_ENV === "production" ? undefined : "lifeon-local-nextauth-dev-only");
+
+if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
+  console.error("[NextAuth] NEXTAUTH_SECRET is required in production");
+}
+
 const refreshAccessToken = async (refreshToken: string) => {
   const host = process.env.NEXT_PUBLIC_ADMIN_MODULE_API;
   const payload = {
@@ -61,7 +69,7 @@ const nextAuthOptions: NextAuthOptions = {
       },
     }),
   ],
-  secret: 'f3y=txg=k9_!vb=6duyv^02jlryh%m9q*%bzas$tsjj^l=-467',
+  secret: nextAuthSecret ?? "lifeon-local-nextauth-dev-only",
   callbacks: {
     async session({session, token}) {
       session.accessToken = token.accessToken
@@ -86,7 +94,10 @@ const nextAuthOptions: NextAuthOptions = {
     sessionToken: {
       name: `${cookieNamePrefix}.session-token`,
       options: {
-        domain: process.env.DOMAIN ?? 'localhost',
+        domain:
+          process.env.NODE_ENV === "production"
+            ? process.env.DOMAIN || undefined
+            : process.env.DOMAIN ?? "localhost",
         sameSite: 'lax',
         path: '/',
         secure: true,
@@ -96,7 +107,10 @@ const nextAuthOptions: NextAuthOptions = {
     csrfToken: {
       name: `${cookieNamePrefix}.csrf-token`,
       options: {
-        domain: process.env.DOMAIN ?? 'localhost',
+        domain:
+          process.env.NODE_ENV === "production"
+            ? process.env.DOMAIN || undefined
+            : process.env.DOMAIN ?? "localhost",
         sameSite: 'lax',
         path: '/',
         secure: true,

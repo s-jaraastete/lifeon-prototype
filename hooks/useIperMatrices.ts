@@ -7,6 +7,12 @@ import { mergeIperMatrixLists } from "@/lib/utils/iperMatrixPersistence";
 import { IperMatrixItem } from "@/app/dashboard/components/IperMatrixView";
 import { INITIAL_MATRICES } from "@/app/dashboard/components/IperMatrixView";
 import type { OrgWorkCenter } from "@/types/orgStructure";
+import {
+  isStorageEvent,
+  setLocalStorageJsonIfChanged,
+  storageEventMatchesKey,
+} from "@/lib/dashboard/localStorageSync";
+import { isDemoOrganizationId, resolveProductOrgId } from "@/lib/env/demoFlags";
 
 function matrixMatchesWorkplace(
   m: IperMatrixItem,
@@ -30,10 +36,10 @@ function matrixMatchesWorkplace(
 
 export function useIperMatrices(activeWorkplace?: string, workCenters: OrgWorkCenter[] = []) {
   const { currentUser } = useLifeOnPreferences();
-  const orgId = currentUser?.orgId || "org_demo";
-  const storageKey = `lifeon_iper_matrices_${orgId}`;
+  const orgId = resolveProductOrgId(currentUser?.orgId);
+  const storageKey = orgId ? `lifeon_iper_matrices_${orgId}` : "lifeon_iper_matrices__pending";
 
-  const isDemo = orgId === "org_demo";
+  const isDemo = isDemoOrganizationId(orgId);
 
   const [matrices, setMatrices] = useState<IperMatrixItem[]>(() => {
     if (typeof window !== "undefined") {
@@ -64,15 +70,17 @@ export function useIperMatrices(activeWorkplace?: string, workCenters: OrgWorkCe
     }
 
     setIsLoading(true);
+    if (!orgId) {
+      setIsLoading(false);
+      return;
+    }
     fetchIperMatricesFromSupabase(orgId)
       .then((cloudMatrices) => {
         if (cloudMatrices === null) return;
         setMatrices((prev) => {
           const merged = mergeIperMatrixLists(prev, cloudMatrices, orgId);
           if (typeof window !== "undefined") {
-            try {
-              localStorage.setItem(storageKey, JSON.stringify(merged));
-            } catch (_) {}
+            setLocalStorageJsonIfChanged(storageKey, merged);
           }
           return merged;
         });
@@ -88,12 +96,28 @@ export function useIperMatrices(activeWorkplace?: string, workCenters: OrgWorkCe
   useEffect(() => {
     loadMatrices();
 
-    const handleMatricesSync = (e: any) => {
-      if (e?.detail?.matrices) {
-        if (!e.detail.orgId || e.detail.orgId === orgId) {
-          setMatrices(e.detail.matrices);
+    const handleMatricesSync = (e: Event) => {
+      const storageEvt = storageEventMatchesKey(e, storageKey);
+      if (storageEvt) {
+        if (!storageEvt.newValue) {
+          setMatrices(isDemo ? INITIAL_MATRICES : []);
+          return;
         }
-      } else {
+        try {
+          const parsed = JSON.parse(storageEvt.newValue);
+          if (Array.isArray(parsed)) setMatrices(parsed);
+        } catch {
+          /* noop */
+        }
+        return;
+      }
+
+      const custom = e as CustomEvent<{ orgId?: string; matrices?: IperMatrixItem[] }>;
+      if (custom.detail?.matrices) {
+        if (!custom.detail.orgId || custom.detail.orgId === orgId) {
+          setMatrices(custom.detail.matrices);
+        }
+      } else if (!isStorageEvent(e)) {
         loadMatrices();
       }
     };

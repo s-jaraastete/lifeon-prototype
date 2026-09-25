@@ -24,7 +24,8 @@ async function incrementWindow(
   limit: number
 ): Promise<boolean> {
   const client = getSupabaseAdminClient();
-  if (!client) return true;
+  const failClosed = process.env.NODE_ENV === "production";
+  if (!client) return !failClosed;
 
   const startIso = windowStart.toISOString();
 
@@ -52,7 +53,7 @@ async function incrementWindow(
 
     return true;
   } catch {
-    return true;
+    return !failClosed;
   }
 }
 

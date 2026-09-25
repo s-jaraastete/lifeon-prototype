@@ -76,6 +76,14 @@ const TEST_ACCOUNTS: Record<string, TestAccountServer> = {
     orgName: "Subiabre Ingeniería SpA",
     isDemo: false,
   },
+  "pablo.yanez1@safetyclub.cl": {
+    id: "user_pablo",
+    name: "Pablo Yañez",
+    email: "pablo.yanez1@safetyclub.cl",
+    orgId: "org_pablo",
+    orgName: "Yañez Prevención SpA",
+    isDemo: false,
+  },
   "sergio.jara@lifeon.cl": {
     id: "demo_sergio",
     name: "Sergio A. Jara Astete",
@@ -95,6 +103,7 @@ const DEV_PASSWORDS: Record<string, string[]> = {
   "rene.ramos@safetyclub.cl": ["rene"],
   "alex.ordenes@safetyclub.cl": ["alex"],
   "carlos.subiabre@safetyclub.cl": ["carl"],
+  "pablo.yanez1@safetyclub.cl": ["pabl"],
   "sergio.jara@lifeon.cl": ["serg"],
 };
 
@@ -102,6 +111,10 @@ export function validateLifeOnCredentials(
   email: string,
   password: string
 ): { ok: true; user: AuthUser } | { ok: false; message: string } {
+  if (process.env.NODE_ENV === "production") {
+    return { ok: false, message: "Use inicio de sesión con Supabase en producción." };
+  }
+
   const normalizedEmail = email.trim().toLowerCase();
   const trimmedPass = password.trim();
   const account = TEST_ACCOUNTS[normalizedEmail];

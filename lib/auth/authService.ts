@@ -100,6 +100,15 @@ export const TEST_ACCOUNTS_CONFIG: Record<string, TestAccountConfig> = {
     isDemo: false,
     resetAllowed: true,
   },
+  "pablo.yanez1@safetyclub.cl": {
+    id: "user_pablo",
+    name: "Pablo Yañez",
+    email: "pablo.yanez1@safetyclub.cl",
+    orgId: "org_pablo",
+    orgName: "Yañez Prevención SpA",
+    isDemo: false,
+    resetAllowed: true,
+  },
   "sergio.jara@lifeon.cl": {
     id: "demo_sergio",
     name: "Sergio A. Jara Astete",
@@ -121,6 +130,7 @@ const DEV_PASSWORDS: Record<string, string[]> = {
   "rene.ramos@safetyclub.cl": ["rene"],
   "alex.ordenes@safetyclub.cl": ["alex"],
   "carlos.subiabre@safetyclub.cl": ["carl"],
+  "pablo.yanez1@safetyclub.cl": ["pabl"],
   "sergio.jara@lifeon.cl": ["serg"],
 };
 
@@ -210,7 +220,7 @@ export function authenticateUser(email: string, pass: string): { success: boolea
   return {
     success: false,
     message:
-      "Credenciales inválidas. Usa tu email @safetyclub.cl con la contraseña de prueba asignada (luis, serg, aldo, gonz, rene, alex, carl).",
+      "Credenciales inválidas. Usa tu email @safetyclub.cl con la contraseña de prueba asignada (luis, serg, aldo, gonz, rene, alex, carl, pabl).",
   };
 }
 
@@ -296,7 +306,7 @@ export async function resetTestAccount(userEmail: string): Promise<ResetTestAcco
   }
 
   if (!isResetAllowedForUser(emailForReset)) {
-    console.error("Seguridad: restablecimiento no autorizado para:", emailForReset);
+    console.error("Seguridad: restablecimiento no autorizado.");
     return { ok: false, error: "Restablecimiento no permitido para esta cuenta." };
   }
 

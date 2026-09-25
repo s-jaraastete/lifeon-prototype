@@ -9,6 +9,7 @@ import { LuArrowLeft, LuEye, LuEyeOff, LuLoader } from "react-icons/lu";
 import { setActiveUser, DEMO_USER } from "@/lib/auth/authService";
 import { signInLifeOn } from "@/lib/auth/lifeonAuth";
 import { syncLifeOnSessionCookie } from "@/lib/auth/lifeonSessionClient";
+import { mustUseSupabasePersistence, requiresSupabaseAuthSession } from "@/lib/env/runtime";
 import { getMobilePrototypeHref } from "@/lib/env/mobilePrototype";
 
 const PROFESSION_IMAGES = [
@@ -28,6 +29,16 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
   const mobilePrototypeHref = getMobilePrototypeHref();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reason") === "supabase_session") {
+      setErrorMessage(
+        "Tu sesión de Supabase expiró o no está activa. Inicia sesión de nuevo con tu correo y contraseña."
+      );
+    }
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -75,6 +86,10 @@ export default function LoginPage() {
 
   const handleSocialLogin = async () => {
     if (isSigningIn) return;
+    if (requiresSupabaseAuthSession() || mustUseSupabasePersistence()) {
+      setErrorMessage("Usa tu correo y contraseña para ingresar (sesión Supabase requerida).");
+      return;
+    }
     setIsSigningIn(true);
     setErrorMessage("");
     try {

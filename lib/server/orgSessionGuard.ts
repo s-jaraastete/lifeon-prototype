@@ -12,6 +12,14 @@ export type OrgEditorContext = {
   role: string;
 };
 
+/** Only Administrador may grant the Administrador role. */
+export function canAssignMemberRole(actorRole: string, targetRole: string): boolean {
+  if (targetRole === "Administrador" && actorRole !== "Administrador") {
+    return false;
+  }
+  return true;
+}
+
 export async function requireOrgEditor(
   request: Request,
   organizationId: string

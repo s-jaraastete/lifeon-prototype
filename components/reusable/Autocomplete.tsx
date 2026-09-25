@@ -7,7 +7,7 @@ import useCustomInfiniteQuery from "@/hooks/useCustomInfiniteQuery";
 import axiosFetcher from "@/lib/axios_fetcher";
 import useDebounce from "@/hooks/useDebounce";
 import Spinner from "@/components/reusable/Spinner";
-import Chip from "./Chip";
+import Chip from "@/app/components/ui/Chip";
 import clsx from 'clsx'
 
 type InterfaceWithId = {

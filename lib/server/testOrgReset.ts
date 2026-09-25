@@ -13,6 +13,7 @@ const ALLOWED_ORGS = new Set([
   "org_rene",
   "org_alex",
   "org_carlos",
+  "org_pablo",
 ]);
 
 const ORG_META: Record<
@@ -27,6 +28,7 @@ const ORG_META: Record<
   org_rene: { industry: "Consultoría en Prevención", size: "1-20" },
   org_alex: { industry: "Construcción", size: "21-50" },
   org_carlos: { industry: "Construcción", size: "21-50" },
+  org_pablo: { industry: "Construcción", size: "1-20" },
 };
 
 async function clearAuthUserProfileMedia(

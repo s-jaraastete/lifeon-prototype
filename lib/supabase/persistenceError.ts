@@ -45,7 +45,9 @@ export function logPersistenceError(context: string, error: unknown): Persistenc
   const classified = classifySupabaseError(error);
   const payload = { context, kind: classified.kind, raw: classified.raw };
   if (classified.kind === "rls") {
-    console.error("[LifeOn persistence]", payload);
+    console.warn("[LifeOn persistence]", payload);
+  } else if (classified.kind === "config") {
+    console.warn("[LifeOn persistence]", payload);
   } else {
     console.warn("[LifeOn persistence]", payload);
   }

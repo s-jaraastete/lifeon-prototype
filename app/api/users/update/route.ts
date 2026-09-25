@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/adminClient";
-import { requireOrgEditor } from "@/lib/server/orgSessionGuard";
+import { canAssignMemberRole, requireOrgEditor } from "@/lib/server/orgSessionGuard";
 import { ensureAreaForOrg, ensurePositionForOrg } from "@/lib/server/structureRefs";
 import type { PlatformUser } from "@/types/users";
 
@@ -64,6 +64,13 @@ export async function PATCH(request: Request) {
   const auth = await requireOrgEditor(request, organizationId);
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  if (updates.role !== undefined && !canAssignMemberRole(auth.ctx.role, updates.role)) {
+    return NextResponse.json(
+      { error: "Solo un Administrador puede asignar rol Administrador" },
+      { status: 403 }
+    );
   }
 
   const admin = getSupabaseAdminClient();
