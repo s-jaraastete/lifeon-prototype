@@ -4,6 +4,7 @@ import { createHash } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildIrlDocumentCode } from "@/lib/irl/irlDocumentCopy";
 import { resolveOrganizationLogoUrl } from "@/lib/media/publicStorageUrl";
+import { fetchOrganizationDisplayName } from "@/lib/server/organizationDisplayName";
 import { fetchVigenteIperMatrixForOrg } from "@/lib/server/resolveVigenteIperMatrix";
 import { iperMatrixIdCandidates } from "@/lib/utils/iperMatrixPersistence";
 
@@ -140,7 +141,7 @@ export async function assignDocumentDeliveryAdmin(
       .eq("id", organizationId)
       .maybeSingle();
 
-    const organizationName = orgRow?.name?.trim() || "Empresa";
+    const organizationName = await fetchOrganizationDisplayName(admin, organizationId);
     const organizationLogoUrl = resolveOrganizationLogoUrl(
       admin,
       organizationId,

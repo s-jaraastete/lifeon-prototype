@@ -14,7 +14,9 @@ import {
   fetchOrganization,
   fetchOrganizationPreferences,
   saveOrganizationPreferences,
+  updateOrganization,
 } from "@/lib/repositories/organizationRepository";
+import { resolveOrganizationDisplayName } from "@/lib/organization/displayName";
 import { fetchProfileByAuthId } from "@/lib/repositories/profileRepository";
 import { getSupabaseAuthUserId } from "@/lib/auth/lifeonAuth";
 import {
@@ -203,6 +205,18 @@ export default function LifeOnPreferencesProvider({
           };
 
           const orgRow = await fetchOrganization(user.orgId);
+          const canonicalOrgName = resolveOrganizationDisplayName(
+            merged.organizationName,
+            orgRow?.name
+          );
+          if (
+            merged.organizationName?.trim() &&
+            orgRow?.name?.trim() !== merged.organizationName.trim()
+          ) {
+            void updateOrganization(user.orgId, { name: merged.organizationName.trim() });
+          } else if (!merged.organizationName?.trim() && orgRow?.name?.trim()) {
+            hydratedMedia = { ...hydratedMedia, organizationName: canonicalOrgName };
+          }
           const logo = orgRow?.logo_url || orgRow?.logo_path;
           if (logo && logo.startsWith("http")) {
             hydratedMedia = {

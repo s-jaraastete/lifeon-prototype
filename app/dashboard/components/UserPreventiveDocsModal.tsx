@@ -27,6 +27,7 @@ import {
 import { getActiveUser } from "@/lib/auth/authService";
 import { IrlDeliveryPdfEmbed } from "./IrlDeliveryPdfEmbed";
 import { buildIrlDocumentCode, parseIrlSnapshot } from "@/lib/irl/irlDocumentCopy";
+import { resolveOrganizationDisplayName } from "@/lib/organization/displayName";
 import { buildIrlPreviewSnapshot } from "@/lib/irl/buildIrlPreviewSnapshot";
 import {
   indexIrlDeliveriesByMatrix,
@@ -386,7 +387,10 @@ function IrlPersonalDocumentView({
         hazards: (matrix as { hazards?: unknown[] }).hazards,
       },
       cargoName,
-      organizationName: snapFromDelivery.organizationName || organizationName,
+      organizationName: resolveOrganizationDisplayName(
+        organizationName,
+        snapFromDelivery.organizationName
+      ),
       organizationLogoUrl: snapFromDelivery.organizationLogoUrl ?? organizationLogoUrl,
       assigneeFullName: fullName,
       assigneeIdentificationNumber: user.identificationNumber ?? null,

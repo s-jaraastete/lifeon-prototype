@@ -652,10 +652,13 @@ export function AccountModal({
     const lastName = nameParts.slice(1).join(" ");
     const displayName = `${firstName} ${lastName}`.trim() || name.trim();
 
+    const companyName =
+      company.trim() || preferences.organizationName?.trim() || organizationName?.trim() || "";
+
     updatePreferences({
       profilePhoto,
       organizationLogo: orgLogo,
-      organizationName: company,
+      organizationName: companyName,
     });
 
     const { upsertProfile } = await import("@/lib/repositories/profileRepository");
@@ -688,10 +691,10 @@ export function AccountModal({
       return;
     }
 
-    if (currentUser?.orgId) {
+    if (currentUser?.orgId && companyName) {
       const logoForDb = orgLogo && !orgLogo.startsWith("data:") ? orgLogo : null;
       await updateOrganization(currentUser.orgId, {
-        name: company.trim(),
+        name: companyName,
         logo_url: logoForDb,
         logo_path: logoForDb,
       });
@@ -1140,13 +1143,20 @@ export function SettingsModal({
 
   if (!isOpen) return null;
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedName = orgName.trim() || preferences.organizationName;
     updatePreferences({
-      organizationName: orgName.trim() || preferences.organizationName,
+      organizationName: trimmedName,
       organizationSector: orgSector,
       organizationSize: orgSize,
     });
+    const { updateOrganization } = await import("@/lib/repositories/organizationRepository");
+    const { getActiveUser } = await import("@/lib/auth/authService");
+    const orgId = getActiveUser().orgId;
+    if (orgId && trimmedName) {
+      await updateOrganization(orgId, { name: trimmedName });
+    }
     setSaved(true);
     setTimeout(() => {
       setSaved(false);

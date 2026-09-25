@@ -1,7 +1,9 @@
 import { ScrollView, Text, StyleSheet } from "react-native";
 import { Card } from "@/components/Card";
 import { IrlHierarchyView } from "@/components/IrlHierarchyView";
+import { useOrgBranding } from "@/hooks/useOrgBranding";
 import { useTabBarPadding } from "@/hooks/useTabBarPadding";
+import { resolveOrganizationDisplayName } from "@/utils/organizationDisplayName";
 import type { IrlMatrixEntry, MemberContext } from "@/types/models";
 import { colors, spacing } from "@/theme/tokens";
 
@@ -12,6 +14,12 @@ type Props = {
 
 export function IrlInfoView({ entry, member }: Props) {
   const bottomPad = useTabBarPadding();
+  const { branding } = useOrgBranding(member?.organizationId);
+  const organizationLabel = resolveOrganizationDisplayName(
+    branding?.name,
+    entry.organizationName,
+    member?.organizationName
+  );
 
   return (
     <ScrollView
@@ -21,9 +29,7 @@ export function IrlInfoView({ entry, member }: Props) {
       <Card style={styles.hero}>
         <Text style={styles.kicker}>Información de Riesgos Laborales</Text>
         <Text style={styles.heroTitle}>{entry.cargoName}</Text>
-        <Text style={styles.heroMeta}>
-          {member?.organizationName ?? entry.organizationName}
-        </Text>
+        <Text style={styles.heroMeta}>{organizationLabel}</Text>
         <Text style={styles.heroMeta}>Centro: {entry.workCenterName || "—"}</Text>
         <Text style={styles.heroHint}>
           Toca cada tarea para ver peligros, riesgos y medidas. El PDF formal para firma está en

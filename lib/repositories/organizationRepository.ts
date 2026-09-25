@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { coalesceRequest } from "@/lib/supabase/coalesceRequest";
+import { organizationNameFromPreferencesJson } from "@/lib/organization/displayName";
 import { OrganizationPreferences } from "@/types/preferences";
 import { logPersistenceError } from "@/lib/supabase/persistenceError";
 
@@ -92,5 +93,20 @@ export async function saveOrganizationPreferences(
     logPersistenceError("organization.preferences.save", error);
     return false;
   }
+
+  const displayName =
+    organizationNameFromPreferencesJson(prefs) ??
+    prefs.organizationName?.trim() ??
+    null;
+  if (displayName) {
+    const synced = await updateOrganization(orgId, { name: displayName });
+    if (!synced) {
+      logPersistenceError(
+        "organization.name.sync",
+        new Error("No se pudo sincronizar organizations.name desde preferencias")
+      );
+    }
+  }
+
   return true;
 }

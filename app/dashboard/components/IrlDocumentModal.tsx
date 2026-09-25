@@ -23,6 +23,7 @@ import { getActiveUser } from "@/lib/auth/authService";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import IrlFormalDocument from "./IrlFormalDocument";
 import { buildIrlDocumentCode, IRL_LEGAL_BADGE, parseIrlSnapshot } from "@/lib/irl/irlDocumentCopy";
+import { resolveOrganizationDisplayName } from "@/lib/organization/displayName";
 import { createSignatureSignedUrl } from "@/lib/repositories/ackEvidenceRepository";
 import {
   assignDocumentDelivery,
@@ -394,7 +395,10 @@ export default function IrlDocumentModal({
                   const worker = workersForCargo.find((u) => u.id === previewWorkerId);
                   return (
                     <IrlFormalDocument
-                      organizationName={snap.organizationName || organizationName}
+                      organizationName={resolveOrganizationDisplayName(
+                        organizationName,
+                        snap.organizationName
+                      )}
                       organizationLogoUrl={snap.organizationLogoUrl ?? organizationLogoUrl}
                       matrixCode={snap.matrixCode || matrix.code}
                       matrixTitle={snap.matrixTitle || matrix.name}

@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { resolveOrganizationDisplayName } from "@/lib/organization/displayName";
+import { getSupabaseAdminClient } from "@/lib/supabase/adminClient";
+import { fetchOrganizationDisplayName } from "@/lib/server/organizationDisplayName";
 import { requireDeliveryPdfAccess } from "@/lib/server/requireDeliveryAssigneeAccess";
 import { generateIrlDeliveryPdf } from "@/lib/server/generateIrlDeliveryPdf";
 import { fetchAckSignaturePngBytes } from "@/lib/server/fetchAckSignaturePng";
@@ -16,7 +19,7 @@ export async function GET(
   const { data: delivery, error } = await auth.ctx.userClient
     .from("document_deliveries")
     .select(
-      "id, source_type, content_snapshot, document_code, signed_at, signature_path, title"
+      "id, organization_id, source_type, content_snapshot, document_code, signed_at, signature_path, title"
     )
     .eq("id", auth.ctx.deliveryId)
     .maybeSingle();
@@ -37,10 +40,24 @@ export async function GET(
     );
   }
 
-  const snapshot =
+  let snapshot =
     typeof delivery.content_snapshot === "object" && delivery.content_snapshot
       ? (delivery.content_snapshot as Record<string, unknown>)
       : {};
+
+  const admin = getSupabaseAdminClient();
+  const orgId =
+    typeof delivery.organization_id === "string" ? delivery.organization_id.trim() : "";
+  if (admin && orgId) {
+    const canonicalName = await fetchOrganizationDisplayName(admin, orgId);
+    snapshot = {
+      ...snapshot,
+      organizationName: resolveOrganizationDisplayName(
+        canonicalName,
+        typeof snapshot.organizationName === "string" ? snapshot.organizationName : undefined
+      ),
+    };
+  }
 
   try {
     const pdfBytes = await generateIrlDeliveryPdf({

@@ -13,6 +13,7 @@ import {
   buildIrlDocumentCode,
   parseIrlSnapshot,
 } from "@/utils/irlDocumentCopy";
+import { resolveOrganizationDisplayName } from "@/utils/organizationDisplayName";
 import { colors, spacing, radius } from "@/theme/tokens";
 
 type WorkerSignature = {
@@ -41,10 +42,10 @@ export function IrlFormalDocumentView({
   variant = "inline",
 }: Props) {
   const parsed = parseIrlSnapshot(snapshot);
-  const organizationName =
-    parsed.organizationName?.trim() ||
-    fallbackOrganizationName?.trim() ||
-    "Empresa";
+  const organizationName = resolveOrganizationDisplayName(
+    fallbackOrganizationName,
+    parsed.organizationName
+  );
   const logoUrl = parsed.organizationLogoUrl ?? fallbackOrganizationLogoUrl ?? null;
   const matrixCode = parsed.matrixCode ?? "—";
   const matrixTitle = parsed.matrixTitle ?? "Matriz IPER";

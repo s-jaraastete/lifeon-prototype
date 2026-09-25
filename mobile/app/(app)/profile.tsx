@@ -7,6 +7,8 @@ import { OfflineBanner } from "@/components/OfflineBanner";
 import { UserAvatar } from "@/components/UserAvatar";
 import { TextField } from "@/components/TextField";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgBranding } from "@/hooks/useOrgBranding";
+import { resolveOrganizationDisplayName } from "@/utils/organizationDisplayName";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useNetworkOnline } from "@/hooks/useNetwork";
 import { updateUserPassword } from "@/services/profile";
@@ -14,6 +16,11 @@ import { colors, radius, spacing } from "@/theme/tokens";
 
 export default function ProfileScreen() {
   const { member, session, signOut } = useAuth();
+  const { branding } = useOrgBranding(member?.organizationId);
+  const organizationLabel = resolveOrganizationDisplayName(
+    branding?.name,
+    member?.organizationName
+  );
   const { profile, setAvatar, clearAvatar } = useUserProfile(session?.user?.id);
   const online = useNetworkOnline();
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -141,7 +148,7 @@ export default function ProfileScreen() {
 
       <Card>
         <Text style={styles.sectionTitle}>Tu cuenta</Text>
-        <InfoRow label="Organización" value={member?.organizationName} />
+        <InfoRow label="Organización" value={organizationLabel} />
         <InfoRow label="Cargo" value={member?.cargoName ?? "—"} />
         <InfoRow label="Centro de trabajo" value={member?.workCenterName ?? "—"} />
         <InfoRow label="Rol" value={member?.role} />

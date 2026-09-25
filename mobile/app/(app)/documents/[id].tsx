@@ -27,6 +27,7 @@ import type { DocumentDelivery } from "@/types/models";
 import { useTabBarPadding } from "@/hooks/useTabBarPadding";
 import { isIrlDelivery, normalizeDeliverySnapshot } from "@/utils/deliverySnapshot";
 import { parseIrlSnapshot } from "@/utils/irlDocumentCopy";
+import { resolveOrganizationDisplayName } from "@/utils/organizationDisplayName";
 import { colors, spacing } from "@/theme/tokens";
 
 const DECLARATION =
@@ -114,7 +115,7 @@ export default function DocumentDetailScreen() {
   const snapshot = normalizeDeliverySnapshot(delivery.content_snapshot);
   const isIrl = isIrlDelivery(delivery);
   const parsedIrl = isIrl ? parseIrlSnapshot(snapshot) : null;
-  const orgName = parsedIrl?.organizationName || branding?.name;
+  const orgName = resolveOrganizationDisplayName(branding?.name, parsedIrl?.organizationName);
 
   return (
     <ScrollView
