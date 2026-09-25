@@ -90,6 +90,7 @@ function TaskBlock({
           name={open ? "chevron-up" : "chevron-down"}
           size={20}
           color={colors.textSecondary}
+          style={styles.chevron}
         />
       </Pressable>
 
@@ -102,7 +103,7 @@ function TaskBlock({
                   onPress={() => onToggleHazard(hazard.id)}
                   style={[styles.rowPress, styles.hazardPress]}
                 >
-                  <View style={styles.rowLeft}>
+                  <View style={styles.rowText}>
                     <Text style={styles.hazardLabel}>Peligro {hIdx + 1}</Text>
                     <Text style={styles.hazardTitle}>{hazard.hazard}</Text>
                     <Text style={styles.rowMeta}>
@@ -113,6 +114,7 @@ function TaskBlock({
                     name={hOpen ? "chevron-up" : "chevron-down"}
                     size={18}
                     color={colors.textSecondary}
+                    style={styles.chevron}
                   />
                 </Pressable>
 
@@ -125,7 +127,7 @@ function TaskBlock({
                             onPress={() => onToggleRisk(risk.id)}
                             style={styles.rowPress}
                           >
-                            <View style={styles.rowLeft}>
+                            <View style={styles.rowText}>
                               <Text style={styles.riskLabel}>Riesgo {rIdx + 1}</Text>
                               <Text style={styles.riskTitle}>{risk.riskEvent}</Text>
                               {risk.initialLevel ? (
@@ -136,6 +138,7 @@ function TaskBlock({
                               name={rOpen ? "chevron-up" : "chevron-down"}
                               size={18}
                               color={colors.textSecondary}
+                              style={styles.chevron}
                             />
                           </Pressable>
 
@@ -177,7 +180,13 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.sm,
   },
-  rowLeft: { flex: 1, flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
+  rowLeft: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
   stepBadge: {
     width: 28,
     height: 28,
@@ -191,23 +200,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.secondary,
   },
-  rowText: { gap: 2 },
+  chevron: { flexShrink: 0 },
+  rowText: { flex: 1, minWidth: 0, gap: 2 },
   taskTitle: {
     fontFamily: "Poppins_700Bold",
     fontSize: 16,
     color: colors.text,
     lineHeight: 22,
+    flexShrink: 1,
   },
   taskProcess: {
     fontFamily: "Poppins_400Regular",
     fontSize: 12,
     color: colors.textSecondary,
+    lineHeight: 18,
+    flexShrink: 1,
   },
   rowMeta: {
     fontFamily: "Poppins_400Regular",
     fontSize: 11,
     color: colors.textSecondary,
     marginTop: 2,
+    flexShrink: 1,
   },
   nestedBlock: {
     borderTopWidth: 1,
@@ -226,6 +240,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text,
     lineHeight: 20,
+    flexShrink: 1,
   },
   riskBlock: {
     marginLeft: spacing.md,
@@ -244,6 +259,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#92400E",
     lineHeight: 20,
+    flexShrink: 1,
   },
   levelTag: {
     fontFamily: "Poppins_500Medium",

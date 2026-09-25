@@ -132,7 +132,6 @@ export default function IrlDocumentModal({
     deliveries.find(
       (d) =>
         d.assignee_member_id === userId &&
-        d.source_id === deliverySourceId &&
         (d.cargo_name === selectedPosition || !d.cargo_name)
     );
 
@@ -166,7 +165,7 @@ export default function IrlDocumentModal({
     onAcknowledgementsChange?.(list);
   };
 
-  const handleSendIrlForUser = async (userId: string, userName: string, rut?: string) => {
+  const handleSendIrlForUser = async (userId: string) => {
     setSendError(null);
     await saveIperMatrixToSupabase(
       {
@@ -185,28 +184,13 @@ export default function IrlDocumentModal({
       cargoName: selectedPosition,
     });
 
-    if (remote.id) {
-      const rows = await fetchDeliveriesForSource(organizationId, "irl", deliverySourceId);
-      setDeliveries(rows);
+    if (!remote.id) {
+      setSendError(remote.error ?? "No se pudo enviar el IRL");
       return;
     }
 
-    if (remote.error) {
-      setSendError(remote.error);
-    }
-
-    const id = getAckForUser(userId)?.id || `ack-${matrix.id}-${userId}-${Date.now()}`;
-    upsertAck({
-      id,
-      matrixId: matrix.id,
-      cargoName: selectedPosition,
-      userId,
-      userName,
-      identificationNumber: rut,
-      status: "Enviado",
-      sentAt: new Date().toISOString(),
-      acknowledgedAt: null,
-    });
+    const rows = await fetchDeliveriesForSource(organizationId, "irl", deliverySourceId);
+    setDeliveries(rows);
   };
 
   const handleRegisterKnowledge = (userId: string, userName: string, rut?: string) => {
@@ -229,19 +213,15 @@ export default function IrlDocumentModal({
     for (const u of workersForCargo) {
       const delivery = getDeliveryForUser(u.id);
       const ack = getAckForUser(u.id);
-      const alreadySent =
+      const alreadyDelivered =
         delivery &&
         (delivery.status === "pendiente_revision" ||
           delivery.status === "pendiente_firma" ||
           delivery.status === "firmado");
-      if (alreadySent || ack?.status === "Enviado" || ack?.status === "Firmado") {
+      if (alreadyDelivered || ack?.status === "Firmado") {
         continue;
       }
-      await handleSendIrlForUser(
-        u.id,
-        `${u.firstName} ${u.lastName}`.trim(),
-        u.identificationNumber
-      );
+      await handleSendIrlForUser(u.id);
     }
   };
 
@@ -587,7 +567,7 @@ export default function IrlDocumentModal({
                               <>
                                 <button
                                   type="button"
-                                  onClick={() => handleSendIrlForUser(w.id, w.name, w.rut)}
+                                  onClick={() => handleSendIrlForUser(w.id)}
                                   className="px-3 py-1 text-[11px] font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition cursor-pointer"
                                 >
                                   Enviar IRL

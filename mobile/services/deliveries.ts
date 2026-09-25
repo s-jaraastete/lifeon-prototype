@@ -12,7 +12,7 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 }
 
 const DELIVERY_LIST_COLUMNS =
-  "id, organization_id, assignee_auth_user_id, source_type, source_id, status, assigned_at, opened_at, reviewed_at, signed_at, signature_storage_path, cargo_id, cargo_name, matrix_id, matrix_title";
+  "id, organization_id, assignee_auth_user_id, source_type, source_id, status, assigned_at, opened_at, signed_at, signature_path, cargo_id, cargo_name, title, document_code";
 
 export async function fetchMyDeliveries(): Promise<DocumentDelivery[]> {
   const supabase = getSupabase();
