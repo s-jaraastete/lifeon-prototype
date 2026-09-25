@@ -7,34 +7,35 @@ import FilterDropdown, {
 
 const orderingFieldOptions = [
   { value: "", label: "Por defecto" },
-  { value: "company__name", label: "Cliente" },
-  { value: "mrr_clp", label: "Monto" },
-  { value: "created", label: "Fecha emisión" },
-  { value: "next_billing_at", label: "Fecha vencimiento" },
+  { value: "company_name_snapshot", label: "Cliente" },
+  { value: "total_amount_clp", label: "Monto" },
+  { value: "issued_at", label: "Fecha emisión" },
+  { value: "due_date", label: "Fecha vencimiento" },
 ];
 
 const orderingConfig: OrderingConfig = {
   options: orderingFieldOptions,
-  defaultDescFields: ["created", "next_billing_at", "mrr_clp"],
+  defaultField: "issued_at",
+  defaultDescFields: ["issued_at", "due_date", "total_amount_clp"],
 };
 
 const groups: FilterGroup[] = [
   {
     type: "number-range",
     label: "Monto (CLP)",
-    base: "mrr_clp",
+    base: "total_amount_clp",
     ariaLabels: ["Monto desde", "Monto hasta"],
   },
   {
     type: "date-range",
     label: "Fecha emisión",
-    base: "created",
+    base: "issued_at",
     ariaLabels: ["Fecha emisión desde", "Fecha emisión hasta"],
   },
   {
     type: "date-range",
     label: "Fecha vencimiento",
-    base: "next_billing_at",
+    base: "due_date",
     ariaLabels: ["Fecha vencimiento desde", "Fecha vencimiento hasta"],
   },
 ];

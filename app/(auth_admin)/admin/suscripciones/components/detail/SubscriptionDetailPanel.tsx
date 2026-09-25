@@ -181,14 +181,14 @@ export default function SubscriptionDetailPanel({
           type="button"
           className="flex-1 rounded-lg border border-secondary px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-secondary/5"
         >
-          <LuRocket className="mr-2 inline-block h-4.5 w-4.5" />
+          <LuRocket className="mr-1 inline-block size-4" />
           Cambiar plan
         </button>
         <button
           type="button"
           className="flex-1 rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
         >
-          <LuBan className="mr-2 inline-block h-4.5 w-4.5" />
+          <LuBan className="mr-1 inline-block size-4" />
           Suspender suscripción
         </button>
         <button
