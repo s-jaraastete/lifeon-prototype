@@ -61,6 +61,7 @@ export async function upsertOrgTask(
   if (!client) return null;
 
   const normalized = normalizeTaskName(input.name);
+  if (!normalized) return null;
 
   let existingQuery = client
     .from("org_tasks")
@@ -74,16 +75,50 @@ export async function upsertOrgTask(
     existingQuery = existingQuery.is("process_id", null);
   }
 
-  const { data: existingRow, error: findErr } = await existingQuery.maybeSingle();
+  const { data: existingMatches, error: findErr } = await existingQuery.limit(1);
   if (findErr) {
     logPersistenceError("artp.org_task.find", findErr);
   }
+  const existingRow = existingMatches?.[0] ?? null;
 
-  const id = input.id ?? existingRow?.id ?? scopedArtpId(orgId, `task_${Date.now()}`);
+  let id = existingRow?.id ?? input.id;
+  if (id && !existingRow) {
+    const { data: byId, error: byIdErr } = await client
+      .from("org_tasks")
+      .select("id")
+      .eq("organization_id", orgId)
+      .eq("id", id)
+      .maybeSingle();
+    if (byIdErr) {
+      logPersistenceError("artp.org_task.by_id", byIdErr);
+    }
+    if (!byId?.id) {
+      id = undefined;
+    }
+  }
+  if (!id) {
+    id = scopedArtpId(orgId, `task_${Date.now()}`);
+  }
+
+  let iperMatrixId = input.iperMatrixId ?? null;
+  if (iperMatrixId) {
+    const { data: matrixRow, error: matrixErr } = await client
+      .from("iper_matrices")
+      .select("id")
+      .eq("id", iperMatrixId)
+      .maybeSingle();
+    if (matrixErr) {
+      logPersistenceError("artp.org_task.matrix", matrixErr);
+    }
+    if (!matrixRow?.id) {
+      iperMatrixId = null;
+    }
+  }
+
   const row = {
     id,
     organization_id: orgId,
-    name: input.name,
+    name: input.name.trim(),
     normalized_name: normalized,
     description: input.description ?? null,
     work_center_id: input.workCenterId ?? null,
@@ -91,13 +126,43 @@ export async function upsertOrgTask(
     process_id: input.processId ?? null,
     subprocess_id: input.subprocessId ?? null,
     origin: input.origin,
-    iper_matrix_id: input.iperMatrixId ?? null,
+    iper_matrix_id: iperMatrixId,
     iper_task_label: input.iperTaskLabel ?? null,
   };
 
   const { data, error } = await client.from("org_tasks").upsert(row).select("*").single();
   if (error) {
     logPersistenceError("artp.org_task.upsert", error);
+    if (error.code === "23505") {
+      const { data: retryRows } = await existingQuery.limit(1);
+      const canonicalId = retryRows?.[0]?.id;
+      if (canonicalId && canonicalId !== row.id) {
+        const { data: retryData, error: retryErr } = await client
+          .from("org_tasks")
+          .upsert({ ...row, id: canonicalId })
+          .select("*")
+          .single();
+        if (!retryErr && retryData) {
+          return {
+            id: retryData.id,
+            organizationId: retryData.organization_id,
+            name: retryData.name,
+            normalizedName: retryData.normalized_name,
+            description: retryData.description ?? undefined,
+            workCenterId: retryData.work_center_id ?? undefined,
+            areaId: retryData.area_id ?? undefined,
+            processId: retryData.process_id ?? undefined,
+            subprocessId: retryData.subprocess_id ?? undefined,
+            origin: retryData.origin,
+            iperMatrixId: retryData.iper_matrix_id ?? undefined,
+            iperTaskLabel: retryData.iper_task_label ?? undefined,
+          };
+        }
+        if (retryErr) {
+          logPersistenceError("artp.org_task.upsert.retry", retryErr);
+        }
+      }
+    }
     return null;
   }
   return {
