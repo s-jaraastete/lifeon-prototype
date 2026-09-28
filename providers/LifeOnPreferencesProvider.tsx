@@ -214,7 +214,11 @@ export default function LifeOnPreferencesProvider({
             orgRow?.name?.trim() !== merged.organizationName.trim()
           ) {
             void updateOrganization(user.orgId, { name: merged.organizationName.trim() });
-          } else if (!merged.organizationName?.trim() && orgRow?.name?.trim()) {
+          } else if (
+            merged.onboardingCompleted &&
+            !merged.organizationName?.trim() &&
+            orgRow?.name?.trim()
+          ) {
             hydratedMedia = { ...hydratedMedia, organizationName: canonicalOrgName };
           }
           const logo = orgRow?.logo_url || orgRow?.logo_path;

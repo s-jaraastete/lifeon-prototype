@@ -77,6 +77,35 @@ async function findAuthUserIdByEmail(
   return null;
 }
 
+async function deleteIperMatrices(admin: SupabaseClient, orgId: string): Promise<void> {
+  const { data, error: listError } = await admin
+    .from("iper_matrices")
+    .select("id")
+    .or(`organization_id.eq.${orgId},id.like.${orgId}_%`);
+  if (listError) {
+    throw new Error(`iper_matrices: ${listError.message}`);
+  }
+  const ids = (data ?? []).map((row) => row.id).filter((id): id is string => Boolean(id));
+  if (!ids.length) return;
+
+  const { error: unlinkError } = await admin
+    .from("iper_matrices")
+    .update({ source_matrix_id: null })
+    .in("id", ids);
+  if (
+    unlinkError &&
+    !unlinkError.message.includes("source_matrix_id") &&
+    !unlinkError.message.includes("schema cache")
+  ) {
+    throw new Error(`iper_matrices: ${unlinkError.message}`);
+  }
+
+  const { error: deleteError } = await admin.from("iper_matrices").delete().in("id", ids);
+  if (deleteError) {
+    throw new Error(`iper_matrices: ${deleteError.message}`);
+  }
+}
+
 export async function purgeTestOrganizationData(
   admin: SupabaseClient,
   orgId: string,
@@ -187,6 +216,8 @@ export async function purgeTestOrganizationData(
   }
   await admin.from("energy_types").delete().eq("organization_id", orgId).eq("is_system", false);
 
+  await deleteIperMatrices(admin, orgId);
+
   await admin.from("positions").delete().eq("organization_id", orgId);
   await admin.from("subprocesses").delete().eq("organization_id", orgId);
   await admin.from("processes").delete().eq("organization_id", orgId);
@@ -198,10 +229,6 @@ export async function purgeTestOrganizationData(
   await admin.from("preventive_plans").delete().eq("organization_id", orgId);
   await admin.from("technical_documents").delete().eq("organization_id", orgId);
   await admin.from("preventive_docs").delete().like("id", `${orgId}_%`);
-  await admin
-    .from("iper_matrices")
-    .delete()
-    .or(`organization_id.eq.${orgId},id.like.${orgId}_%`);
   await admin.from("org_structure").delete().in("id", [`structure_${orgId}`, orgId]);
   await admin
     .from("organization_preferences")
@@ -222,7 +249,7 @@ export async function reseedTestOrganizationBootstrap(
 
   await admin.from("organizations").upsert({
     id: orgId,
-    name: account.orgName,
+    name: "",
     industry: meta.industry,
     size: meta.size,
     status: "Activo",
@@ -235,6 +262,10 @@ export async function reseedTestOrganizationBootstrap(
     organization_id: orgId,
     preferences: {
       onboardingCompleted: false,
+      onboardingStep: 1,
+      organizationName: "",
+      organizationSize: "",
+      organizationSector: "",
       organizationLogo: null,
       profilePhoto: null,
     },

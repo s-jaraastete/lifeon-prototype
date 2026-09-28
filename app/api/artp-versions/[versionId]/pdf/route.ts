@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createArtpPrintToken } from "@/lib/server/artpPrintToken";
-import { printPageToPdf } from "@/lib/server/printPageToPdf";
+import { generateArtpFormalPdf } from "@/lib/server/generateArtpSignedPdf";
+import { loadArtpFormalDetailForPrint } from "@/lib/server/loadArtpFormalDetail";
 import { requireArtpVersionPdfAccess } from "@/lib/server/requireArtpVersionPdfAccess";
 
 export async function GET(
@@ -28,11 +28,11 @@ export async function GET(
   }
 
   try {
-    const token = createArtpPrintToken(versionId);
-    const origin = new URL(request.url).origin;
-    const pdf = await printPageToPdf(
-      `${origin}/print/artp/${encodeURIComponent(versionId)}?t=${encodeURIComponent(token)}`
-    );
+    const loaded = await loadArtpFormalDetailForPrint(versionId);
+    if (!loaded) {
+      return NextResponse.json({ error: "Documento no disponible" }, { status: 404 });
+    }
+    const pdf = await generateArtpFormalPdf(loaded);
     return new NextResponse(Buffer.from(pdf), {
       status: 200,
       headers: {
