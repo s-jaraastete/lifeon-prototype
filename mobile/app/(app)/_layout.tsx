@@ -99,6 +99,17 @@ export default function AppTabsLayout() {
       />
       <Tabs.Screen name="irl/[matrixId]" options={{ href: null, title: "IRL" }} />
       <Tabs.Screen
+        name="artp/index"
+        options={{
+          title: "ARTP",
+          tabBarLabel: "ARTP",
+          tabBarIcon: ({ focused }) =>
+            tabIcon(focused ? "list" : "list-outline", focused),
+        }}
+      />
+      <Tabs.Screen name="artp/[executionId]" options={{ href: null, title: "ARTP" }} />
+      <Tabs.Screen name="artp/doc/[versionId]" options={{ href: null, title: "ARTP" }} />
+      <Tabs.Screen
         name="documents/index"
         options={{
           title: "Documentos",

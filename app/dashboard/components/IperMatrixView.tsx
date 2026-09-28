@@ -53,6 +53,7 @@ import {
 } from "@/lib/xlsx/lifeOnWorkbookTheme";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import { getSectorRiskProfile } from "@/data/sectorRiskTemplates";
+import { usePendingArtpIperLinks } from "@/hooks/useArtp";
 import IperMatrixDetailView, { IperEvaluationRow } from "./IperMatrixDetailView";
 import IrlEntryModal from "./IrlEntryModal";
 import IrlDocumentModal from "./IrlDocumentModal";
@@ -518,11 +519,14 @@ interface MatrixActionItem {
 export default function IperMatrixView({
   onOpenAprVirtual,
   onNavigateToOrg,
+  onNavigateToArtp,
 }: {
   onOpenAprVirtual?: () => void;
   onNavigateToOrg?: () => void;
+  onNavigateToArtp?: (taskName: string, matrixId: string) => void;
 }) {
   const { preferences, configureMiperModule, currentUser } = useLifeOnPreferences();
+  const { data: pendingArtpLinks = [] } = usePendingArtpIperLinks();
   const sectorProfile = useMemo(() => {
     return getSectorRiskProfile(preferences.organizationSector);
   }, [preferences.organizationSector]);
@@ -1671,6 +1675,11 @@ export default function IperMatrixView({
           showToast(`Matriz '${updated.name}' guardada correctamente.`);
         }}
         onOpenAprVirtual={onOpenAprVirtual}
+        onCreateArtpFromTask={
+          onNavigateToArtp
+            ? (taskName) => onNavigateToArtp(taskName, selectedMatrix.id)
+            : undefined
+        }
       />
     );
   }
@@ -1836,6 +1845,14 @@ export default function IperMatrixView({
           </button>
         </div>
       </div>
+
+      {pendingArtpLinks.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>Actualización pendiente desde ARTP:</strong>{" "}
+          {pendingArtpLinks.length} propuesta(s) esperan incorporación a una matriz en borrador
+          (la matriz vigente no se modifica automáticamente).
+        </div>
+      )}
 
       {/* ESTADO GUIADO CUANDO NO HAY ESTRUCTURA ORGANIZACIONAL (Acceso contextual según Req 12) */}
       {areas.length === 0 && (

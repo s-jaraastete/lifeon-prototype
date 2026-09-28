@@ -15,6 +15,7 @@ export interface UserPermissions {
   matrizIper?: ModulePermission;
   planificacion?: ModulePermission;
   documentacionTecnica?: ModulePermission;
+  artp?: ModulePermission;
 }
 
 export interface PlatformUser {

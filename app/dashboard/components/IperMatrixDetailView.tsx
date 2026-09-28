@@ -136,6 +136,7 @@ interface IperMatrixDetailViewProps {
   onBack: () => void;
   onUpdateMatrix: (updated: IperMatrixItem) => void;
   onOpenAprVirtual?: () => void;
+  onCreateArtpFromTask?: (taskName: string, cargo?: string) => void;
   initialOpenWizard?: boolean;
 }
 
@@ -144,6 +145,7 @@ export default function IperMatrixDetailView({
   onBack,
   onUpdateMatrix,
   onOpenAprVirtual,
+  onCreateArtpFromTask,
   initialOpenWizard,
 }: IperMatrixDetailViewProps) {
   const [evaluations, setEvaluations] = useState<IperEvaluationRow[]>(() => {
@@ -733,6 +735,15 @@ export default function IperMatrixDetailView({
 
                     <td className="py-3.5 px-4 align-top">
                       <p className="font-bold text-gray-900 leading-snug">{row.task}</p>
+                      {onCreateArtpFromTask && (
+                        <button
+                          type="button"
+                          onClick={() => onCreateArtpFromTask(row.task, row.cargo)}
+                          className="text-[10px] font-bold text-violet-700 hover:underline mt-1 block"
+                        >
+                          Crear ARTP
+                        </button>
+                      )}
                       <span className="text-[11px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md inline-block mt-1 font-medium">
                         {row.process}
                       </span>

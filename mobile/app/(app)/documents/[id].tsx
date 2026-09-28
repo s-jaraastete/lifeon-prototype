@@ -13,6 +13,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { SignaturePad } from "@/components/SignaturePad";
 import { IrlDeliveryPdfViewer } from "@/components/IrlDeliveryPdfViewer";
+import { ArtpDocumentReview } from "@/components/ArtpDocumentReview";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgBranding } from "@/hooks/useOrgBranding";
 import { useNetworkOnline } from "@/hooks/useNetwork";
@@ -25,13 +26,16 @@ import {
 } from "@/services/deliveries";
 import type { DocumentDelivery } from "@/types/models";
 import { useTabBarPadding } from "@/hooks/useTabBarPadding";
-import { isIrlDelivery, normalizeDeliverySnapshot } from "@/utils/deliverySnapshot";
+import { isIrlDelivery, isArtpDelivery, normalizeDeliverySnapshot } from "@/utils/deliverySnapshot";
 import { parseIrlSnapshot } from "@/utils/irlDocumentCopy";
 import { resolveOrganizationDisplayName } from "@/utils/organizationDisplayName";
 import { colors, spacing } from "@/theme/tokens";
 
 const DECLARATION =
   "Declaro haber recibido, leído y comprendido el documento asignado. Me comprometo a cumplir con los procedimientos y medidas preventivas indicadas.";
+
+const ARTP_DECLARATION =
+  "Declaro haber leído y comprendido el Análisis de Riesgo de la Tarea Planificada (ARTP) asignado y me comprometo a respetar los controles y la gestión de cambios indicados.";
 
 export default function DocumentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -114,8 +118,11 @@ export default function DocumentDetailScreen() {
 
   const snapshot = normalizeDeliverySnapshot(delivery.content_snapshot);
   const isIrl = isIrlDelivery(delivery);
+  const isArtp = isArtpDelivery(delivery);
   const parsedIrl = isIrl ? parseIrlSnapshot(snapshot) : null;
   const orgName = resolveOrganizationDisplayName(branding?.name, parsedIrl?.organizationName);
+  const declarationText = isArtp ? ARTP_DECLARATION : DECLARATION;
+  const needsReviewStep = isIrl || isArtp;
 
   return (
     <ScrollView
@@ -134,11 +141,13 @@ export default function DocumentDetailScreen() {
 
       {isIrl ? (
         <IrlDeliveryPdfViewer deliveryId={delivery.id} minHeight={560} />
+      ) : isArtp ? (
+        <ArtpDocumentReview snapshot={snapshot} />
       ) : (
         <TechnicalSnapshotBody snapshot={snapshot} />
       )}
 
-      {step === "sign" && delivery.status !== "firmado" && isIrl ? (
+      {step === "sign" && delivery.status !== "firmado" && (isIrl || isArtp) ? (
         <View style={styles.block}>
           <Text style={styles.section}>Firma del trabajador</Text>
           <SignaturePad onConfirm={handleSignature} />
@@ -150,10 +159,10 @@ export default function DocumentDetailScreen() {
         <View style={styles.block}>
           <View style={styles.switchRow}>
             <Switch value={accepted} onValueChange={setAccepted} />
-            <Text style={styles.declaration}>{DECLARATION}</Text>
+            <Text style={styles.declaration}>{declarationText}</Text>
           </View>
           <PrimaryButton
-            label="Continuar a firma"
+            label={needsReviewStep ? "Continuar a firma" : "Continuar a firma"}
             onPress={handleContinueToSign}
             disabled={!accepted}
             loading={loading}
@@ -165,7 +174,7 @@ export default function DocumentDetailScreen() {
         </View>
       ) : null}
 
-      {step === "sign" && delivery.status !== "firmado" && !isIrl ? (
+      {step === "sign" && delivery.status !== "firmado" && !isIrl && !isArtp ? (
         <View style={styles.block}>
           <SignaturePad onConfirm={handleSignature} />
           {loading ? <ActivityIndicator color={colors.primary} /> : null}

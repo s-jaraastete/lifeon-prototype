@@ -157,6 +157,36 @@ export async function purgeTestOrganizationData(
     .eq("id", orgId);
 
   await admin.from("organization_members").delete().eq("organization_id", orgId);
+
+  const artpTables = [
+    "artp_acknowledgements",
+    "artp_execution_checks",
+    "artp_execution_changes",
+    "artp_execution_participants",
+    "artp_executions",
+    "artp_iper_links",
+    "artp_step_controls",
+    "artp_step_risks",
+    "artp_step_hazards",
+    "artp_step_energies",
+    "artp_steps",
+    "artp_version_positions",
+    "artp_versions",
+    "artp_documents",
+    "org_tasks",
+  ] as const;
+  for (const table of artpTables) {
+    const { error } = await admin.from(table).delete().eq("organization_id", orgId);
+    if (
+      error &&
+      !error.message.includes("does not exist") &&
+      !error.message.includes("schema cache")
+    ) {
+      throw new Error(`${table}: ${error.message}`);
+    }
+  }
+  await admin.from("energy_types").delete().eq("organization_id", orgId).eq("is_system", false);
+
   await admin.from("positions").delete().eq("organization_id", orgId);
   await admin.from("subprocesses").delete().eq("organization_id", orgId);
   await admin.from("processes").delete().eq("organization_id", orgId);

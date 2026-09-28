@@ -636,18 +636,6 @@ body {
     break-inside: avoid;
   }
 
-  @media print {
-    .irl-a4-document-stack .irl-a4-sheet {
-      break-after: page;
-      page-break-after: always;
-    }
-
-    .irl-a4-document-stack .irl-a4-sheet:last-child {
-      break-after: auto;
-      page-break-after: auto;
-    }
-  }
-
   /* IRL — hoja oficio A4 */
   .irl-a4-sheet {
     box-sizing: border-box;
@@ -664,20 +652,149 @@ body {
       0 8px 24px rgb(0 0 0 / 0.06);
   }
 
-  @media print {
-    @page {
-      size: A4 portrait;
-      margin: 12mm;
-    }
+  /* ARTP — hoja carta US (216 × 279 mm), tamaño fijo en pantalla e impresión */
+  .irl-a4-sheet.irl-letter-sheet {
+    width: 216mm;
+    max-width: 216mm;
+    height: 279mm;
+    min-height: 279mm;
+    max-height: 279mm;
+  }
 
-    .irl-a4-sheet {
-      max-width: none;
-      width: 100%;
-      min-height: auto;
-      padding: 0;
-      box-shadow: none;
-      border: none !important;
-      border-radius: 0 !important;
+  .irl-letter-sheet__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .artp-print-table {
+    overflow: visible;
+    max-width: 100%;
+  }
+
+  .artp-print-table table {
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  .artp-print-table th,
+  .artp-print-table td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  @media print {
+    .artp-print-table,
+    .artp-print-table table {
+      overflow: visible !important;
     }
+  }
+
+  .artp-workers-table--compact td {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    font-size: 9px;
+  }
+
+  .artp-workers-table--compact .artp-signature-line {
+    height: 1.75rem;
+  }
+
+  .artp-workers-table--dense td {
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    font-size: 8px;
+  }
+
+  .artp-workers-table--dense .artp-signature-line {
+    height: 1.25rem;
+  }
+
+  .artp-signature-line {
+    border-bottom: 1px solid #9ca3af;
+    height: 2.5rem;
+    max-width: 100%;
+  }
+
+  .irl-a4-sheet-footer {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid #e5e7eb;
+    position: relative;
+    text-align: center;
+  }
+
+  .irl-a4-sheet-footer__meta {
+    position: relative;
+    z-index: 1;
+    font-size: 8px;
+    line-height: 1.4;
+    color: #6b7280;
+  }
+
+  .irl-a4-sheet-footer__watermark {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    opacity: 0.12;
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  @page artp-letter {
+    size: letter portrait;
+    margin: 0;
+  }
+
+  .irl-a4-sheet {
+    max-width: none;
+    width: 100%;
+    min-height: auto;
+    padding: 0;
+    box-shadow: none;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  .irl-a4-sheet.irl-letter-sheet {
+    page: artp-letter;
+    width: 216mm;
+    height: 279mm;
+    min-height: 279mm;
+    max-height: 279mm;
+    padding: 14mm 12mm 12mm;
+    box-shadow: none;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  .irl-a4-document-stack .irl-a4-sheet {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .irl-a4-document-stack .irl-a4-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
 }

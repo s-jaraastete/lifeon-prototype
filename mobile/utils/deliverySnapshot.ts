@@ -23,3 +23,9 @@ export function isIrlDelivery(delivery: DocumentDelivery): boolean {
   const snap = normalizeDeliverySnapshot(delivery.content_snapshot);
   return snap.kind === "irl";
 }
+
+export function isArtpDelivery(delivery: DocumentDelivery): boolean {
+  if (delivery.source_type === "artp") return true;
+  const snap = normalizeDeliverySnapshot(delivery.content_snapshot);
+  return snap.kind === "artp";
+}

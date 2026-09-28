@@ -5,7 +5,15 @@ import type { IperAiContextInput, IperSuggestionKind } from "@/types/ai";
 
 export const runtime = "nodejs";
 
-const KINDS: IperSuggestionKind[] = ["task", "hazard", "risk", "control"];
+const KINDS: IperSuggestionKind[] = [
+  "task",
+  "hazard",
+  "risk",
+  "control",
+  "step",
+  "energy",
+  "verification",
+];
 
 export async function POST(request: Request) {
   try {

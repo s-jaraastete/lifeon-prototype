@@ -12,6 +12,7 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
   const hideHeaderFooter =
     pathname === '/login' ||
     pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/print') ||
     (pathname?.startsWith('/admin') ?? false);
 
   return (

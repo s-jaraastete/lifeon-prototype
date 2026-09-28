@@ -11,6 +11,7 @@ const MODULE_TITLES: Record<DashboardMenuKey, string> = {
   users: "Usuarios",
   org: "Estructura Organizacional",
   iper: "Matriz IPER",
+  artp: "ARTP",
   docs: "Planificación Preventiva",
   techDocs: "Documentación Técnica",
   apr: "APR Virtual",

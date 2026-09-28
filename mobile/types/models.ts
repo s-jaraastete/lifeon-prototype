@@ -47,7 +47,7 @@ export type DeliveryStatus =
   | "firmado"
   | "anulado";
 
-export type DeliverySourceType = "irl" | "technical_document";
+export type DeliverySourceType = "irl" | "technical_document" | "artp";
 
 export interface DocumentDelivery {
   id: string;
@@ -71,4 +71,15 @@ export interface DocumentDelivery {
   signed_at: string | null;
   signed_by_auth_user_id: string | null;
   signature_path: string | null;
+}
+
+export interface ArtpExecutionSummary {
+  id: string;
+  code: string;
+  status: string;
+  artp_version_id: string;
+  specific_location: string | null;
+  starts_on: string | null;
+  started_at: string | null;
+  ended_at: string | null;
 }

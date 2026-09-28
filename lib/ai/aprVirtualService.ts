@@ -40,6 +40,14 @@ import {
   IPER_TASK_SYSTEM,
 } from "@/lib/ai/prompts/iperSuggestions";
 import {
+  ARTP_ENERGY_SYSTEM,
+  ARTP_STEP_SYSTEM,
+  ARTP_VERIFICATION_SYSTEM,
+  buildArtpEnergyUserPrompt,
+  buildArtpStepUserPrompt,
+  buildArtpVerificationUserPrompt,
+} from "@/lib/ai/prompts/artpSuggestions";
+import {
   CONTROL_JSON_SCHEMA,
   HAZARD_JSON_SCHEMA,
   parseSuggestionsByKind,
@@ -86,6 +94,13 @@ function validateIperContext(kind: IperSuggestionKind, ctx: IperAiContextInput):
           "Se requiere tarea, peligro y riesgo.",
           400
         );
+      }
+      break;
+    case "step":
+    case "energy":
+    case "verification":
+      if (!ctx.taskName?.trim()) {
+        throw new AiServiceError("CONTEXT_INCOMPLETE", "Se requiere una tarea.", 400);
       }
       break;
   }
@@ -185,6 +200,24 @@ export async function generateIperSuggestions(params: {
       userPrompt = buildIperControlUserPrompt(ctx);
       schemaName = "control_suggestions";
       jsonSchema = CONTROL_JSON_SCHEMA as unknown as Record<string, unknown>;
+      break;
+    case "step":
+      systemAddon += `\n${ARTP_STEP_SYSTEM}`;
+      userPrompt = buildArtpStepUserPrompt(ctx);
+      schemaName = "task_suggestions";
+      jsonSchema = TASK_JSON_SCHEMA as unknown as Record<string, unknown>;
+      break;
+    case "energy":
+      systemAddon += `\n${ARTP_ENERGY_SYSTEM}`;
+      userPrompt = buildArtpEnergyUserPrompt(ctx);
+      schemaName = "task_suggestions";
+      jsonSchema = TASK_JSON_SCHEMA as unknown as Record<string, unknown>;
+      break;
+    case "verification":
+      systemAddon += `\n${ARTP_VERIFICATION_SYSTEM}`;
+      userPrompt = buildArtpVerificationUserPrompt(ctx);
+      schemaName = "task_suggestions";
+      jsonSchema = TASK_JSON_SCHEMA as unknown as Record<string, unknown>;
       break;
   }
 

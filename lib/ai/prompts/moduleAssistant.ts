@@ -6,6 +6,7 @@ const MODULE_HINTS: Record<DashboardMenuKey, string> = {
   users: "Módulo Usuarios: roles Lector, Editor y Administrador; permisos y buenas prácticas.",
   org: "Módulo Estructura: Centro de Trabajo, Área, Proceso, Subproceso y Cargo.",
   iper: "Módulo Matriz IPER: tareas, peligros, evaluación, controles y riesgo residual.",
+  artp: "Módulo ARTP: planificación paso a paso, ejecución en terreno, verificación de controles y toma de conocimiento.",
   docs: "Planificación preventiva: actividades, responsables, periodicidad, avance y Curva S.",
   techDocs: "Documentación técnica: PTS, RIOHS, Plan de Emergencia y estructura documental.",
   apr: "Módulo APR Virtual (chat principal).",

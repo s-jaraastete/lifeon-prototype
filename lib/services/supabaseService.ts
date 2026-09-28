@@ -784,6 +784,32 @@ export async function resetSupabaseDataForOrg(orgId: string, userId?: string): P
     await client.from("preventive_docs").delete().like("id", `${orgId}_%`);
 
     // 4. Eliminar matrices IPER asociadas a la organización
+    const artpTables = [
+      "artp_acknowledgements",
+      "artp_execution_checks",
+      "artp_execution_changes",
+      "artp_execution_participants",
+      "artp_executions",
+      "artp_iper_links",
+      "artp_step_controls",
+      "artp_step_risks",
+      "artp_step_hazards",
+      "artp_step_energies",
+      "artp_steps",
+      "artp_version_positions",
+      "artp_versions",
+      "artp_documents",
+      "org_tasks",
+    ];
+    for (const table of artpTables) {
+      try {
+        await client.from(table).delete().eq("organization_id", orgId);
+      } catch (_) {}
+    }
+    try {
+      await client.from("energy_types").delete().eq("organization_id", orgId).eq("is_system", false);
+    } catch (_) {}
+
     await client.from("iper_matrices").delete().or(`organization_id.eq.${orgId},id.like.${orgId}_%`);
 
     // 5. Eliminar estructura organizacional compuesta (legado)

@@ -2,7 +2,7 @@ import type { DashboardMenuKey } from "@/types/dashboardNav";
 
 export type AprChatMode = "apr_chat" | "module_assistant";
 
-export type IperSuggestionKind = "task" | "hazard" | "risk" | "control";
+export type IperSuggestionKind = "task" | "hazard" | "risk" | "control" | "step" | "energy" | "verification";
 
 export interface AiChatHistoryItem {
   role: "user" | "assistant";
@@ -34,6 +34,8 @@ export interface IperAiContextInput {
   existingHazardNames?: string[];
   existingRiskNames?: string[];
   existingControls?: { type: string; description: string }[];
+  existingStepNames?: string[];
+  stepDescription?: string;
 }
 
 export interface TaskSuggestionItem {

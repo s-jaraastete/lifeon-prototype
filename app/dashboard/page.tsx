@@ -30,12 +30,14 @@ import {
   LuBuilding2,
   LuChevronDown,
   LuLock,
+  LuClipboardList,
 } from "react-icons/lu";
 
 import dynamic from "next/dynamic";
 import { hasLifeOnAiSession } from "@/lib/auth/lifeonSessionClient";
 
 import DashboardKpis from "./components/DashboardKpis";
+import type { ArtpPrefillFromIper } from "./components/artp/ArtpHomeView";
 import AprVirtualAssistant from "./components/AprVirtualAssistant";
 import AprVirtualSessionPrompt from "./components/AprVirtualSessionPrompt";
 
@@ -43,6 +45,9 @@ const IperMatrixView = dynamic(() => import("./components/IperMatrixView"), {
   loading: () => (
     <div className="p-8 text-sm text-gray-500">Cargando Matriz IPER…</div>
   ),
+});
+const ArtpHomeView = dynamic(() => import("./components/artp/ArtpHomeView"), {
+  loading: () => <div className="p-8 text-sm text-gray-500">Cargando ARTP…</div>,
 });
 const PreventiveDocsView = dynamic(() => import("./components/PreventiveDocsView"), {
   loading: () => (
@@ -129,6 +134,7 @@ const NAV_SECTIONS: NavSectionConfig[] = [
     title: "Gestión técnica",
     items: [
       { key: "iper", label: "Matriz IPER", title: "Matriz IPER", icon: LuLayoutGrid },
+      { key: "artp", label: "ARTP", title: "ARTP", icon: LuClipboardList },
       {
         key: "docs",
         label: "Planificación y Gestión Preventiva",
@@ -260,6 +266,7 @@ export default function DashboardPage() {
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeMenu, setActiveMenu] = useState<DashboardMenuKey>("dashboard");
+  const [artpPrefill, setArtpPrefill] = useState<ArtpPrefillFromIper | null>(null);
   const [aiSessionReady, setAiSessionReady] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -1248,6 +1255,17 @@ export default function DashboardPage() {
           <IperMatrixView
             onOpenAprVirtual={() => navigateToMenu("apr")}
             onNavigateToOrg={() => setActiveMenu("org")}
+            onNavigateToArtp={(taskName, matrixId) => {
+              setArtpPrefill({ taskName, matrixId });
+              setActiveMenu("artp");
+            }}
+          />
+        )}
+
+        {activeMenu === "artp" && (
+          <ArtpHomeView
+            initialPrefill={artpPrefill}
+            onClearPrefill={() => setArtpPrefill(null)}
           />
         )}
 

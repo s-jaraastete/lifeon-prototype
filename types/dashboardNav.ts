@@ -3,6 +3,7 @@ export type DashboardMenuKey =
   | "users"
   | "org"
   | "iper"
+  | "artp"
   | "docs"
   | "apr"
   | "techDocs";
@@ -10,6 +11,7 @@ export type DashboardMenuKey =
 /** Módulos de la sección Gestión técnica del sidebar */
 export const TECHNICAL_MANAGEMENT_MENU_KEYS: DashboardMenuKey[] = [
   "iper",
+  "artp",
   "docs",
   "techDocs",
   "apr",
