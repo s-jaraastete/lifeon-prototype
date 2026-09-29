@@ -6,6 +6,7 @@ type DetailRowProps = {
   label: string;
   value: string;
   className?: string;
+  valueClassName?: string;
 };
 
 type DetailSectionProps = {
@@ -26,6 +27,7 @@ export type DetailSectionRowConfig = {
   label: string;
   value: string;
   className?: string;
+  valueClassName?: string;
 };
 
 export type DetailSectionConfig = {
@@ -36,10 +38,12 @@ export type DetailSectionConfig = {
 };
 
 // TODO: Revisar los estilos default contra el diseño final.
-export const DetailRow = ({ label, value, className }: DetailRowProps) => (
+export const DetailRow = ({ label, value, className, valueClassName }: DetailRowProps) => (
   <div className={clsx("flex flex-col gap-1", className)}>
     <span className="text-xs font-medium text-neutral-secondary">{label}</span>
-    <span className="text-sm text-neutral-primary">{value}</span>
+    <span className={clsx("text-sm text-neutral-primary", valueClassName)}>
+      {value}
+    </span>
   </div>
 );
 
