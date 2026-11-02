@@ -30,5 +30,6 @@ Keep **`"use client"`** low in the tree. Extend backend responses instead of a s
 
 ## Related
 
+- Client-only reads: [fld-client-react-query](../fld-client-react-query/SKILL.md)
 - [fld-reusable-components](../fld-reusable-components/SKILL.md)
 - `lib/requests.ts`, `lib/axios_server_manager.ts`

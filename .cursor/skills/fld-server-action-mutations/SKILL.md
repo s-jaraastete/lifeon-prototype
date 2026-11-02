@@ -23,6 +23,10 @@ Use **`@/components/reusable/hooks/useFormActionState`** + **`@/components/reusa
 
 Use dedicated **`'use server'`** functions (e.g. checkout one-click start) that call **`axiosServerManager`**—still no client-side API writes.
 
+## User-triggered client requests
+
+See [fld-client-triggered-mutations](../fld-client-triggered-mutations/SKILL.md) for export/download/click-driven API calls with `useMutation`.
+
 ## Checklist
 
 - [ ] No new client-side mutation calls to the backend API.
