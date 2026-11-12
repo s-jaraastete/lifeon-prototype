@@ -5,6 +5,8 @@ import Image from "next/image";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import axiosFetcher from "@/lib/axios_fetcher";
 import type { FormFields } from "@/hooks/useFormValidation";
 import useFormValidation from "@/hooks/useFormValidation";
 import { useCart } from "@/providers/CartProvider";
@@ -42,6 +44,22 @@ type CheckoutFormProps = {
   regions: Region[]
   ufValue: number
 }
+
+// Test data that satisfies lib/validators/validateForm.ts (RUT has a valid check digit).
+const TEST_FORM_DATA: FormFields = {
+  first_name: "Juan",
+  last_name: "Pérez González",
+  email: "juan.perez@example.com",
+  phone: "+56912345678",
+  rut: "76.123.456-0",
+  business_name: "Empresa de Prueba SpA",
+  business_line: "Servicios de software y consultoría",
+  billing_email: "facturacion@example.com",
+  address: "Av. Providencia 1234, Of. 56",
+  payment_method: "webpay",
+};
+
+const IS_DEV = process.env.NODE_ENV !== "production";
 
 export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
   const router = useRouter();
@@ -91,6 +109,44 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
   const handleFieldReset = (field: keyof FormFields) => {
     setForm((prev) => ({ ...prev, [field]: "" }));
   };
+
+  const fillTestData = useMutation({
+    mutationFn: async () => {
+      const region = regions[0];
+      if (!region) throw new Error("No hay regiones cargadas.");
+
+      const response = await axiosFetcher(
+        `/communes/all/?region=${region.id}&page_size=1`,
+        { useAccessToken: false },
+      );
+      const commune: Commune | undefined = response.data?.results?.[0];
+      if (!commune) throw new Error("La región no tiene comunas.");
+
+      return { region, commune };
+    },
+    onSuccess: ({ region, commune }) => {
+      setForm({
+        ...TEST_FORM_DATA,
+        region: String(region.id),
+        comuna: String(commune.id),
+      });
+      setSelectedCommune(commune);
+      setTouched(
+        Object.fromEntries(
+          [...PERSONAL_FIELDS, ...BILLING_FIELDS, ...PAYMENT_FIELDS].map(
+            (field) => [field, true],
+          ),
+        ),
+      );
+    },
+    onError: (error) => {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "No se pudo rellenar el formulario.",
+      );
+    },
+  });
 
   const toggle = (section: SectionId) => {
     setActiveSection((prev) => (prev === section ? null : section));
@@ -203,6 +259,16 @@ export default function CheckoutForm({ regions, ufValue }: CheckoutFormProps) {
       onSubmit={handleSubmit}
     >
       <div className="lg:col-span-2 flex flex-col gap-5.5">
+        {IS_DEV && (
+          <button
+            type="button"
+            onClick={() => fillTestData.mutate()}
+            disabled={fillTestData.isPending}
+            className="self-start text-sm border border-dashed border-gray-400 rounded-xl px-4 py-2 text-secondary-text transition duration-200 hover:bg-gray-100 cursor-pointer disabled:cursor-not-allowed"
+          >
+            {fillTestData.isPending ? "Rellenando..." : "Rellenar con datos de prueba (dev)"}
+          </button>
+        )}
         <CheckoutCollapse
           title="Datos personales"
           active={activeSection === "personal"}
