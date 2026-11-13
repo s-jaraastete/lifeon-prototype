@@ -2,7 +2,16 @@ import {NextAuthOptions} from 'next-auth'
 import {checkExpired} from "../jwtTokenHandler";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-const cookieNamePrefix = process.env.COOKIES_NAME_PREFIX ?? 'localhost_frontend'
+const cookieNamePrefix = process.env.COOKIES_NAME_PREFIX ?? 'lifeon_2_localhost-next-auth'
+const cookieDomain = process.env.DOMAIN
+const useSharedCookieDomain = Boolean(cookieDomain && cookieDomain !== 'localhost')
+const cookieOptions = {
+  ...(useSharedCookieDomain ? { domain: cookieDomain } : {}),
+  sameSite: 'lax' as const,
+  path: '/',
+  secure: useSharedCookieDomain,
+  httpOnly: true,
+}
 
 const refreshAccessToken = async (refreshToken: string) => {
   const host = process.env.NEXT_PUBLIC_ADMIN_MODULE_API;
@@ -85,24 +94,16 @@ const nextAuthOptions: NextAuthOptions = {
   cookies: {
     sessionToken: {
       name: `${cookieNamePrefix}.session-token`,
-      options: {
-        domain: process.env.DOMAIN ?? 'localhost',
-        sameSite: 'lax',
-        path: '/',
-        secure: true,
-        httpOnly: true
-      }
+      options: cookieOptions,
+    },
+    callbackUrl: {
+      name: `${cookieNamePrefix}.callback-url`,
+      options: cookieOptions,
     },
     csrfToken: {
       name: `${cookieNamePrefix}.csrf-token`,
-      options: {
-        domain: process.env.DOMAIN ?? 'localhost',
-        sameSite: 'lax',
-        path: '/',
-        secure: true,
-        httpOnly: true
-      }
-    }
+      options: cookieOptions,
+    },
   }
 }
 
