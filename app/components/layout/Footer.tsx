@@ -75,7 +75,10 @@ const Footer = () => {
                       <Link href="/" className="transition-colors duration-200 hover:text-gray-400">MIPER</Link>
                     </li>
                     <li>
-                      <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Programa y Documentación Preventiva</Link>
+                      <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Planificación y Gestión Preventiva</Link>
+                    </li>
+                    <li>
+                      <Link href="/" className="transition-colors duration-200 hover:text-gray-400">Documentación Técnica</Link>
                     </li>
                     <li>
                       <Link href="/" className="transition-colors duration-200 hover:text-gray-400">APR Virtual</Link>

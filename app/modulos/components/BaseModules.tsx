@@ -1,7 +1,7 @@
 'use client'
 
 import CardSlider from '@/app/components/shared/CardSlider';
-import { AprIcon, DocumentacionIcon, MiperIcon } from '@/app/components/shared/baseModules';
+import { AprIcon, DocumentacionIcon, MiperIcon, PlanificacionIcon } from '@/app/components/shared/baseModules';
 import ModuleCard from './ModuleCard';
 
 export const CardData = [
@@ -19,15 +19,27 @@ export const CardData = [
     buttonLink: "/modulos/miper",
   },
   {
-    icon: <DocumentacionIcon box="w-12 h-12" iconSize={24} />,
-    title: "Programa y Documentación Preventiva",
-    description: "Planifica las actividades de seguridad y mantén tu documentación preventiva organizada, vigente y disponible.",
+    icon: <PlanificacionIcon box="w-12 h-12" iconSize={24} />,
+    title: "Planificación y Gestión Preventiva",
+    description: "Planifica las actividades de seguridad, asigna responsables y haz seguimiento del cumplimiento.",
     details: [
       "Programa actividades, inspecciones y compromisos.",
       "Asigna responsables y fechas de cumplimiento.",
-      "Centraliza documentos y registros preventivos.",
       "Controla estados, avances y vencimientos.",
+      "Mantén el plan preventivo actualizado.",
+      "Da seguimiento a la gestión de la organización.",
+    ],
+    buttonLink: "/contacto",
+  },
+  {
+    icon: <DocumentacionIcon box="w-12 h-12" iconSize={24} />,
+    title: "Documentación Técnica",
+    description: "Mantén tu documentación técnica organizada, vigente y disponible.",
+    details: [
+      "Centraliza documentos y registros preventivos.",
       "Mantén disponible la evidencia de tu gestión.",
+      "Conserva la documentación vigente y ordenada.",
+      "Facilita la consulta de los antecedentes preventivos.",
     ],
     buttonLink: "/contacto",
   },

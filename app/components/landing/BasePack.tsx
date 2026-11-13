@@ -20,7 +20,7 @@ export const CardData = [
     chip: "Incluído en Paquete Base Esencial",
     icon: <LuFileSearch2 size={24} className="text-black" />,
     bgIcon: "bg-[#7dd3fc]",
-    title: "Programa y Documentación Preventiva",
+    title: "Documentación Técnica",
     description: "Planifica las actividades de seguridad y mantén tu documentación preventiva organizada, vigente y disponible.",
     details: ["Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet", "Lorem ipsum dolor sit amet"],
     borderButtonColor: "border-[#7dd3fc]",

@@ -13,7 +13,7 @@ import {
 } from '@/utils/pricingHelpers';
 import { PAYMENT_METHODS } from './form/PaymentMethod';
 import DiscountCoupon from './DiscountCoupon';
-import { AprIcon, DocumentacionIcon, MiperIcon } from '@/app/components/shared/baseModules';
+import { AprIcon, DocumentacionIcon, MiperIcon, PlanificacionIcon } from '@/app/components/shared/baseModules';
 
 
 type CheckoutModule = {
@@ -36,10 +36,17 @@ const getCheckoutModule = (name: string): CheckoutModule | undefined => {
         text: 'Matriz IPER ',
       };
 
+    case "Planificación y Gestión Preventiva":
+      return {
+        icon: <PlanificacionIcon box="h-5 w-5" iconSize={10} />,
+        text: 'Planificación y Gestión Preventiva',
+      };
+
     case "Programa y Documentación Preventiva":
+    case "Documentación Técnica":
       return {
         icon: <DocumentacionIcon box="h-5 w-5" iconSize={10} />,
-        text: 'Programa y Documentación preventiva ',
+        text: 'Documentación Técnica',
       };
 
     case "APR Virtual":
