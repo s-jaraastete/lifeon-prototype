@@ -67,6 +67,8 @@ export default function InvoiceDetailPanel({
   const isDocumentReady = invoice.document_status === "ready";
   const canDownload = invoice.document_available && !!invoice.download_url;
 
+  const isOverdue = getInvoiceDisplayStatus(invoice) === "vencida";
+
   const sections: DetailSectionConfig[] = [
     {
       title: "Información tributaria y cliente",
@@ -82,7 +84,18 @@ export default function InvoiceDetailPanel({
         { label: "Fecha de emisión", value: formatInvoiceDate(invoice.issued_at) },
         { label: "Fecha de vencimiento", value: formatInvoiceDate(invoice.due_date) },
         // TODO: El backend no expone fecha de pago.
-        { label: "Fecha de pago", value: DISPLAY_FALLBACK },
+        ...(isOverdue
+          ? []
+          : [{ label: "Fecha de pago", value: DISPLAY_FALLBACK }]),
+        ...(isOverdue
+          ? [
+              {
+                label: "Días de mora",
+                value: `${invoice.overdue_days ?? DISPLAY_FALLBACK} días de mora`,
+                valueClassName: "text-red-error-600",
+              },
+            ]
+          : []),
         {
           label: "Orden de compra / Ref",
           value: invoice.order_number || DISPLAY_FALLBACK,
@@ -110,19 +123,23 @@ export default function InvoiceDetailPanel({
         </>
       ),
     },
-    {
-      title: "Método de pago",
-      rows: [
-        {
-          label: "Modalidad",
-          value: formatInvoicePaymentMethod(invoice),
-        },
-        {
-          label: "Detalle",
-          value: formatInvoicePaymentDetail(invoice.payment_method),
-        },
-      ],
-    },
+    ...(isOverdue
+      ? []
+      : [
+          {
+            title: "Método de pago",
+            rows: [
+              {
+                label: "Modalidad",
+                value: formatInvoicePaymentMethod(invoice),
+              },
+              {
+                label: "Detalle",
+                value: formatInvoicePaymentDetail(invoice.payment_method),
+              },
+            ],
+          },
+        ]),
   ];
 
   return (
@@ -146,15 +163,26 @@ export default function InvoiceDetailPanel({
         </p>
       </div>
 
-      {/* TODO: "Reenviar DTE por correo" sin conectar */}
+      {/* TODO: "Reenviar DTE por correo" y "recordatorio de pago" sin conectar */}
+      {/* TODO: Ajustar clases flex y centrado de botones */}
       <DetailActions>
-        <button
-          type="button"
-          className="flex-1 rounded-lg border border-secondary px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-secondary/5"
-        >
-          <LuMail className="mr-1 inline-block size-4" />
-          Reenviar DTE por correo
-        </button>
+        {isOverdue ? (
+            <button
+              type="button"
+              className="flex items-center rounded-lg border border-secondary px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-secondary/5"
+            >
+              <LuMail className="mr-1 inline-block size-4" />
+              Enviar recordatorio de pago
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="flex-1 rounded-lg border border-secondary px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-secondary/5"
+            >
+              <LuMail className="mr-1 inline-block size-4" />
+              Reenviar DTE por correo
+            </button>
+        )}
         {canDownload ? (
           <a
             href={invoice.download_url ?? undefined}
@@ -172,6 +200,7 @@ export default function InvoiceDetailPanel({
             Descargar Factura
           </button>
         )}
+        {/* TODO: Pendiente el funcionamiento de botón "Más acciones" */}
         <button
           type="button"
           className="rounded-lg border border-stroke-primary p-2 text-neutral-secondary transition-colors hover:bg-surface-tertiary hover:text-secondary"

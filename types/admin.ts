@@ -112,6 +112,7 @@ export type Invoice = {
   issued_at: string;
   due_date: string | null;
   status: InvoiceStatus;
+  overdue_days?: number;
   payment_method: InvoicePaymentMethod | null;
   document_status: InvoiceDocumentStatus;
   document_available: boolean;
