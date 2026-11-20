@@ -10,7 +10,7 @@ import {
 import Image from "next/image";
 import clsx from "clsx";
 import { Subscription } from "@/types/admin";
-import { AprIcon, DocumentacionIcon, MiperIcon } from "@/app/components/shared/baseModules";
+import { AprIcon, DocumentacionIcon, MiperIcon, PlanificacionIcon } from "@/app/components/shared/baseModules";
 import DetailPanel, {
   DetailActions,
   DetailSectionList,
@@ -47,7 +47,13 @@ const getModuleIcon = (displayName: string): React.ReactNode => {
     case "Matriz IPER":
       return <MiperIcon box="size-5" iconSize={12} />;
 
+    case "Planificación y Gestión Preventiva":
+      return <PlanificacionIcon box="size-5" iconSize={12} />;
+
     case "Programa y Documentación Preventiva":
+    case "Programa y Documentación Preventiva Limited":
+    case "Documentación Técnica":
+    case "Documentación Técnica Limited":
       return <DocumentacionIcon box="size-5" iconSize={12} />;
 
     case "APR Virtual":

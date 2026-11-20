@@ -15,7 +15,6 @@ import {
   LuShieldCheck,
   LuOctagonAlert,
   LuScrollText,
-  LuSparkles,
   LuAtom,
   LuSend,
 } from "react-icons/lu";
@@ -241,15 +240,15 @@ export default function TechnicalDocsView() {
   const inReviewCount = useMemo(() => documents.filter((d) => d.status === "En Revisión").length, [documents]);
 
   return (
-    <div className="flex flex-col gap-4 font-[family-name:var(--font-poppins)] select-none">
+    <div className="flex flex-col gap-4 font-[family-name:var(--font-poppins)]">
       {/* Header */}
       <section className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-violet-50 text-violet-700 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center">
             <LuBookOpen className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
               Documentación Técnica
             </h1>
             <p className="text-xs sm:text-sm text-gray-500">
@@ -264,9 +263,9 @@ export default function TechnicalDocsView() {
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
           <div className="flex items-center justify-between text-gray-400 mb-1">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Total</span>
-            <LuBookOpen className="w-4 h-4 text-violet-400" />
+            <LuBookOpen className="w-4 h-4 text-gray-400" />
           </div>
-          <p className="text-2xl font-black text-gray-900">{totalDocsCount}</p>
+          <p className="text-2xl font-bold text-gray-900">{totalDocsCount}</p>
           <span className="text-[10px] text-gray-500 mt-0.5">Documentos registrados</span>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
@@ -274,7 +273,7 @@ export default function TechnicalDocsView() {
             <span className="text-[11px] font-semibold uppercase tracking-wider">Vigentes</span>
             <LuShieldCheck className="w-4 h-4 text-emerald-500" />
           </div>
-          <p className="text-2xl font-black text-emerald-700">{vigentCount}</p>
+          <p className="text-2xl font-bold text-emerald-700">{vigentCount}</p>
           <span className="text-[10px] text-gray-500 mt-0.5">Aprobados y vigentes</span>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
@@ -282,7 +281,7 @@ export default function TechnicalDocsView() {
             <span className="text-[11px] font-semibold uppercase tracking-wider">Borradores</span>
             <LuPencil className="w-4 h-4 text-amber-500" />
           </div>
-          <p className="text-2xl font-black text-amber-600">{draftCount}</p>
+          <p className="text-2xl font-bold text-amber-600">{draftCount}</p>
           <span className="text-[10px] text-gray-500 mt-0.5">En elaboración</span>
         </div>
       </section>
@@ -363,7 +362,7 @@ export default function TechnicalDocsView() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
         {filteredDocs.length === 0 ? (
           <div className="p-16 text-center">
-            <div className="w-14 h-14 rounded-full bg-violet-50 flex items-center justify-center text-violet-600 mx-auto mb-4">
+            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 mx-auto mb-4">
               <LuBookOpen className="w-7 h-7" />
             </div>
             <h3 className="text-sm font-bold text-gray-900 mb-1">
@@ -472,7 +471,7 @@ export default function TechnicalDocsView() {
       {/* CREATE DOC NAME MODAL */}
       {isCreateModalOpen && selectedTypeForCreate && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-lg border border-gray-100">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <h3 className="text-base font-bold text-gray-900">Nuevo Documento</h3>
               <button
@@ -547,7 +546,7 @@ export default function TechnicalDocsView() {
       {/* DELETE CONFIRM MODAL */}
       {isDeleteConfirmId && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-lg border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
                 <LuTriangleAlert className="w-5 h-5" />
@@ -583,7 +582,7 @@ export default function TechnicalDocsView() {
       {/* DOCUMENT EDITOR MODAL */}
       {isEditorOpen && editingDoc && typeDef && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl w-full max-w-2xl my-8 shadow-2xl border border-gray-100">
+          <div className="bg-white rounded-3xl w-full max-w-2xl my-8 shadow-lg border border-gray-100">
             {/* Editor header */}
             <div className="sticky top-0 z-10 bg-white rounded-t-3xl border-b border-gray-100 px-6 py-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -596,7 +595,7 @@ export default function TechnicalDocsView() {
                   );
                 })()}
                 <div className="min-w-0">
-                  <p className="text-sm font-black text-gray-900 truncate">{editingDoc.name}</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">{editingDoc.name}</p>
                   <p className="text-[11px] text-gray-500">{typeDef.label}</p>
                 </div>
               </div>
@@ -622,12 +621,12 @@ export default function TechnicalDocsView() {
 
             {/* Sections */}
             <div className="px-6 pt-4 flex flex-col gap-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-2xl border border-violet-200 bg-violet-50/60">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg border border-teal-200 bg-teal-50">
                 <div className="flex items-start gap-2">
-                  <LuAtom className="w-4 h-4 text-violet-700 mt-0.5 flex-shrink-0" />
+                  <LuAtom className="w-4 h-4 text-teal-700 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-violet-950">APR Virtual IA</p>
-                    <p className="text-[11px] text-violet-900/80">
+                    <p className="text-xs font-bold text-gray-900">APR Virtual IA</p>
+                    <p className="text-[11px] text-gray-600">
                       Genera un borrador por secciones. Tú revisas, editas y guardas cuando esté listo.
                     </p>
                   </div>
@@ -636,9 +635,9 @@ export default function TechnicalDocsView() {
                   type="button"
                   disabled={isGeneratingAi}
                   onClick={() => void handleGenerateWithAi()}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold disabled:opacity-50 cursor-pointer whitespace-nowrap"
                 >
-                  <LuSparkles className="w-3.5 h-3.5" />
+                  <LuAtom className="w-3.5 h-3.5" />
                   {isGeneratingAi ? "Generando borrador…" : "Generar contenido con IA"}
                 </button>
               </div>
@@ -648,7 +647,7 @@ export default function TechnicalDocsView() {
                 </p>
               )}
               {isGeneratingAi && (
-                <p className="text-[11px] text-violet-700 animate-pulse">
+                <p className="text-[11px] text-teal-700 animate-pulse">
                   APR Virtual está preparando el borrador del documento…
                 </p>
               )}
@@ -748,11 +747,11 @@ export default function TechnicalDocsView() {
       {/* AI PREVIEW MODAL */}
       {aiPreviewOpen && editingDoc && typeDef && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-violet-200">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-lg border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <LuSparkles className="w-4 h-4 text-violet-600" />
+                  <LuAtom className="w-4 h-4 text-teal-600" />
                   Revisar borrador — APR Virtual IA
                 </h3>
                 <p className="text-[11px] text-gray-500 mt-0.5">{editingDoc.name}</p>
@@ -789,7 +788,7 @@ export default function TechnicalDocsView() {
                   type="checkbox"
                   checked={aiMergeOnlyEmpty}
                   onChange={(e) => setAiMergeOnlyEmpty(e.target.checked)}
-                  className="accent-violet-600"
+                  className="accent-teal-600"
                 />
                 Aplicar solo en secciones vacías
               </label>
@@ -804,7 +803,7 @@ export default function TechnicalDocsView() {
                 <button
                   type="button"
                   onClick={handleApplyAiPreview}
-                  className="px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-xl cursor-pointer"
+                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl cursor-pointer"
                 >
                   Aplicar al editor
                 </button>
@@ -816,7 +815,7 @@ export default function TechnicalDocsView() {
 
       {sendDoc && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 max-h-[85vh] flex flex-col">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-lg border border-gray-100 max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-gray-900">Enviar documento a trabajadores</h3>
               <button type="button" onClick={() => setSendDoc(null)} className="p-1.5 text-gray-400">

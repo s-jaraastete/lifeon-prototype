@@ -9,7 +9,7 @@ import type {CartBillingPeriod, CartItem} from '@/providers/CartProvider';
 import Switch from '../ui/Switch';
 import CardSlider from './CardSlider';
 import PlanPricingCard, { PlanPricingCardProps } from './PlanPricingCard';
-import { AprIcon, DocumentacionIcon, MiperIcon } from './baseModules';
+import { AprIcon, DocumentacionIcon, MiperIcon, PlanificacionIcon } from './baseModules';
 
 // Icons
 import { LuCheck } from 'react-icons/lu';
@@ -24,9 +24,14 @@ const IPERModule = {
   text: 'Matriz IPER ',
 };
 
+const PlanificationModule = {
+  icon: <PlanificacionIcon box="w-4.5 h-4.5" iconSize={10} />,
+  text: 'Planificación y Gestión Preventiva',
+};
+
 const DocumentationModule = {
   icon: <DocumentacionIcon box="w-4.5 h-4.5" iconSize={10} />,
-  text: 'Programa y Documentación preventiva ',
+  text: 'Documentación Técnica',
 };
 
 const APRVirtualModule = {
@@ -154,6 +159,12 @@ const buildCardData = (plans: Pack[], billingPeriod: CartBillingPeriod, onPlanCl
         case 'miper_matrix_limit':
           return {
             ...IPERModule,
+            ...baseFeature,
+          };
+
+        case 'planification_access':
+          return {
+            ...PlanificationModule,
             ...baseFeature,
           };
 

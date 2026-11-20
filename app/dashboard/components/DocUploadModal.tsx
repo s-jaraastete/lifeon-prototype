@@ -127,8 +127,8 @@ export default function DocUploadModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-gray-100 p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-lg rounded-3xl shadow-lg border border-gray-100 p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
         <button
           type="button"
           onClick={onClose}

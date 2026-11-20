@@ -1,12 +1,13 @@
-import { ProgramActivity } from "@/types/preventiveProgram";
+import type { ProgramActivity } from "@/types/preventiveProgram";
 
 export interface SCurvePoint {
   date: string;
   planned: number;
-  actual: number;
+  /** null = fecha futura, sin avance real todavía */
+  actual: number | null;
 }
 
-function parseYmd(s: string): Date | null {
+export function parseYmd(s: string): Date | null {
   if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
   const d = new Date(`${s}T12:00:00`);
   return Number.isNaN(d.getTime()) ? null : d;
@@ -20,7 +21,7 @@ function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86400000);
 }
 
-function plannedFraction(start: Date, end: Date, t: Date): number {
+export function plannedFraction(start: Date, end: Date, t: Date): number {
   if (t < start) return 0;
   if (t >= end) return 1;
   const total = daysBetween(start, end);

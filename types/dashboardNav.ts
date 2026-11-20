@@ -6,7 +6,8 @@ export type DashboardMenuKey =
   | "artp"
   | "docs"
   | "apr"
-  | "techDocs";
+  | "techDocs"
+  | "processSafety";
 
 /** Módulos de la sección Gestión técnica del sidebar */
 export const TECHNICAL_MANAGEMENT_MENU_KEYS: DashboardMenuKey[] = [

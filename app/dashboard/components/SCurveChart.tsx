@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -11,28 +10,19 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { ProgramActivity, ActivityCategory } from "@/types/preventiveProgram";
-import { buildSCurveSeries } from "@/lib/preventive/sCurve";
+import type { SCurveBuildResult } from "@/lib/preventive/sCurve";
 
 type SCurveChartProps = {
-  activities: ProgramActivity[];
-  categoryFilter: ActivityCategory | "Todas";
+  result: SCurveBuildResult;
+  title: string;
+  emptyMessage: string;
 };
 
-export default function SCurveChart({ activities, categoryFilter }: SCurveChartProps) {
-  const result = useMemo(
-    () => buildSCurveSeries(activities, categoryFilter),
-    [activities, categoryFilter]
-  );
-
+export default function SCurveChart({ result, title, emptyMessage }: SCurveChartProps) {
   if (!result.ok) {
-    const message =
-      result.reason === "no_activities"
-        ? "Configura tu Programa de Trabajo para visualizar la Curva S."
-        : "Define fechas de inicio y término en las actividades para visualizar la Curva S.";
     return (
       <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 p-8 text-center">
-        <p className="text-sm text-gray-600">{message}</p>
+        <p className="text-sm text-gray-600">{emptyMessage}</p>
       </div>
     );
   }
@@ -45,7 +35,7 @@ export default function SCurveChart({ activities, categoryFilter }: SCurveChartP
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-xs">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h3 className="text-sm font-bold text-gray-900">Curva S — Avance del programa</h3>
+        <h3 className="text-sm font-bold text-gray-900">{title}</h3>
         <span className="text-[10px] text-gray-500 font-mono">
           {result.minDate} → {result.maxDate}
         </span>
@@ -57,7 +47,7 @@ export default function SCurveChart({ activities, categoryFilter }: SCurveChartP
             <XAxis dataKey="label" tick={{ fontSize: 10 }} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} unit="%" />
             <Tooltip
-              formatter={(value) => [`${value ?? 0}%`, ""]}
+              formatter={(value) => [value == null ? "—" : `${value}%`, ""]}
               labelFormatter={(label) => `Periodo: ${label}`}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />

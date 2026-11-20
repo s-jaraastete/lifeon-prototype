@@ -463,7 +463,7 @@ export default function UsersView() {
   }, [users, searchQuery, filterRole]);
 
   return (
-    <div className="flex flex-col gap-4 font-[family-name:var(--font-poppins)] select-none">
+    <div className="flex flex-col gap-4 font-[family-name:var(--font-poppins)]">
       {/* Header */}
       <section className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -471,7 +471,7 @@ export default function UsersView() {
             <LuUsers className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Usuarios</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Usuarios</h1>
             <p className="text-xs sm:text-sm text-gray-500">
               Administra las personas con acceso a LifeOn, sus roles y permisos.
             </p>
@@ -517,7 +517,7 @@ export default function UsersView() {
             <span className="text-[11px] font-semibold uppercase tracking-wider">Total</span>
             <LuUsers className="w-4 h-4 text-emerald-500" />
           </div>
-          <p className="text-2xl font-black text-gray-900">{totalUsersCount}</p>
+          <p className="text-2xl font-bold text-gray-900">{totalUsersCount}</p>
           <span className="text-[10px] text-gray-500 mt-0.5">Usuarios registrados</span>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
@@ -525,7 +525,7 @@ export default function UsersView() {
             <span className="text-[11px] font-semibold uppercase tracking-wider">Activos</span>
             <LuCircleCheck className="w-4 h-4 text-emerald-500" />
           </div>
-          <p className="text-2xl font-black text-emerald-700">{totalActiveUsersCount}</p>
+          <p className="text-2xl font-bold text-emerald-700">{totalActiveUsersCount}</p>
           <span className="text-[10px] text-gray-500 mt-0.5">Con acceso activo</span>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
@@ -533,7 +533,7 @@ export default function UsersView() {
             <span className="text-[11px] font-semibold uppercase tracking-wider">Inactivos</span>
             <LuPower className="w-4 h-4 text-gray-400" />
           </div>
-          <p className="text-2xl font-black text-gray-500">{totalInactiveUsersCount}</p>
+          <p className="text-2xl font-bold text-gray-500">{totalInactiveUsersCount}</p>
           <span className="text-[10px] text-gray-500 mt-0.5">Acceso suspendido</span>
         </div>
       </section>
@@ -626,7 +626,7 @@ export default function UsersView() {
                     <tr key={usr.id} className="hover:bg-gray-50/50 transition">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-500 to-emerald-500 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-teal-600 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">
                             {initials || <LuUser className="w-4 h-4" />}
                           </div>
                           <div>
@@ -677,7 +677,7 @@ export default function UsersView() {
                             type="button"
                             onClick={() => handleSendAccess(usr)}
                             disabled={isInactive}
-                            className="p-1.5 rounded-lg text-violet-700 bg-violet-50 hover:bg-violet-100 transition disabled:opacity-40"
+                            className="p-1.5 rounded-lg text-teal-700 bg-teal-50 hover:bg-teal-100 transition disabled:opacity-40"
                             title="Enviar acceso (email y contraseña)"
                           >
                             <LuMail className="w-3.5 h-3.5" />
@@ -733,7 +733,7 @@ export default function UsersView() {
       {/* DELETE CONFIRM MODAL */}
       {isDeleteConfirmId && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-lg border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
                 <LuTriangleAlert className="w-5 h-5" />
@@ -769,7 +769,7 @@ export default function UsersView() {
       {/* ADD MODAL */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-lg border border-gray-100 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <h3 className="text-base font-bold text-gray-900">Nuevo Usuario</h3>
               <button
@@ -816,7 +816,7 @@ export default function UsersView() {
       {/* EDIT MODAL */}
       {isEditModalOpen && editingUser && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-lg border border-gray-100 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <h3 className="text-base font-bold text-gray-900">Editar Usuario</h3>
               <button
@@ -869,7 +869,7 @@ export default function UsersView() {
       {/* IMPORT MODAL */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-lg border border-gray-100 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <h3 className="text-base font-bold text-gray-900">Importar Usuarios</h3>
               <button
@@ -915,15 +915,15 @@ export default function UsersView() {
                   <div className="mt-4 flex flex-col gap-3">
                     <div className="grid grid-cols-3 gap-2">
                       <div className="p-3 bg-gray-50 rounded-xl text-center">
-                        <p className="text-xl font-black text-gray-900">{importReport.totalRecords}</p>
+                        <p className="text-xl font-bold text-gray-900">{importReport.totalRecords}</p>
                         <p className="text-[11px] text-gray-500">Total</p>
                       </div>
                       <div className="p-3 bg-emerald-50 rounded-xl text-center">
-                        <p className="text-xl font-black text-emerald-700">{importReport.validRecords}</p>
+                        <p className="text-xl font-bold text-emerald-700">{importReport.validRecords}</p>
                         <p className="text-[11px] text-gray-500">Válidos</p>
                       </div>
                       <div className="p-3 bg-red-50 rounded-xl text-center">
-                        <p className="text-xl font-black text-red-600">{importReport.errorRecords}</p>
+                        <p className="text-xl font-bold text-red-600">{importReport.errorRecords}</p>
                         <p className="text-[11px] text-gray-500">Con error</p>
                       </div>
                     </div>

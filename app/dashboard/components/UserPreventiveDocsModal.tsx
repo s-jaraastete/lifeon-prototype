@@ -194,10 +194,10 @@ export default function UserPreventiveDocsModal({ user, onClose }: UserPreventiv
   const viewingDocument = docView !== null;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-2 sm:p-4">
+    <div className="fixed inset-0 z-[60] bg-black/40-[2px] flex items-center justify-center p-2 sm:p-4">
       <div
         className={clsx(
-          "bg-white w-full rounded-2xl shadow-2xl border border-gray-100 max-h-[94vh] overflow-hidden flex flex-col",
+          "bg-white w-full rounded-2xl shadow-lg border border-gray-100 max-h-[94vh] overflow-hidden flex flex-col",
           viewingDocument ? "max-w-[min(100%,230mm)]" : "max-w-2xl"
         )}
       >

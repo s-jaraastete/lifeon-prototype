@@ -13,7 +13,7 @@ import {
   LuFileText,
   LuPlus,
   LuTrash2,
-  LuSparkles,
+  LuInfo,
 } from "react-icons/lu";
 import { PreventiveDoc, DocSection } from "@/types/preventiveDocs";
 
@@ -103,10 +103,10 @@ export default function DocEditorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-gray-100 flex flex-col max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-4xl rounded-3xl shadow-lg border border-gray-100 flex flex-col max-h-[92vh] overflow-hidden">
         {/* Cabecera */}
-        <div className="p-5 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50/80 via-white to-teal-50/30 flex items-start justify-between gap-4">
+        <div className="p-5 sm:p-6 border-b border-gray-100 bg-white flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
               <LuSquarePen className="w-6 h-6" />
@@ -207,7 +207,7 @@ export default function DocEditorModal({
             </div>
 
             <div className="mt-4 pt-3 border-t border-gray-200 text-[11px] text-gray-500 flex items-center gap-1.5">
-              <LuSparkles className="w-3.5 h-3.5 text-teal-600 flex-shrink-0" />
+              <LuInfo className="w-3.5 h-3.5 text-teal-600 flex-shrink-0" />
               <span>Contenido redactado bajo normativa chilena vigente. Ajusta según la faena.</span>
             </div>
           </div>

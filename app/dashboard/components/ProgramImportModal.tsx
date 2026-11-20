@@ -408,8 +408,8 @@ export default function ProgramImportModal({
   const canConfirm = hasValidated && validActivities.length > 0 && validationErrors.length === 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-gray-100 p-6 max-h-[90vh] flex flex-col relative">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-lg border border-gray-100 p-6 max-h-[90vh] flex flex-col relative">
         <button
           onClick={handleClose}
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition cursor-pointer"
@@ -501,23 +501,23 @@ export default function ProgramImportModal({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                   <span className="text-[10px] uppercase font-bold text-gray-400">Total Leídas</span>
-                  <p className="text-xl font-black text-gray-800 mt-0.5">{totalRows}</p>
+                  <p className="text-xl font-bold text-gray-800 mt-0.5">{totalRows}</p>
                 </div>
                 <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                   <span className="text-[10px] uppercase font-bold text-emerald-600">Válidas</span>
-                  <p className="text-xl font-black text-emerald-700 mt-0.5">{validActivities.length}</p>
+                  <p className="text-xl font-bold text-emerald-700 mt-0.5">{validActivities.length}</p>
                 </div>
                 <div className={clsx("p-3 rounded-xl border", validationErrors.length > 0 ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200")}>
                   <span className={clsx("text-[10px] uppercase font-bold", validationErrors.length > 0 ? "text-red-600" : "text-gray-400")}>
                     Con Errores
                   </span>
-                  <p className={clsx("text-xl font-black mt-0.5", validationErrors.length > 0 ? "text-red-700" : "text-gray-800")}>
+                  <p className={clsx("text-xl font-bold mt-0.5", validationErrors.length > 0 ? "text-red-700" : "text-gray-800")}>
                     {validationErrors.length}
                   </p>
                 </div>
                 <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
                   <span className="text-[10px] uppercase font-bold text-amber-600">Advertencias</span>
-                  <p className="text-xl font-black text-amber-700 mt-0.5">{warnings.length}</p>
+                  <p className="text-xl font-bold text-amber-700 mt-0.5">{warnings.length}</p>
                 </div>
               </div>
 

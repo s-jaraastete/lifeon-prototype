@@ -75,9 +75,9 @@ export default function SetupGuide({
   };
 
   return (
-    <div className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center p-4 bg-black/40-[2px]">
       <div
-        className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
+        className="bg-white w-full max-w-lg rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
         role="dialog"
         aria-labelledby="setup-guide-title"
       >

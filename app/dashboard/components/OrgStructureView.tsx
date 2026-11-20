@@ -19,7 +19,6 @@ import {
   LuChevronDown,
   LuChevronRight,
   LuBuilding2,
-  LuSparkles,
   LuFileSpreadsheet,
   LuMapPin,
   LuTrash2,
@@ -456,7 +455,7 @@ export default function OrgStructureView() {
   }, [positions, searchQuery]);
 
   return (
-    <div className="flex flex-col gap-4 font-[family-name:var(--font-poppins)] select-none">
+    <div className="flex flex-col gap-4 font-[family-name:var(--font-poppins)]">
       {/* Encabezado del Módulo */}
       <section className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -465,7 +464,7 @@ export default function OrgStructureView() {
               <LuFolderTree className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
                 Estructura Organizacional
               </h1>
               <p className="text-xs sm:text-sm text-gray-500">
@@ -476,7 +475,7 @@ export default function OrgStructureView() {
 
           {isGuided && (
             <div className="mt-3 p-3 rounded-xl bg-teal-50/70 border border-teal-200/80 text-xs text-teal-800 flex items-center gap-2">
-              <LuSparkles className="w-4 h-4 text-teal-600 flex-shrink-0" />
+              <LuInfo className="w-4 h-4 text-teal-600 flex-shrink-0" />
               <span>
                 <strong>Modo Guiado:</strong> Esta jerarquía alimenta de manera contextual la confección
                 de la Matriz IPER, las asignaciones de cargo y el Programa Preventivo.
@@ -560,7 +559,7 @@ export default function OrgStructureView() {
             <span className="text-[11px] font-semibold uppercase tracking-wider">Centros</span>
             <LuBuilding2 className="w-4 h-4 text-blue-500" />
           </div>
-          <p className="text-2xl font-black text-gray-900">{totalWorkCentersCount}</p>
+          <p className="text-2xl font-bold text-gray-900">{totalWorkCentersCount}</p>
           <span className="text-[10px] text-gray-500 mt-0.5">{totalActiveWorkCentersCount} activos</span>
         </div>
 
@@ -569,7 +568,7 @@ export default function OrgStructureView() {
             <span className="text-[11px] font-semibold uppercase tracking-wider">Áreas</span>
             <LuLayers className="w-4 h-4 text-red-500" />
           </div>
-          <p className="text-2xl font-black text-gray-900">{totalAreasCount}</p>
+          <p className="text-2xl font-bold text-gray-900">{totalAreasCount}</p>
           <span className="text-[10px] text-gray-500 mt-0.5">{totalActiveAreasCount} activas</span>
         </div>
 
@@ -578,7 +577,7 @@ export default function OrgStructureView() {
             <span className="text-[11px] font-semibold uppercase tracking-wider">Procesos</span>
             <LuFolderTree className="w-4 h-4 text-teal-600" />
           </div>
-          <p className="text-2xl font-black text-gray-900">{totalProcessesCount}</p>
+          <p className="text-2xl font-bold text-gray-900">{totalProcessesCount}</p>
           <span className="text-[10px] text-gray-500 mt-0.5">{totalSubprocessesCount} subprocesos</span>
         </div>
 
@@ -587,7 +586,7 @@ export default function OrgStructureView() {
             <span className="text-[11px] font-semibold uppercase tracking-wider">Cargos</span>
             <LuBriefcase className="w-4 h-4 text-amber-500" />
           </div>
-          <p className="text-2xl font-black text-gray-900">{totalPositionsCount}</p>
+          <p className="text-2xl font-bold text-gray-900">{totalPositionsCount}</p>
           <span className="text-[10px] text-gray-500 mt-0.5">Dotación registrada</span>
         </div>
 
@@ -1256,7 +1255,7 @@ export default function OrgStructureView() {
       {/* ==================================================================== */}
       {isAddWcModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-lg border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <h3 className="text-base font-bold text-gray-900">Crear Centro de Trabajo</h3>
               <button
@@ -1350,7 +1349,7 @@ export default function OrgStructureView() {
       {/* ==================================================================== */}
       {isEditWcModalOpen && editingWc && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-lg border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <h3 className="text-base font-bold text-gray-900">Editar Centro de Trabajo</h3>
               <button
@@ -1439,7 +1438,7 @@ export default function OrgStructureView() {
       {/* ==================================================================== */}
       {isAddAreaModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-lg border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <h3 className="text-base font-bold text-gray-900">Crear Nueva Área</h3>
               <button
@@ -1536,7 +1535,7 @@ export default function OrgStructureView() {
       {/* ==================================================================== */}
       {isEditAreaModalOpen && editingArea && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-lg border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <h3 className="text-base font-bold text-gray-900">Editar Área</h3>
               <button
@@ -1629,7 +1628,7 @@ export default function OrgStructureView() {
       {/* ==================================================================== */}
       {isAddProcModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-lg border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <h3 className="text-base font-bold text-gray-900">Crear Nuevo Proceso</h3>
               <button
@@ -1742,7 +1741,7 @@ export default function OrgStructureView() {
       {/* ==================================================================== */}
       {isAddPositionModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-lg border border-gray-100 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <div>
                 <h3 className="text-base font-bold text-gray-900">Crear Cargo y Dotación</h3>
@@ -1841,7 +1840,7 @@ export default function OrgStructureView() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-violet-700 mb-1">
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">
                       Otro
                     </label>
                     <input
@@ -1949,7 +1948,7 @@ export default function OrgStructureView() {
       {/* ==================================================================== */}
       {isEditPositionModalOpen && editingPos && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-lg border border-gray-100 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <div>
                 <h3 className="text-base font-bold text-gray-900">Editar Cargo y Dotación</h3>
@@ -2032,7 +2031,7 @@ export default function OrgStructureView() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-violet-700 mb-1">
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">
                       Otro
                     </label>
                     <input
@@ -2130,7 +2129,7 @@ export default function OrgStructureView() {
       {/* ==================================================================== */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-lg border border-gray-100 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <div>
                 <h3 className="text-base font-bold text-gray-900">Importación Masiva XLSX</h3>

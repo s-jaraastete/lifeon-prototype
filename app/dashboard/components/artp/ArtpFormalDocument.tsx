@@ -38,7 +38,7 @@ function formatTimeDisplay(value: string | undefined): string {
 
 function SectionTitle({ roman, title }: { roman: string; title: string }) {
   return (
-    <h2 className="text-xs font-black uppercase text-gray-900 border-b border-gray-300 pb-1 mb-2 shrink-0">
+    <h2 className="text-xs font-bold uppercase text-gray-900 border-b border-gray-300 pb-1 mb-2 shrink-0">
       {roman}. {title}
     </h2>
   );
@@ -111,7 +111,7 @@ function renderPageBlocks(blocks: ArtpDocBlock[]): ReactNode {
                 <p className="text-sm font-bold text-gray-900 leading-tight">
                   {block.organizationName}
                 </p>
-                <h1 className="text-[15px] sm:text-base font-black text-gray-900 uppercase tracking-tight mt-1 leading-snug">
+                <h1 className="text-[15px] sm:text-base font-bold text-gray-900 uppercase tracking-tight mt-1 leading-snug">
                   Análisis de Riesgo de la Tarea Planificada (ARTP)
                 </h1>
                 <p className="text-[10px] text-gray-600 mt-1 leading-snug">{block.taskName}</p>

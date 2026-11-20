@@ -28,6 +28,13 @@ export function classifySupabaseError(error: unknown): PersistenceError {
   if (code === "PGRST301" || lower.includes("row-level security") || lower.includes("rls")) {
     return { kind: "rls", message: "No tienes permiso para esta operación.", raw: message };
   }
+  if (code === "PGRST205" || code === "42P01") {
+    return {
+      kind: "config",
+      message: "La base de datos no tiene las tablas de este módulo. Falta aplicar la migración.",
+      raw: message,
+    };
+  }
   if (lower.includes("fetch") || lower.includes("network") || lower.includes("failed to fetch")) {
     return { kind: "network", message: "Error de conexión con el servidor.", raw: message };
   }

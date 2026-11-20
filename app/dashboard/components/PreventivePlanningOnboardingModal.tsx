@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import clsx from "clsx";
 import {
   LuFileCheck,
-  LuSparkles,
   LuUpload,
   LuCheck,
   LuLayers,
@@ -47,8 +46,8 @@ export default function PreventivePlanningOnboardingModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 font-[family-name:var(--font-poppins)] select-none overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 flex flex-col justify-between animate-in fade-in zoom-in-95 duration-200 relative">
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 sm:p-6 font-[family-name:var(--font-poppins)] select-none overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-lg border border-gray-100 flex flex-col justify-between animate-in fade-in zoom-in-95 duration-200 relative">
         {onClose && (
           <button
             type="button"
@@ -69,7 +68,7 @@ export default function PreventivePlanningOnboardingModal({
               <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700">
                 Configuración Inicial de Módulo
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
                 ¿Su organización ya cuenta con un Programa de Trabajo en Gestión de Riesgos Laborales?
               </h2>
             </div>

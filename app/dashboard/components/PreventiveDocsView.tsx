@@ -16,7 +16,6 @@ import {
   LuUser,
   LuBuilding2,
   LuBriefcase,
-  LuSparkles,
   LuCheck,
   LuX,
   LuCalendar,
@@ -29,6 +28,7 @@ import {
   LuShieldAlert,
   LuActivity,
   LuLayers,
+  LuInfo,
 } from "react-icons/lu";
 import * as XLSX from "xlsx";
 import {
@@ -50,6 +50,7 @@ import {
 } from "@/types/preventiveProgram";
 import PreventivePlanningOnboardingModal from "./PreventivePlanningOnboardingModal";
 import SCurveChart from "./SCurveChart";
+import { buildSCurveSeries } from "@/lib/preventive/sCurve";
 
 const CATEGORIES: ActivityCategory[] = [
   "Planificación y Gestión",
@@ -247,6 +248,11 @@ export default function PreventiveDocsView() {
   };
 
   // Filtrado de actividades
+  const sCurveResult = useMemo(
+    () => buildSCurveSeries(activities, sCurveCategory),
+    [activities, sCurveCategory]
+  );
+
   const filteredActivities = useMemo(() => {
     return activities.filter((act) => {
       const matchesSearch =
@@ -396,7 +402,7 @@ export default function PreventiveDocsView() {
   };
 
   return (
-    <div className="flex flex-col gap-4 font-[family-name:var(--font-poppins)] select-none">
+    <div className="flex flex-col gap-4 font-[family-name:var(--font-poppins)]">
       {/* Onboarding Inicial del Módulo (Cerrable) */}
       <PreventivePlanningOnboardingModal
         isOpen={(!isModuleConfigured && !hasDismissedModal) || isConfigModalOpen}
@@ -423,7 +429,7 @@ export default function PreventiveDocsView() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
                   Programa de Trabajo en Gestión de Riesgos Laborales
                 </h1>
                 <span className={clsx(
@@ -441,7 +447,7 @@ export default function PreventiveDocsView() {
 
           {isGuided && hasProgram && (
             <div className="mt-3 p-3 rounded-xl bg-teal-50/70 border border-teal-200/80 text-xs text-teal-800 flex items-center gap-2">
-              <LuSparkles className="w-4 h-4 text-teal-600 flex-shrink-0" />
+              <LuInfo className="w-4 h-4 text-teal-600 flex-shrink-0" />
               <span>
                 <strong>Modo Guiado:</strong> Cada tarea debe contar con un responsable de tu estructura organizacional y evidencias adjuntas al completarse.
               </span>
@@ -500,7 +506,7 @@ export default function PreventiveDocsView() {
           <div className="w-16 h-16 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mb-4 shadow-2xs">
             <LuCalendarCheck className="w-8 h-8" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-gray-900 mb-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
             Configura tu Programa de Trabajo para comenzar
           </h2>
           <p className="text-xs sm:text-sm text-gray-600 max-w-md mb-6 leading-relaxed">
@@ -540,43 +546,43 @@ export default function PreventiveDocsView() {
           <section className="grid grid-cols-2 sm:grid-cols-7 gap-3">
             <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Tareas</span>
-              <p className="text-2xl font-black text-gray-900 mt-1">{metrics.totalActivities}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{metrics.totalActivities}</p>
               <span className="text-[10px] text-gray-500">Planificadas</span>
             </div>
 
             <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Cumplidas</span>
-              <p className="text-2xl font-black text-emerald-700 mt-1">{metrics.completedActivities}</p>
+              <p className="text-2xl font-bold text-emerald-700 mt-1">{metrics.completedActivities}</p>
               <span className="text-[10px] text-emerald-600 font-semibold">Con evidencias</span>
             </div>
 
             <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-teal-600">En Curso</span>
-              <p className="text-2xl font-black text-teal-700 mt-1">{metrics.inProgressActivities}</p>
+              <p className="text-2xl font-bold text-teal-700 mt-1">{metrics.inProgressActivities}</p>
               <span className="text-[10px] text-teal-600">En ejecución</span>
             </div>
 
             <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Pendientes</span>
-              <p className="text-2xl font-black text-gray-700 mt-1">{metrics.pendingActivities}</p>
+              <p className="text-2xl font-bold text-gray-700 mt-1">{metrics.pendingActivities}</p>
               <span className="text-[10px] text-gray-400">Por iniciar</span>
             </div>
 
             <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-red-600">Atrasadas</span>
-              <p className="text-2xl font-black text-red-600 mt-1">{metrics.overdueActivities}</p>
+              <p className="text-2xl font-bold text-red-600 mt-1">{metrics.overdueActivities}</p>
               <span className="text-[10px] text-red-500 font-semibold">Vencidas</span>
             </div>
 
             <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Próximas a Vencer</span>
-              <p className="text-2xl font-black text-amber-600 mt-1">{metrics.upcomingActivities}</p>
+              <p className="text-2xl font-bold text-amber-600 mt-1">{metrics.upcomingActivities}</p>
               <span className="text-[10px] text-amber-600 font-semibold">En 15 días</span>
             </div>
 
             <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col justify-between col-span-2 sm:col-span-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800">Cumplimiento</span>
-              <p className="text-2xl font-black text-teal-800 mt-1">{metrics.compliancePercentage}%</p>
+              <p className="text-2xl font-bold text-teal-800 mt-1">{metrics.compliancePercentage}%</p>
               <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden mt-1">
                 <div
                   className="bg-teal-600 h-full rounded-full transition-all duration-500"
@@ -671,7 +677,15 @@ export default function PreventiveDocsView() {
                   </select>
                 </div>
               </div>
-              <SCurveChart activities={activities} categoryFilter={sCurveCategory} />
+              <SCurveChart
+                result={sCurveResult}
+                title="Curva S — Avance del programa"
+                emptyMessage={
+                  !sCurveResult.ok && sCurveResult.reason === "no_activities"
+                    ? "Configura tu Programa de Trabajo para visualizar la Curva S."
+                    : "Define fechas de inicio y término en las actividades para visualizar la Curva S."
+                }
+              />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Panel Izquierdo: Cumplimiento General y Distribución de Estados */}
@@ -1026,7 +1040,7 @@ export default function PreventiveDocsView() {
                                 act.status === "Cumplida" && "bg-emerald-50 text-emerald-800 border-emerald-200",
                                 act.status === "En curso" && "bg-teal-50 text-teal-800 border-teal-200",
                                 act.status === "Pendiente" && "bg-gray-100 text-gray-600 border-gray-200",
-                                act.status === "Atrasada" && "bg-red-50 text-red-700 border-red-200 animate-pulse"
+                                act.status === "Atrasada" && "bg-red-50 text-red-700 border-red-200"
                               )}
                             >
                               {act.status}
@@ -1098,8 +1112,8 @@ export default function PreventiveDocsView() {
       {/* MODAL: VER PROGRAMA COMPLETO COMO DOCUMENTO ESTRUCTURADO (REQ 23) */}
       {/* ==================================================================== */}
       {isFullProgramModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-10 shadow-2xl border border-gray-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-10 shadow-lg border border-gray-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
             {/* Barra de Acciones del Documento */}
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-200 print:hidden">
               <div className="flex items-center gap-2 text-teal-800 font-bold text-xs">
@@ -1132,7 +1146,7 @@ export default function PreventiveDocsView() {
                 <span className="text-[11px] font-bold uppercase tracking-widest text-teal-700 block">
                   Documento Oficial de Planificación Anual
                 </span>
-                <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
                   PROGRAMA DE TRABAJO EN GESTIÓN DE RIESGOS LABORALES
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-gray-200 text-left text-xs">
@@ -1157,7 +1171,7 @@ export default function PreventiveDocsView() {
 
               {/* 1. Objetivo */}
               <div>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-1.5 border-b border-gray-200 pb-1">
+                <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wider mb-1.5 border-b border-gray-200 pb-1">
                   1. Objetivo
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -1167,7 +1181,7 @@ export default function PreventiveDocsView() {
 
               {/* 2. Alcance */}
               <div>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-1.5 border-b border-gray-200 pb-1">
+                <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wider mb-1.5 border-b border-gray-200 pb-1">
                   2. Alcance
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -1177,7 +1191,7 @@ export default function PreventiveDocsView() {
 
               {/* 3. Responsabilidades */}
               <div>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-1.5 border-b border-gray-200 pb-1">
+                <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wider mb-1.5 border-b border-gray-200 pb-1">
                   3. Responsabilidades
                 </h3>
                 <ul className="list-disc pl-5 space-y-1 text-gray-600">
@@ -1191,7 +1205,7 @@ export default function PreventiveDocsView() {
 
               {/* 4. Programa Anual de Actividades */}
               <div>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2 border-b border-gray-200 pb-1">
+                <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wider mb-2 border-b border-gray-200 pb-1">
                   4. Programa Anual de Actividades ({activities.length} Actividades)
                 </h3>
                 <div className="overflow-x-auto border border-gray-200 rounded-xl">
@@ -1240,7 +1254,7 @@ export default function PreventiveDocsView() {
 
               {/* 5. Seguimiento */}
               <div>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-1.5 border-b border-gray-200 pb-1">
+                <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wider mb-1.5 border-b border-gray-200 pb-1">
                   5. Seguimiento y Control
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -1250,40 +1264,40 @@ export default function PreventiveDocsView() {
 
               {/* 6. Indicadores */}
               <div>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2 border-b border-gray-200 pb-1">
+                <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wider mb-2 border-b border-gray-200 pb-1">
                   6. Indicadores de Cumplimiento
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 text-center">
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                     <span className="text-[10px] text-gray-500 font-bold uppercase block">Cumplimiento Global</span>
-                    <strong className="text-lg text-teal-800 font-black">{metrics.compliancePercentage}%</strong>
+                    <strong className="text-lg text-teal-800 font-bold">{metrics.compliancePercentage}%</strong>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                     <span className="text-[10px] text-gray-500 font-bold uppercase block">Total Tareas</span>
-                    <strong className="text-lg text-gray-900 font-black">{metrics.totalActivities}</strong>
+                    <strong className="text-lg text-gray-900 font-bold">{metrics.totalActivities}</strong>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                     <span className="text-[10px] text-emerald-700 font-bold uppercase block">Cumplidas</span>
-                    <strong className="text-lg text-emerald-700 font-black">{metrics.completedActivities}</strong>
+                    <strong className="text-lg text-emerald-700 font-bold">{metrics.completedActivities}</strong>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                     <span className="text-[10px] text-teal-700 font-bold uppercase block">En Curso</span>
-                    <strong className="text-lg text-teal-700 font-black">{metrics.inProgressActivities}</strong>
+                    <strong className="text-lg text-teal-700 font-bold">{metrics.inProgressActivities}</strong>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                     <span className="text-[10px] text-gray-500 font-bold uppercase block">Pendientes</span>
-                    <strong className="text-lg text-gray-700 font-black">{metrics.pendingActivities}</strong>
+                    <strong className="text-lg text-gray-700 font-bold">{metrics.pendingActivities}</strong>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                     <span className="text-[10px] text-red-700 font-bold uppercase block">Atrasadas</span>
-                    <strong className="text-lg text-red-700 font-black">{metrics.overdueActivities}</strong>
+                    <strong className="text-lg text-red-700 font-bold">{metrics.overdueActivities}</strong>
                   </div>
                 </div>
               </div>
 
               {/* 7. Evidencias / Registros */}
               <div>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-1.5 border-b border-gray-200 pb-1">
+                <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wider mb-1.5 border-b border-gray-200 pb-1">
                   7. Evidencias y Registros
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -1293,7 +1307,7 @@ export default function PreventiveDocsView() {
 
               {/* 8. Estado General del Programa y Firmas */}
               <div className="pt-4 border-t border-gray-200">
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2">
+                <h3 className="text-sm font-bold text-gray-950 uppercase tracking-wider mb-2">
                   8. Estado General y Cierre
                 </h3>
                 <p className="text-gray-600 leading-relaxed mb-6">
@@ -1333,7 +1347,7 @@ export default function PreventiveDocsView() {
       {/* ==================================================================== */}
       {isActivityModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-lg border border-gray-100 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <h3 className="text-base font-bold text-gray-900">
                 {editingActivity ? "Editar Actividad del Programa" : "Nueva Actividad Preventiva"}
@@ -1612,7 +1626,7 @@ export default function PreventiveDocsView() {
       {/* ==================================================================== */}
       {evidenceModalActivity && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-lg border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <div>
                 <h3 className="text-sm font-bold text-gray-900">

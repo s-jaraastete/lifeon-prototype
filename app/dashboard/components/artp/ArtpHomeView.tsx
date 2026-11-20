@@ -174,7 +174,7 @@ export default function ArtpHomeView({ initialPrefill, onClearPrefill }: ArtpHom
       )}
       <div className="bg-white rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#F3E8FF] text-[#9333EA] flex items-center justify-center shadow-xs flex-shrink-0">
+          <div className="w-12 h-12 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center flex-shrink-0">
             <LuClipboardList className="w-6 h-6" />
           </div>
           <div>

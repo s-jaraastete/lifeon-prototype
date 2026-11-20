@@ -12,7 +12,6 @@ import {
   LuTrash2,
   LuInfo,
   LuShieldAlert,
-  LuSparkles,
   LuCircleHelp,
   LuUsers,
   LuTriangleAlert,
@@ -29,6 +28,9 @@ import {
   LuCircleAlert,
   LuLock,
   LuBuilding2,
+  LuAtom,
+  LuListChecks,
+  LuShield,
 } from "react-icons/lu";
 import { IperMatrixItem } from "./IperMatrixView";
 import { IperEvaluationRow } from "./IperMatrixDetailView";
@@ -973,8 +975,8 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
         <header className="py-3 px-4 sm:px-6 flex items-center justify-between border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <span className="text-lg font-black text-[#F04438] tracking-tight">Life</span>
-              <span className="text-lg font-black text-[#0D9488] tracking-tight">On</span>
+              <span className="text-lg font-bold text-[#F04438] tracking-tight">Life</span>
+              <span className="text-lg font-bold text-[#0D9488] tracking-tight">On</span>
             </div>
             <div className="h-4 w-px bg-gray-300 mx-1 hidden sm:block" />
             <div className="flex items-center gap-2 flex-wrap">
@@ -1260,7 +1262,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                       <div className="flex flex-col gap-2 pt-0.5">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <span className="text-[11px] font-bold text-teal-900 flex items-center gap-1">
-                            <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                            <LuAtom className="w-3.5 h-3.5 text-teal-600" />
                             Sugerencias de APR Virtual IA
                           </span>
                           <button
@@ -1503,7 +1505,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                       {task.specificLocation && (
                                         <>
                                           <span>&bull;</span>
-                                          <span className="text-teal-800 font-medium">📍 {task.specificLocation}</span>
+                                          <span className="text-teal-800 font-medium inline-flex items-center gap-1"><LuMapPin className="w-3 h-3" aria-hidden />{task.specificLocation}</span>
                                         </>
                                       )}
                                     </div>
@@ -1632,10 +1634,10 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider block">
                             Tarea Activa en Análisis
                           </span>
-                          <p className="font-black text-teal-950 mt-0.5 text-xs">{activeTask.name}</p>
+                          <p className="font-bold text-teal-950 mt-0.5 text-xs">{activeTask.name}</p>
                           <p className="text-[11px] text-teal-800 mt-0.5">
                             Proceso: {activeTask.processName} {activeTask.subprocessName ? `(${activeTask.subprocessName})` : ""}
-                            {activeTask.specificLocation ? ` • 📍 Lugar: ${activeTask.specificLocation}` : ""}
+                            {activeTask.specificLocation ? ` • Lugar: ${activeTask.specificLocation}` : ""}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1655,7 +1657,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     <div className="bg-teal-50/40 border border-teal-200 rounded-2xl p-3 flex flex-col gap-2">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <span className="text-xs font-bold text-teal-900 flex items-center gap-1">
-                          <LuSparkles className="w-3.5 h-3.5" /> Peligros sugeridos (APR Virtual IA)
+                          <LuAtom className="w-3.5 h-3.5" /> Peligros sugeridos (APR Virtual IA)
                         </span>
                         <button
                           type="button"
@@ -1700,19 +1702,19 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                   )}
 
                   {activeTask && contextualHazardSuggestions.length > 0 && (
-                    <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-teal-50/50 border-2 border-amber-300/80 rounded-2xl p-4 flex flex-col gap-3 shadow-2xs">
+                    <div className="bg-amber-50 border-2 border-amber-300/80 rounded-2xl p-4 flex flex-col gap-3 shadow-2xs">
                       <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-amber-200/70">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black shadow-xs">
+                          <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
                             <LuShieldAlert className="w-4 h-4" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <h4 className="text-xs font-bold text-gray-900 flex items-center gap-1">
-                                <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                                <LuAtom className="w-3.5 h-3.5 text-teal-600" />
                                 Sugerencias de APR Virtual IA
                               </h4>
-                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-teal-900 border border-teal-300 line-clamp-1">
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-900 border border-teal-300 line-clamp-1">
                                 {activeTask.name}
                               </span>
                             </div>
@@ -1727,7 +1729,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           onClick={handleLoadAllSectorHazards}
                           className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
                         >
-                          <LuSparkles className="w-3.5 h-3.5" />
+                          <LuListChecks className="w-3.5 h-3.5" />
                           Cargar sugerencias
                         </button>
                       </div>
@@ -1775,7 +1777,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                   className="text-[10px] text-teal-700 mt-0.5 font-medium line-clamp-1"
                                   title={sug.recommendedControls[0]?.description}
                                 >
-                                  🛡️ {sug.recommendedControls[0]?.description}
+                                  <LuShield className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden />{sug.recommendedControls[0]?.description}
                                 </p>
                               </div>
 
@@ -2143,20 +2145,20 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     </div>
 
                     {/* Banner de Contexto Visual Destacado */}
-                    <div className="p-3.5 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl flex items-center justify-between flex-wrap gap-2 text-xs">
+                    <div className="p-3.5 bg-teal-50 border border-teal-200 rounded-xl flex items-center justify-between flex-wrap gap-2 text-xs">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-teal-900">📌 Tarea: {activeTask?.name}</span>
+                          <span className="font-bold text-teal-900">Tarea: {activeTask?.name}</span>
                           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-teal-100 text-teal-900">
                             {activeTask?.taskType}
                           </span>
                         </div>
                         <p className="text-gray-700 mt-1 font-medium">
-                          ⚠️ Peligro: <span className="font-bold text-gray-900">{activeHazard.hazardDescription}</span>
+                          <LuTriangleAlert className="inline w-3.5 h-3.5 mr-1 align-[-2px] text-amber-600" aria-hidden />Peligro: <span className="font-bold text-gray-900">{activeHazard.hazardDescription}</span>
                         </p>
                         <p className="text-[11px] text-teal-800 mt-0.5">
                           Riesgo: <strong>{activeHazard.specificRiskCode} - {activeHazard.specificRiskName}</strong> (Familia: {activeHazard.riskFamily})
-                          {activeTask?.specificLocation ? ` • 📍 Lugar: ${activeTask.specificLocation}` : ""}
+                          {activeTask?.specificLocation ? ` • Lugar: ${activeTask.specificLocation}` : ""}
                         </p>
                       </div>
                       <span className="px-3 py-1 rounded-xl text-xs font-bold bg-white text-teal-900 border border-teal-300 shadow-2xs">
@@ -2208,7 +2210,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                         </div>
                         <span
                           className={clsx(
-                            "px-3 py-1 rounded-xl text-xs font-black border uppercase shadow-2xs",
+                            "px-3 py-1 rounded-xl text-xs font-bold border uppercase shadow-2xs",
                             is5x5 ? score5x5.badgeColor : getVepLevel(vepScore).color
                           )}
                         >
@@ -2283,9 +2285,9 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                   : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
                               )}
                             >
-                              {lvl === "Bajo" && "🟢 Nivel Bajo"}
-                              {lvl === "Medio" && "🟡 Nivel Medio"}
-                              {lvl === "Alto" && "🔴 Nivel Alto"}
+                              {lvl === "Bajo" && <><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5 align-middle" aria-hidden />Nivel Bajo</>}
+                              {lvl === "Medio" && <><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 align-middle" aria-hidden />Nivel Medio</>}
+                              {lvl === "Alto" && <><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1.5 align-middle" aria-hidden />Nivel Alto</>}
                             </button>
                           ))}
                         </div>
@@ -2385,13 +2387,13 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     </div>
 
                     {/* Banner de Contexto Visual */}
-                    <div className="p-3.5 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl flex items-center justify-between flex-wrap gap-2 text-xs">
+                    <div className="p-3.5 bg-teal-50 border border-teal-200 rounded-xl flex items-center justify-between flex-wrap gap-2 text-xs">
                       <div>
                         <p className="font-bold text-teal-950">
-                          📌 Tarea: {activeTask?.name} {activeTask?.specificLocation ? `(📍 ${activeTask.specificLocation})` : ""}
+                          Tarea: {activeTask?.name} {activeTask?.specificLocation ? `(Lugar: ${activeTask.specificLocation})` : ""}
                         </p>
                         <p className="text-gray-700 mt-0.5">
-                          ⚠️ Peligro: <strong>{activeHazard.hazardDescription}</strong> &bull; Riesgo: <strong>{activeHazard.specificRiskCode} - {activeHazard.specificRiskName}</strong>
+                          <LuTriangleAlert className="inline w-3.5 h-3.5 mr-1 align-[-2px] text-amber-600" aria-hidden />Peligro: <strong>{activeHazard.hazardDescription}</strong> &bull; Riesgo: <strong>{activeHazard.specificRiskCode} - {activeHazard.specificRiskName}</strong>
                         </p>
                       </div>
                       <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-white text-teal-900 border border-teal-200">
@@ -2403,7 +2405,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                   <div className="bg-teal-50/70 border border-teal-200 rounded-xl p-3 flex flex-col gap-2">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-teal-950">
-                        <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                        <LuAtom className="w-3.5 h-3.5 text-teal-600" />
                         Controles sugeridos (APR Virtual IA)
                       </div>
                       <button
@@ -2481,7 +2483,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     return (
                       <div className="bg-teal-50/70 border border-teal-200 rounded-xl p-3 flex flex-col gap-2">
                         <div className="flex items-center gap-1.5 text-xs font-bold text-teal-950">
-                          <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                          <LuListChecks className="w-3.5 h-3.5 text-teal-600" />
                           <span>Controles sugeridos por buenas prácticas en {sectorProfile.sector}:</span>
                         </div>
                         <div className="flex flex-col gap-1.5">
@@ -2499,7 +2501,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                     {recCtrl.type}
                                   </span>
                                   {recCtrl.isCritical && (
-                                    <span className="font-black text-amber-900 text-[9px] bg-amber-100 px-1.5 py-0.5 rounded">
+                                    <span className="font-bold text-amber-900 text-[9px] bg-amber-100 px-1.5 py-0.5 rounded">
                                       Control Crítico
                                     </span>
                                   )}
@@ -2741,7 +2743,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                     <div className="p-3 bg-teal-50/60 border border-teal-100 rounded-xl flex items-center justify-between text-xs flex-wrap gap-2">
                       <div>
                         <span className="font-bold text-teal-950">
-                          Tarea: {activeTask?.name} {activeTask?.specificLocation ? `(📍 ${activeTask.specificLocation})` : ""}
+                          Tarea: {activeTask?.name} {activeTask?.specificLocation ? `(Lugar: ${activeTask.specificLocation})` : ""}
                         </span>
                         <p className="text-gray-700 mt-0.5">
                           Peligro: {activeHazard.hazardDescription} ({activeHazard.specificRiskCode} - {activeHazard.specificRiskName})
@@ -2782,7 +2784,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           <p className="text-[11px] text-gray-500 font-medium">
                             {is5x5 ? "Riesgo Inicial 5×5" : "Riesgo Inicial (VEP)"}
                           </p>
-                          <p className="text-xl font-black text-gray-900 mt-0.5">
+                          <p className="text-xl font-bold text-gray-900 mt-0.5">
                             {is5x5 ? `${score5x5.val5x5} pts` : `${vepScore} pts`}
                           </p>
                           <span
@@ -2799,7 +2801,7 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                           <p className="text-[11px] text-gray-500 font-medium">
                             {is5x5 ? "Riesgo Residual 5×5" : "Riesgo Residual Final"}
                           </p>
-                          <p className="text-xl font-black text-emerald-700 mt-0.5">
+                          <p className="text-xl font-bold text-emerald-700 mt-0.5">
                             {is5x5 ? `${scoreRes5x5.val5x5} pts` : `${residualScoreCalc} pts`}
                           </p>
                           <span
@@ -2843,9 +2845,9 @@ export default function IperMatrixWizard({ matrix, onClose, onFinish }: IperMatr
                                   !isBlocked && activeHazard.residualRiskLevel !== lvl && "bg-white border-gray-200 hover:bg-gray-50 text-gray-700 cursor-pointer"
                                 )}
                               >
-                                {lvl === "Bajo" && "🟢 Residual Bajo"}
-                                {lvl === "Medio" && "🟡 Residual Medio"}
-                                {lvl === "Alto" && "🔴 Residual Alto"}
+                                {lvl === "Bajo" && <><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5 align-middle" aria-hidden />Residual Bajo</>}
+                                {lvl === "Medio" && <><span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 align-middle" aria-hidden />Residual Medio</>}
+                                {lvl === "Alto" && <><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1.5 align-middle" aria-hidden />Residual Alto</>}
                               </button>
                             );
                           })}

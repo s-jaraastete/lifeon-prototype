@@ -38,7 +38,7 @@ export default function SetupGuideCompanion({
       >
         <LuListChecks className="w-5 h-5 flex-shrink-0" />
         <span className="text-xs font-bold">Primeros pasos</span>
-        <span className="text-[10px] font-black bg-white/20 px-2 py-0.5 rounded-lg">
+        <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-lg">
           {doneCount}/{total}
         </span>
       </button>
@@ -47,10 +47,10 @@ export default function SetupGuideCompanion({
 
   return (
     <aside
-      className="fixed bottom-5 right-5 z-40 w-[min(100vw-2rem,22rem)] rounded-2xl border border-teal-200/80 bg-white shadow-xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200"
+      className="fixed bottom-5 right-5 z-40 w-[min(100vw-2rem,22rem)] rounded-2xl border border-teal-200/80 bg-white shadow-lg flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200"
       aria-label="Guía de primeros pasos"
     >
-      <div className="px-4 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white flex items-start justify-between gap-2">
+      <div className="px-4 py-3 bg-teal-700 text-white flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-wide text-teal-100/90">
             Acompañamiento

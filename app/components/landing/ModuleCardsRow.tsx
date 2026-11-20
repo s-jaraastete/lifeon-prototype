@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import ModuleCard from '../ui/ModuleCard'
-import { AprIcon, DocumentacionIcon, MiperIcon, ModuleBox } from '../shared/baseModules';
+import { AprIcon, DocumentacionIcon, MiperIcon, ModuleBox, PlanificacionIcon } from '../shared/baseModules';
 
 // Icons
-import { LuBookCheck, LuCircleCheck, LuSearch } from 'react-icons/lu'
+import { LuRefreshCcw, LuSearch } from 'react-icons/lu'
 
 const cardBox = "w-12 h-12 border-2 border-gray-200";
 
 const cards = [
   {
     icon: <MiperIcon box={cardBox} iconSize={24} />,
+  },
+  {
+    icon: <PlanificacionIcon box={cardBox} iconSize={24} />,
   },
   {
     icon: <DocumentacionIcon box={cardBox} iconSize={24} />,
@@ -22,14 +25,7 @@ const cards = [
   {
     icon: (
       <ModuleBox bg="bg-gray-300" box={cardBox}>
-        <LuCircleCheck size={24} className="text-gray-700" />
-      </ModuleBox>
-    ),
-  },
-  {
-    icon: (
-      <ModuleBox bg="bg-gray-300" box={cardBox}>
-        <LuBookCheck size={24} className="text-gray-700" />
+        <LuRefreshCcw size={24} className="text-gray-700" />
       </ModuleBox>
     ),
   },

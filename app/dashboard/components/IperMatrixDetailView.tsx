@@ -7,7 +7,6 @@ import {
   LuPlus,
   LuFileSpreadsheet,
   LuDownload,
-  LuSparkles,
   LuSearch,
   LuFilter,
   LuPencil,
@@ -25,6 +24,7 @@ import {
   LuSlidersHorizontal,
   LuFileText,
   LuLock,
+  LuTable,
 } from "react-icons/lu";
 import { IperMatrixItem, MatrixStatus, getStatusBadgeStyle } from "./IperMatrixView";
 import IperMatrixWizard from "./IperMatrixWizard";
@@ -431,7 +431,7 @@ export default function IperMatrixDetailView({
             onClick={() => setIsWizardOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition cursor-pointer shadow-xs"
           >
-            <LuSparkles className="w-4 h-4" />
+            <LuTable className="w-4 h-4" />
             Confeccionar matriz (5 etapas)
           </button>
 
@@ -441,7 +441,7 @@ export default function IperMatrixDetailView({
               onClick={onOpenAprVirtual}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-200 hover:bg-teal-100 transition cursor-pointer"
             >
-              <LuSparkles className="w-4 h-4 text-teal-600" />
+              <LuAtom className="w-4 h-4 text-teal-600" />
               Generar APR con IA
             </button>
           )}
@@ -531,7 +531,7 @@ export default function IperMatrixDetailView({
       </div>
 
       {/* 🌟 BANNER DESTACADO: INFORMACIÓN DE RIESGOS LABORALES (IRL) */}
-      <div className="bg-gradient-to-r from-teal-50/90 via-white to-emerald-50/50 rounded-2xl p-5 border border-teal-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-teal-50 rounded-2xl p-5 border border-teal-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
           <div className="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">
             <LuFileText className="w-5 h-5" />
@@ -585,25 +585,25 @@ export default function IperMatrixDetailView({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs text-center">
           <p className="text-[11px] font-semibold text-red-600">Riesgos Críticos (Inicial)</p>
-          <p className="text-2xl font-black text-red-600 mt-0.5">{criticalCount}</p>
+          <p className="text-2xl font-bold text-red-600 mt-0.5">{criticalCount}</p>
           <span className="text-[10px] text-gray-400">Requieren control duro</span>
         </div>
 
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs text-center">
           <p className="text-[11px] font-semibold text-amber-600">Riesgos Altos</p>
-          <p className="text-2xl font-black text-amber-600 mt-0.5">{highCount}</p>
+          <p className="text-2xl font-bold text-amber-600 mt-0.5">{highCount}</p>
           <span className="text-[10px] text-gray-400">En seguimiento</span>
         </div>
 
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs text-center">
           <p className="text-[11px] font-semibold text-yellow-600">Riesgos Medios</p>
-          <p className="text-2xl font-black text-yellow-600 mt-0.5">{mediumCount}</p>
+          <p className="text-2xl font-bold text-yellow-600 mt-0.5">{mediumCount}</p>
           <span className="text-[10px] text-gray-400">Monitoreo rutinario</span>
         </div>
 
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs text-center">
           <p className="text-[11px] font-semibold text-emerald-600">Riesgos Residuales Bajos</p>
-          <p className="text-2xl font-black text-emerald-600 mt-0.5">
+          <p className="text-2xl font-bold text-emerald-600 mt-0.5">
             {evaluations.filter((e) => e.residualLevel === "Bajo").length}
           </p>
           <span className="text-[10px] text-emerald-600 font-medium">100% bajo control</span>
@@ -704,7 +704,7 @@ export default function IperMatrixDetailView({
                   <td colSpan={8} className="py-12 px-4 text-center">
                     <div className="flex flex-col items-center justify-center max-w-md mx-auto">
                       <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mb-3">
-                        <LuSparkles className="w-6 h-6" />
+                        <LuTable className="w-6 h-6" />
                       </div>
                       <h4 className="text-sm font-bold text-gray-900 mb-1">
                         {matrix.status === "No iniciado"
@@ -720,7 +720,7 @@ export default function IperMatrixDetailView({
                         onClick={() => setIsWizardOpen(true)}
                         className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-2"
                       >
-                        <LuSparkles className="w-4 h-4" />
+                        <LuTable className="w-4 h-4" />
                         Iniciar edición de la matriz (5 etapas)
                       </button>
                     </div>
@@ -739,7 +739,7 @@ export default function IperMatrixDetailView({
                         <button
                           type="button"
                           onClick={() => onCreateArtpFromTask(row.task, row.cargo)}
-                          className="text-[10px] font-bold text-violet-700 hover:underline mt-1 block"
+                          className="text-[10px] font-bold text-teal-700 hover:underline mt-1 block"
                         >
                           Crear ARTP
                         </button>
@@ -750,7 +750,7 @@ export default function IperMatrixDetailView({
                     </td>
 
                     <td className="py-3.5 px-4 align-top">
-                      <p className="font-semibold text-amber-800 leading-snug">⚠️ {row.hazard}</p>
+                      <p className="font-semibold text-amber-800 leading-snug flex items-start gap-1"><LuTriangleAlert className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" aria-hidden />{row.hazard}</p>
                       <p className="text-[11px] text-gray-500 mt-1">{row.riskEvent}</p>
                     </td>
 
@@ -908,8 +908,8 @@ export default function IperMatrixDetailView({
           MODAL: AGREGAR / EDITAR PELIGRO Y EVALUACIÓN
           ========================================================================= */}
       {isAddEvaluationOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-lg border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsAddEvaluationOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -1108,8 +1108,8 @@ export default function IperMatrixDetailView({
           MODAL: EDITAR DATOS GENERALES DE LA MATRIZ
           ========================================================================= */}
       {isEditGeneralOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-lg border border-gray-100 p-6 relative">
             <button
               onClick={() => setIsEditGeneralOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"

@@ -9,6 +9,8 @@ const MODULE_HINTS: Record<DashboardMenuKey, string> = {
   artp: "Módulo ARTP: planificación paso a paso, ejecución en terreno, verificación de controles y toma de conocimiento.",
   docs: "Planificación preventiva: actividades, responsables, periodicidad, avance y Curva S.",
   techDocs: "Documentación técnica: PTS, RIOHS, Plan de Emergencia y estructura documental.",
+  processSafety:
+    "Seguridad de Procesos: implementación de 20 elementos en 4 pilares (liderazgo, identificación y evaluación de riesgos, gestión de riesgos, revisión y mejora); actividades con fechas, avance real vs planificado y Curva S.",
   apr: "Módulo APR Virtual (chat principal).",
 };
 

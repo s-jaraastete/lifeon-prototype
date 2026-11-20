@@ -58,7 +58,7 @@ export default function AprVirtualSessionPrompt({
   return (
     <section
       className={clsx(
-        "rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-teal-50/40 p-4 shadow-xs",
+        "rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-xs",
         className
       )}
     >

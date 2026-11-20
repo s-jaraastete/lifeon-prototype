@@ -66,9 +66,9 @@ const HeroSection = () => {
                 <span className="text-secondary">Crece con LifeOn</span>
               </h2>
               <p className="text-lg text-primary-text leading-6 lg:text-center md:text-[22px] md:leading-7">
-                Gestiona MIPER, Programa y Documentación Preventiva y un Asesor de
-                Prevención de Riesgos Virtual desde una solución integrada, con la flexibilidad
-                de sumar nuevos módulos cuando los necesites.
+                Gestiona MIPER, Planificación y Gestión Preventiva, Documentación
+                Técnica y un Asesor de Prevención de Riesgos Virtual desde una solución
+                integrada, con la flexibilidad de sumar nuevos módulos cuando los necesites.
               </p>
             </div>
           </div>

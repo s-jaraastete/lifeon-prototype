@@ -7,30 +7,28 @@ import { useSession, signOut } from "next-auth/react";
 import clsx from "clsx";
 import {
   LuHouse,
-  LuLayoutGrid,
   LuFileText,
   LuAtom,
   LuPanelLeftClose,
   LuPanelLeftOpen,
+  LuMenu,
   LuSearch,
   LuBell,
   LuCircleHelp,
   LuSlidersHorizontal,
   LuUserRound,
-  LuTriangleAlert,
   LuArrowRight,
   LuShieldAlert,
-  LuSparkles,
-  LuCircleCheck,
   LuFileCheck,
   LuTable,
-  LuLayers,
   LuDatabase,
   LuFolderTree,
+  LuFlame,
   LuBuilding2,
-  LuChevronDown,
   LuLock,
   LuClipboardList,
+  LuChartNoAxesColumnIncreasing,
+  LuUsers,
 } from "react-icons/lu";
 
 import dynamic from "next/dynamic";
@@ -61,6 +59,7 @@ const OrgStructureView = dynamic(() => import("./components/OrgStructureView"), 
   ),
 });
 const UsersView = dynamic(() => import("./components/UsersView"));
+const ProcessSafetyView = dynamic(() => import("./components/processSafety/ProcessSafetyView"));
 const TechnicalDocsView = dynamic(() => import("./components/TechnicalDocsView"), {
   loading: () => (
     <div className="p-8 text-sm text-gray-500">Cargando documentación…</div>
@@ -115,34 +114,32 @@ type NavSectionConfig = {
   items: NavItemConfig[];
 };
 
+// Orden y nombres según Figma "Plataforma LifeOn V2" › Sidebar.
 const NAV_SECTIONS: NavSectionConfig[] = [
   {
-    id: "inicio",
-    title: "Inicio",
-    items: [{ key: "dashboard", label: "Inicio", title: "Inicio", icon: LuHouse }],
+    id: "tecnica",
+    title: "",
+    items: [
+      { key: "dashboard", label: "Dashboard", title: "Dashboard", icon: LuHouse },
+      { key: "iper", label: "Matriz IPER", title: "Matriz IPER", icon: LuTable },
+      { key: "artp", label: "ARTP (Análisis de Riesgo)", title: "ARTP (Análisis de Riesgo)", icon: LuClipboardList },
+      {
+        key: "docs",
+        label: "Planificación y Gestión Preventiva",
+        title: "Planificación y Gestión Preventiva",
+        icon: LuChartNoAxesColumnIncreasing,
+      },
+      { key: "techDocs", label: "Documentación Técnica", title: "Documentación Técnica", icon: LuFileText },
+      { key: "processSafety", label: "Seguridad de Procesos", title: "Seguridad de Procesos", icon: LuFlame },
+      { key: "apr", label: "APR Virtual", title: "APR Virtual", icon: LuAtom, showIaBadge: true },
+    ],
   },
   {
     id: "config",
     title: "Configuración",
     items: [
-      { key: "users", label: "Usuarios", title: "Usuarios", icon: LuUserRound },
-      { key: "org", label: "Estructura Organizacional", title: "Estructura Organizacional", icon: LuFolderTree },
-    ],
-  },
-  {
-    id: "tecnica",
-    title: "Gestión técnica",
-    items: [
-      { key: "iper", label: "Matriz IPER", title: "Matriz IPER", icon: LuLayoutGrid },
-      { key: "artp", label: "ARTP", title: "ARTP", icon: LuClipboardList },
-      {
-        key: "docs",
-        label: "Planificación y Gestión Preventiva",
-        title: "Planificación y Gestión Preventiva",
-        icon: LuFileText,
-      },
-      { key: "techDocs", label: "Documentación Técnica", title: "Documentación Técnica", icon: LuFileText },
-      { key: "apr", label: "APR Virtual", title: "APR Virtual", icon: LuAtom, showIaBadge: true },
+      { key: "users", label: "Usuarios", title: "Usuarios", icon: LuUsers },
+      { key: "org", label: "Estructura organizacional", title: "Estructura organizacional", icon: LuFolderTree },
     ],
   },
 ];
@@ -265,6 +262,8 @@ export default function DashboardPage() {
     "";
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Bajo lg el menú es un panel superpuesto con su propio estado; arranca cerrado.
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState<DashboardMenuKey>("dashboard");
   const [artpPrefill, setArtpPrefill] = useState<ArtpPrefillFromIper | null>(null);
   const [aiSessionReady, setAiSessionReady] = useState<boolean | null>(null);
@@ -275,6 +274,7 @@ export default function DashboardPage() {
 
   const navigateToMenu = useCallback(
     (key: DashboardMenuKey) => {
+      setMobileNavOpen(false);
       if (technicalModulesLocked && isTechnicalManagementMenu(key)) {
         openSetupGuideModal();
         return;
@@ -444,13 +444,23 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="w-full h-screen min-h-screen bg-[#EDF7F5] flex p-3 gap-3 overflow-hidden font-[family-name:var(--font-poppins)] select-none">
+    <div className="w-full h-screen min-h-screen bg-[#EDF7F5] flex p-2 sm:p-3 gap-3 overflow-hidden font-[family-name:var(--font-poppins)]">
+      {mobileNavOpen && (
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          onClick={() => setMobileNavOpen(false)}
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+        />
+      )}
       {/* Sidebar Izquierdo */}
       <aside
         id="tour-sidebar"
         className={clsx(
-          "bg-white rounded-2xl flex flex-col justify-between p-4 shadow-xs transition-all duration-300 flex-shrink-0 z-30",
-          sidebarOpen ? "w-60" : "hidden lg:flex lg:w-20 items-center"
+          "bg-white rounded-2xl flex-col justify-between p-4 shadow-xs transition-[width] duration-200 flex-shrink-0",
+          mobileNavOpen ? "flex fixed inset-y-2 left-2 z-50 w-64 overflow-y-auto" : "hidden",
+          "lg:flex lg:static lg:z-30",
+          sidebarOpen ? "lg:w-60" : "lg:w-20 lg:items-center"
         )}
       >
         <div className="w-full flex flex-col">
@@ -465,12 +475,12 @@ export default function DashboardPage() {
               {sidebarOpen ? (
                 <div className="flex items-center">
                   <span className="text-2xl font-bold text-[#F04438]">Life</span>
-                  <span className="text-2xl font-extrabold text-[#0D9488]">On</span>
+                  <span className="text-2xl font-bold text-[#0D9488]">On</span>
                 </div>
               ) : (
                 <div className="flex items-center justify-center tracking-tighter" title="LifeOn">
-                  <span className="text-2xl font-black text-[#F04438] leading-none">L</span>
-                  <span className="text-2xl font-black text-[#0D9488] leading-none">O</span>
+                  <span className="text-2xl font-bold text-[#F04438] leading-none">L</span>
+                  <span className="text-2xl font-bold text-[#0D9488] leading-none">O</span>
                 </div>
               )}
             </Link>
@@ -479,9 +489,9 @@ export default function DashboardPage() {
           {/* Menú de Navegación */}
           <nav className="flex flex-col w-full">
             {NAV_SECTIONS.map((section, sectionIdx) => (
-              <div key={section.id} className={clsx(sectionIdx > 0 && (sidebarOpen ? "mt-3" : "mt-2"))}>
-                {sidebarOpen ? (
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 px-3 mb-1 flex items-center gap-1.5">
+              <div key={section.id} className={clsx(sectionIdx > 0 && (sidebarOpen ? "mt-6" : "mt-2"))}>
+                {!section.title ? null : sidebarOpen ? (
+                  <p className="text-xs font-normal uppercase text-grey-800 px-3 mb-2 flex items-center gap-1.5">
                     <span>{section.title}</span>
                     {section.id === "tecnica" && technicalModulesLocked && (
                       <LuLock className="w-3 h-3 text-amber-600" aria-hidden />
@@ -497,19 +507,21 @@ export default function DashboardPage() {
                     const isLocked =
                       technicalModulesLocked && isTechnicalManagementMenu(item.key);
                     const baseClass = clsx(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition w-full text-left",
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-base transition w-full text-left",
                       item.showIaBadge && sidebarOpen && "justify-between",
                       isLocked
-                        ? "text-gray-400 cursor-pointer opacity-75 hover:bg-amber-50/60"
+                        ? "text-gray-500 cursor-pointer hover:bg-amber-50/60"
                         : "cursor-pointer",
                       !isLocked &&
                         (isActive
-                          ? "text-[#F04438] bg-red-50/70 font-semibold"
-                          : "text-gray-700 hover:bg-gray-50")
+                          ? "text-red-500 font-medium"
+                          : "text-grey-950 hover:bg-grey-100")
                     );
                     return (
                       <button
                         key={item.key}
+                        id={item.key === "apr" ? "tour-apr-quick" : undefined}
+                        aria-current={isActive ? "page" : undefined}
                         type="button"
                         title={
                           isLocked
@@ -528,7 +540,7 @@ export default function DashboardPage() {
                             {sidebarOpen && (
                               <span className="flex items-center gap-1 flex-shrink-0">
                                 {isLocked && <LuLock className="w-3.5 h-3.5 text-amber-600" />}
-                                <span className="bg-[#DBEAFE] text-[#155DFC] text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                <span className="bg-blue-100 text-blue-600 text-[10px] leading-[18px] font-medium px-1.5 rounded">
                                   IA
                                 </span>
                               </span>
@@ -572,7 +584,7 @@ export default function DashboardPage() {
                   </p>
                 </>
               ) : (
-                <span className="text-[10px] font-black text-amber-800">{setupGuideDoneCount}/{setupGuideSteps.length}</span>
+                <span className="text-[10px] font-bold text-amber-800">{setupGuideDoneCount}/{setupGuideSteps.length}</span>
               )}
             </button>
           )}
@@ -581,65 +593,58 @@ export default function DashboardPage() {
         {/* Sección Inferior del Sidebar */}
         <div className="w-full flex flex-col gap-2 pt-4">
           {sidebarOpen && (
-            <div
+            <button
+              type="button"
               onClick={() => setIsSubscriptionModalOpen(true)}
-              className="bg-gradient-to-br from-emerald-50/90 via-teal-50/60 to-cyan-50/40 border border-emerald-200/80 rounded-xl p-3 cursor-pointer hover:shadow-md hover:border-emerald-400 transition group"
+              className="w-full text-left bg-grey-100 border border-grey-300 rounded-lg p-3 cursor-pointer hover:border-grey-500 transition"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse" />
-                  <span className="text-xs font-bold text-gray-800">Suscripción activa</span>
-                </div>
-                <span className="text-[9px] font-bold bg-emerald-200/70 text-emerald-900 px-1.5 py-0.5 rounded group-hover:bg-emerald-600 group-hover:text-white transition">
-                  Pro
-                </span>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" aria-hidden />
+                <span className="text-xs leading-5 font-medium text-grey-950">Suscripción activa</span>
               </div>
-              <p className="text-[11px] font-bold text-teal-900 mt-1">
-                Plan Pro Enterprise
+              <p className="text-[10px] leading-[18px] text-grey-800 pl-4">
+                Próxima renovación: 01-01-2027
               </p>
-              <p className="text-[10px] text-gray-500 mt-0.5">
-                Renovación: 01-01-2027
-              </p>
-              <div className="mt-2 pt-1.5 border-t border-emerald-200/60 flex items-center justify-between text-[10px] font-bold text-emerald-700 group-hover:text-emerald-900">
-                <span>Mejorar Plan / Add-ons</span>
-                <span>&rarr;</span>
-              </div>
-            </div>
+            </button>
           )}
 
-          <p className="text-[11px] text-gray-400 text-center mt-1">
-            {sidebarOpen ? "LifeOn SST V.2.0.0" : "2.0"}
+          <p className="text-xs text-grey-800 text-center mt-4">
+            {sidebarOpen ? "V.2.0.0" : "2.0"}
           </p>
         </div>
       </aside>
 
       {/* Contenedor Principal */}
-      <main className="flex-1 flex flex-col gap-3 overflow-y-auto">
+      <main className="flex-1 min-w-0 flex flex-col gap-3 overflow-y-auto pb-20">
         {aiSessionReady === false && (
           <AprVirtualSessionPrompt onReady={() => setAiSessionReady(true)} />
         )}
         {/* Barra Superior (Top Navigation) */}
         <header
           ref={headerRef}
-          className="bg-white rounded-2xl p-2.5 px-4 flex items-center justify-between shadow-xs gap-3 relative z-40"
+          className="bg-white rounded-2xl p-2.5 sm:px-5 flex items-center justify-between shadow-[0_6px_16px_-4px_rgba(0,0,0,0.02)] gap-2 sm:gap-3 relative z-30"
         >
           {/* Lado Izquierdo */}
-          <div className="flex items-center gap-2 relative">
+          <div className="flex items-center gap-3 relative">
             <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              aria-label="Alternar barra lateral"
-              className="p-2 text-gray-600 hover:bg-gray-50 rounded-xl transition cursor-pointer border border-gray-200"
+              onClick={() => {
+                if (window.matchMedia("(min-width: 1024px)").matches) setSidebarOpen(!sidebarOpen);
+                else setMobileNavOpen(true);
+              }}
+              aria-label="Mostrar u ocultar menú"
+              className="w-10 h-10 flex items-center justify-center text-grey-800 hover:bg-grey-100 rounded-lg transition cursor-pointer border border-grey-300"
             >
+              <LuMenu className="w-4 h-4 lg:hidden" />
               {sidebarOpen ? (
-                <LuPanelLeftClose className="w-4 h-4" />
+                <LuPanelLeftClose className="w-4 h-4 hidden lg:block" />
               ) : (
-                <LuPanelLeftOpen className="w-4 h-4" />
+                <LuPanelLeftOpen className="w-4 h-4 hidden lg:block" />
               )}
             </button>
 
             {/* Logo de la Organización (Solo Identidad Visual, sin acción al hacer clic) */}
             <div
-              className="h-9 max-w-[140px] flex items-center justify-center px-2 py-1 rounded-xl bg-gray-50/80 border border-gray-200/80 overflow-hidden select-none"
+              className="h-9 max-w-[140px] hidden md:flex items-center justify-center overflow-hidden select-none"
               title={preferences.organizationName || "Organización"}
             >
               {preferences.organizationLogo ? (
@@ -651,10 +656,8 @@ export default function DashboardPage() {
               ) : (
                 <div className="flex items-center gap-1.5 text-gray-500 text-[11px] font-bold">
                   <LuBuilding2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                  <span className="truncate max-w-[95px]">
-                    {preferences.organizationName
-                      ? preferences.organizationName.split(" ")[0]
-                      : "Empresa"}
+                  <span className="truncate max-w-[110px]">
+                    {preferences.organizationName || "Empresa"}
                   </span>
                 </div>
               )}
@@ -662,8 +665,8 @@ export default function DashboardPage() {
           </div>
 
           {/* Buscador Central */}
-          <div id="tour-topbar-search" className="relative flex-1 max-w-xl mx-2">
-            <LuSearch className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <div id="tour-topbar-search" className="relative flex-1 min-w-0 max-w-[390px] ml-auto">
+            <LuSearch className="w-5 h-5 text-grey-800 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
@@ -674,8 +677,9 @@ export default function DashboardPage() {
               onFocus={() => {
                 if (searchQuery.trim().length > 0) setIsSearchDropdownOpen(true);
               }}
-              placeholder="Busca en matrices, documentos, APR..."
-              className="w-full bg-[#F8FAFC] border border-gray-100 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 text-gray-800 placeholder-gray-400 transition"
+              placeholder="Busca en LifeOn…"
+              aria-label="Buscar en LifeOn"
+              className="w-full h-10 bg-white border border-grey-300 rounded-lg pl-11 pr-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 text-grey-950 placeholder-grey-800 transition"
             />
 
             {isSearchDropdownOpen && searchQuery.trim().length > 0 && (
@@ -691,39 +695,33 @@ export default function DashboardPage() {
           </div>
 
           {/* Acciones del Lado Derecho */}
-          <div className="flex items-center gap-2 relative">
-            {/* Botón APR Atom */}
+          <div className="flex items-center gap-2 sm:gap-4 relative sm:ml-4">
+            {/* APR Virtual: degradado IA/Primario (Azure/100 → Emerald/200) */}
             <button
               type="button"
               onClick={() => navigateToMenu("apr")}
-              className={clsx(
-                "p-2 rounded-xl transition cursor-pointer",
-                activeMenu === "apr"
-                  ? "bg-teal-600 text-white"
-                  : "bg-[#E6F4F1] text-[#0D9488] hover:bg-[#D3EFEA]"
-              )}
-              title="Abrir Asistente APR Virtual con IA"
+              title="APR Virtual"
+              aria-label="Abrir APR Virtual"
+              className="w-10 h-10 flex items-center justify-center rounded-lg bg-gradient-to-r from-azure-100 to-emerald-200 text-grey-950 hover:brightness-95 transition cursor-pointer flex-shrink-0"
             >
-              <LuAtom className="w-4 h-4" />
+              <LuAtom className="w-5 h-5" />
             </button>
 
-            {/* Indicador de Estado de Base de Datos (Solo Ícono) */}
+            {/* Indicador de Estado de Base de Datos (no está en Figma; se conserva por función) */}
             <button
               type="button"
               onClick={() => setIsSupabaseModalOpen(true)}
+              aria-label={isSupabaseConfigured() ? "Base de datos conectada" : "Base de datos desconectada"}
               className={clsx(
-                "relative w-8 h-8 flex items-center justify-center rounded-xl border transition cursor-pointer flex-shrink-0",
-                isSupabaseConfigured()
-                  ? "bg-emerald-50/70 border-emerald-200 text-emerald-700 hover:bg-emerald-100/70"
-                  : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
+                "relative w-10 h-10 hidden sm:flex items-center justify-center rounded-lg border border-grey-300 text-grey-800 hover:bg-grey-100 transition cursor-pointer flex-shrink-0"
               )}
               title={isSupabaseConfigured() ? "Base de datos conectada (Supabase)" : "Base de datos desconectada (Modo Local)"}
             >
               <LuDatabase className="w-4 h-4" />
               <span
                 className={clsx(
-                  "absolute top-1 right-1 w-2 h-2 rounded-full",
-                  isSupabaseConfigured() ? "bg-emerald-500 animate-pulse" : "bg-gray-400"
+                  "absolute top-1.5 right-1.5 w-2 h-2 rounded-full",
+                  isSupabaseConfigured() ? "bg-green-500" : "bg-grey-500"
                 )}
               />
             </button>
@@ -737,12 +735,14 @@ export default function DashboardPage() {
                   setIsAlertsOpen(false);
                   setIsProfileOpen(false);
                 }}
-                className="relative p-2 rounded-xl text-gray-600 hover:bg-gray-50 border border-gray-100 transition cursor-pointer"
+                className="relative w-10 h-10 flex items-center justify-center rounded-lg text-grey-800 hover:bg-grey-100 border border-grey-300 transition cursor-pointer"
                 title="Notificaciones"
+                aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : "Notificaciones"}
+                aria-expanded={isNotificationsOpen}
               >
-                <LuBell className="w-4 h-4" />
+                <LuBell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#F04438] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                  <span className="absolute top-1 right-1.5 bg-red-500 text-white text-[10px] leading-none font-medium min-w-4 h-4 px-1 rounded-full flex items-center justify-center tabular-nums">
                     {unreadCount}
                   </span>
                 )}
@@ -765,33 +765,27 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setIsHelpModalOpen(true)}
-              className="p-2 rounded-xl text-gray-600 hover:bg-gray-50 border border-gray-100 transition cursor-pointer"
+              className="w-10 h-10 items-center justify-center rounded-lg text-grey-800 hover:bg-grey-100 border border-grey-300 transition cursor-pointer hidden sm:flex"
               title="Centro de Ayuda y Normativa DS 44"
+              aria-label="Ayuda y normativa DS 44"
             >
-              <LuCircleHelp className="w-4 h-4" />
+              <LuCircleHelp className="w-5 h-5" />
             </button>
 
-            {/* Selector Global de Centro de Trabajo */}
+            {/* Filtro global de Centro de Trabajo (botón de filtros en Figma) */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsFilterModalOpen(true)}
                 disabled={workCenters.length === 0}
-                title={workCenters.length === 0 ? "Sin Centros de Trabajo registrados" : `Centro de Trabajo activo: ${activeWorkplace || "Todos los Centros de Trabajo"}`}
-                className={clsx(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer max-w-[210px]",
-                  workCenters.length === 0
-                    ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-[#F0FDFA] border-teal-200/80 text-teal-900 hover:bg-teal-50 shadow-2xs"
-                )}
+                title={workCenters.length === 0 ? "Sin Centros de Trabajo registrados" : `Centro de Trabajo: ${activeWorkplace || "Todos los Centros de Trabajo"}`}
+                aria-label={workCenters.length === 0 ? "Sin centros de trabajo" : `Filtrar por centro de trabajo. Actual: ${activeWorkplace || "Todos"}`}
+                className="relative w-10 h-10 flex items-center justify-center rounded-lg text-grey-800 hover:bg-grey-100 border border-grey-300 transition cursor-pointer disabled:text-grey-500 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               >
-                <LuBuilding2 className={clsx("w-3.5 h-3.5 flex-shrink-0", workCenters.length === 0 ? "text-gray-400" : "text-teal-600")} />
-                <span className="truncate">
-                  {workCenters.length === 0
-                    ? "Sin Centros de Trabajo"
-                    : activeWorkplace || "Todos los Centros de Trabajo"}
-                </span>
-                {workCenters.length > 0 && <LuChevronDown className="w-3 h-3 text-teal-600 flex-shrink-0 ml-0.5" />}
+                <LuSlidersHorizontal className="w-5 h-5" />
+                {activeWorkplace && activeWorkplace !== "Todos los Centros de Trabajo" && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-teal-500" aria-hidden />
+                )}
               </button>
             </div>
 
@@ -805,7 +799,9 @@ export default function DashboardPage() {
                   setIsAlertsOpen(false);
                 }}
                 title={`Cuenta: ${userDisplayName}`}
-                className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center font-bold text-xs cursor-pointer shadow-xs ml-1 hover:ring-2 hover:ring-purple-300 transition flex-shrink-0 border border-teal-200"
+                aria-label={`Cuenta de ${userDisplayName}`}
+                aria-expanded={isProfileOpen}
+                className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center font-medium text-xs cursor-pointer hover:ring-2 hover:ring-lavender-300 transition flex-shrink-0"
               >
                 {preferences.profilePhoto ? (
                   <img
@@ -814,14 +810,8 @@ export default function DashboardPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center">
-                    {userDisplayName
-                      .split(" ")
-                      .filter(Boolean)
-                      .map((n: string) => n[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase() || "SJ"}
+                  <div className="w-full h-full bg-lavender-600 text-lavender-300 flex items-end justify-center">
+                    <LuUserRound className="w-6 h-6 translate-y-1" aria-hidden />
                   </div>
                 )}
               </button>
@@ -850,80 +840,36 @@ export default function DashboardPage() {
         {activeMenu === "dashboard" && (
           <div className="flex flex-col gap-3">
             {/* Tarjeta de Bienvenida y KPIs */}
-            <section className="bg-white rounded-2xl p-6 sm:p-7 shadow-xs flex flex-col gap-6">
-              {/* Encabezado con saludo dinámico */}
+            <section className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0_6px_16px_-4px_rgba(0,0,0,0.02)] flex flex-col gap-6 sm:gap-8">
+              {/* Encabezado según Figma › Dashboard: ilustración + saludo + resumen */}
               <div className="flex items-start justify-between flex-wrap gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="relative text-3xl sm:text-4xl select-none flex-shrink-0 pt-0.5">
-                    <span className="inline-block transform -rotate-12">✋</span>
-                    <span className="absolute -top-1 -left-1 text-red-400 text-xs font-bold select-none">
-                      ~
-                    </span>
-                    <span className="absolute -top-1 -right-1 text-red-400 text-xs font-bold select-none">
-                      ~
-                    </span>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
-                        Hola de nuevo, {userFirstName}
-                      </h2>
-                      {setupGuideActive && (
-                          <button
-                            type="button"
-                            onClick={openSetupGuideModal}
-                            className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full cursor-pointer hover:bg-amber-100 transition"
-                          >
-                            Primeros pasos en LifeOn
-                          </button>
-                        )}
-                      {preferences.onboardingCompleted && (
-                        <span className="inline-flex items-center gap-1 bg-teal-50 border border-teal-200 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          <LuSparkles className="w-3 h-3 text-teal-600" />
-                          {preferences.experienceLevel === "expert"
-                            ? "Modo Especialista"
-                            : preferences.experienceLevel === "intermediate"
-                            ? "Modo Equilibrado"
-                            : "Modo Guiado"}
-                        </span>
-                      )}
-                      <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        {preferences.riskEvaluationMethod === "ds44"
-                          ? "DS 44 / ISL"
-                          : preferences.riskEvaluationMethod === "matrix5x5"
-                          ? "Matriz 5×5"
-                          : "IPER Pendiente"}
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                      Aquí tienes el resumen general de gestión de riesgos y estado de cumplimiento en{" "}
-                      <span className="font-semibold text-teal-700">
-                        {preferences.organizationName || activeWorkplace}
-                      </span>.
+                <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- ilustración local de 2.7 KB exportada de Figma */}
+                  <img
+                    src="/images/dashboard/hola.png"
+                    alt=""
+                    width={62}
+                    height={62}
+                    className="w-12 h-12 sm:w-[62px] sm:h-[62px] flex-shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <h2 className="text-2xl sm:text-[32px] sm:leading-[38px] font-semibold text-grey-950 text-balance">
+                      Hola de nuevo, {userFirstName}
+                    </h2>
+                    <p className="text-sm sm:text-base text-grey-800 mt-0.5">
+                      Aquí tienes el resumen general y las actualizaciones de tu espacio de trabajo.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    id="tour-apr-quick"
-                    type="button"
-                    onClick={() => navigateToMenu("apr")}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 transition cursor-pointer border border-teal-200"
-                  >
-                    <LuSparkles className="w-4 h-4 text-teal-600" />
-                    Generar APR con IA
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigateToMenu("iper")}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 transition cursor-pointer shadow-xs"
-                  >
-                    <LuTable className="w-4 h-4" />
-                    Nueva Matriz IPER
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => navigateToMenu("iper")}
+                  className="flex items-center gap-2 h-10 px-4 rounded-lg text-sm font-medium text-white bg-red-500 hover:bg-red-600 active:bg-red-800 focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:outline-none transition cursor-pointer w-full sm:w-auto justify-center"
+                >
+                  <LuTable className="w-4 h-4" />
+                  Nueva Matriz IPER
+                </button>
               </div>
 
               {/* Fila de 5 Tarjetas de Métricas KPI */}
@@ -938,18 +884,15 @@ export default function DashboardPage() {
             {/* Dos Paneles Principales Inferiores */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-[300px]">
               {/* Panel Izquierdo: Mapa de Calor y Estado de Riesgos IPER */}
-              <div id="tour-risk-map" className="bg-white rounded-2xl p-6 shadow-xs flex flex-col justify-between border border-gray-50">
+              <div id="tour-risk-map" className="bg-white rounded-2xl p-4 sm:p-6 shadow-[0_6px_16px_-4px_rgba(0,0,0,0.02)] flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
-                        <LuShieldAlert className="w-4 h-4" />
-                      </div>
+                  <div className="flex items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                    <div className="min-w-0">
                       <div>
-                        <h3 className="text-sm font-bold text-gray-900">
-                          Matriz de Riesgos y Procesos Críticos
+                        <h3 className="text-base font-semibold text-gray-900">
+                          Riesgos y procesos críticos
                         </h3>
-                        <p className="text-[11px] text-gray-400">
+                        <p className="text-xs text-gray-500">
                           {activeWorkplace && activeWorkplace !== "Todos los Centros de Trabajo"
                             ? activeWorkplace
                             : "Jerarquía de control según DS 44"}
@@ -960,9 +903,9 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={() => navigateToMenu("iper")}
-                      className="text-xs text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1 cursor-pointer"
+                      className="text-xs text-teal-700 hover:text-teal-800 font-semibold flex items-center gap-1 cursor-pointer whitespace-nowrap"
                     >
-                      Ver Matriz <LuArrowRight className="w-3.5 h-3.5" />
+                      Ver matrices <LuArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
@@ -989,8 +932,8 @@ export default function DashboardPage() {
                       <div className="mt-4 flex flex-col gap-2">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-600 font-medium">Distribución de Riesgos Evaluados</span>
-                          <span className="text-gray-400 font-mono text-[11px]">
-                            {riskDistribution.total || totalRisksCount} Evaluaciones Totales
+                          <span className="text-gray-500 tabular-nums text-xs">
+                            {riskDistribution.total || totalRisksCount} evaluaciones
                           </span>
                         </div>
 
@@ -1017,7 +960,7 @@ export default function DashboardPage() {
                           />
                         </div>
 
-                        <div className="grid grid-cols-4 gap-2 pt-1 text-[11px]">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-emerald-500" />
                             <span className="text-gray-600">Bajo ({riskDistribution.pctBajo}%)</span>
@@ -1077,7 +1020,7 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                <div className="pt-3 mt-3 border-t border-gray-100 flex justify-between items-center text-[11px] text-gray-400">
+                <div className="pt-3 mt-3 border-t border-gray-100 flex flex-wrap gap-2 justify-between items-center text-xs text-gray-500">
                   <span>
                     {totalMatricesCount === 0
                       ? "0 matrices registradas"
@@ -1085,26 +1028,23 @@ export default function DashboardPage() {
                   </span>
                   <button
                     onClick={() => navigateToMenu("iper")}
-                    className="text-teal-600 hover:underline font-medium cursor-pointer"
+                    className="text-teal-700 hover:underline underline-offset-2 font-medium cursor-pointer"
                   >
-                    Administrar Matrices &rarr;
+                    Administrar matrices
                   </button>
                 </div>
               </div>
 
               {/* Panel Derecho: Programa Preventivo DS 44 & APR Virtual */}
-              <div className="bg-white rounded-2xl p-6 shadow-xs flex flex-col justify-between border border-gray-50">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-[0_6px_16px_-4px_rgba(0,0,0,0.02)] flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
-                        <LuFileCheck className="w-4 h-4" />
-                      </div>
+                  <div className="flex items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                    <div className="min-w-0">
                       <div>
-                        <h3 className="text-sm font-bold text-gray-900">
-                          Programa Anual SST & Documentación
+                        <h3 className="text-base font-semibold text-gray-900">
+                          Programa anual SST
                         </h3>
-                        <p className="text-[11px] text-gray-400">
+                        <p className="text-xs text-gray-500">
                           {isProgramConfigured
                             ? `${programMetrics.compliancePercentage}% de cumplimiento al día`
                             : "Planificación de Gestión de Riesgos"}
@@ -1115,9 +1055,9 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={() => navigateToMenu("docs")}
-                      className="text-xs text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1 cursor-pointer"
+                      className="text-xs text-teal-700 hover:text-teal-800 font-semibold flex items-center gap-1 cursor-pointer whitespace-nowrap"
                     >
-                      Ver Todo <LuArrowRight className="w-3.5 h-3.5" />
+                      Ver programa <LuArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
@@ -1140,35 +1080,10 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <>
-                      {/* Banner Asistente APR Virtual */}
-                      <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-teal-50 via-emerald-50 to-cyan-50 border border-teal-200/80 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-xs flex-shrink-0">
-                            <LuAtom className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-gray-900">
-                              Asistente APR Virtual con IA
-                            </h4>
-                            <p className="text-[11px] text-gray-600 mt-0.5">
-                              Genera análisis de riesgos inmediatos para tus cuadrillas en terreno.
-                            </p>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => navigateToMenu("apr")}
-                          className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg shadow-xs transition cursor-pointer whitespace-nowrap"
-                        >
-                          Iniciar Asistente &rarr;
-                        </button>
-                      </div>
-
                       {/* Próximas Actividades Programadas */}
                       <div className="mt-4 flex flex-col gap-2">
                         <p className="text-xs font-semibold text-gray-700">
-                          Próximas Actividades del Programa:
+                          Próximas actividades
                         </p>
 
                         {(() => {
@@ -1230,13 +1145,13 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                <div className="pt-3 mt-3 border-t border-gray-100 flex justify-between items-center text-[11px] text-gray-400">
+                <div className="pt-3 mt-3 border-t border-gray-100 flex flex-wrap gap-2 justify-between items-center text-xs text-gray-500">
                   <span>Supervisado por: {userDisplayName}</span>
                   <button
                     onClick={() => navigateToMenu("docs")}
-                    className="text-teal-600 hover:underline font-medium cursor-pointer"
+                    className="text-teal-700 hover:underline underline-offset-2 font-medium cursor-pointer"
                   >
-                    Ver Planificación Preventiva &rarr;
+                    Ver planificación preventiva
                   </button>
                 </div>
               </div>
@@ -1277,6 +1192,9 @@ export default function DashboardPage() {
 
         {/* Vista: Documentación Técnica */}
         {activeMenu === "techDocs" && <TechnicalDocsView />}
+
+        {/* Vista: Seguridad de Procesos */}
+        {activeMenu === "processSafety" && <ProcessSafetyView />}
       </main>
 
       {/* Modales Globales */}

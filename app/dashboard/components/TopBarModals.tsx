@@ -21,7 +21,6 @@ import {
   LuAtom,
   LuExternalLink,
   LuSearch,
-  LuSparkles,
   LuCreditCard,
   LuStar,
   LuCircleCheck,
@@ -46,6 +45,7 @@ import {
   LuKey,
   LuCamera,
   LuLoader,
+  LuClipboardList,
 } from "react-icons/lu";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import {
@@ -82,7 +82,7 @@ export function NotificationsDropdown({
   onNavigateTab: (tab: string) => void;
 }) {
   return (
-    <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+    <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
       <div className="flex items-center justify-between pb-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <h4 className="font-semibold text-gray-900 text-sm">Notificaciones</h4>
@@ -161,7 +161,7 @@ export function NotificationsDropdown({
 
 export function AlertsDropdown({ onClose, onNavigateTab }: { onClose: () => void; onNavigateTab: (tab: string) => void }) {
   return (
-    <div className="absolute left-0 sm:left-auto sm:right-0 top-12 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-amber-200/80 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+    <div className="absolute left-0 sm:left-auto sm:right-0 top-12 w-80 sm:w-96 bg-white rounded-2xl shadow-lg border border-amber-200/80 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
       <div className="flex items-center justify-between pb-3 border-b border-gray-100">
         <div className="flex items-center gap-2 text-amber-600">
           <LuShieldAlert className="w-5 h-5" />
@@ -256,7 +256,7 @@ export function UserProfileDropdown({
   const displayOrg = organizationName || (userEmail.includes("luis") ? "Mi Organización" : "Constructora y Servicios Santiago SpA");
 
   return (
-    <div className="absolute right-0 top-12 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+    <div className="absolute right-0 top-12 w-72 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
       {/* Cabecera del Usuario */}
       <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
         {profilePhoto ? (
@@ -266,7 +266,7 @@ export function UserProfileDropdown({
             className="w-11 h-11 rounded-full object-cover shadow-xs flex-shrink-0 border border-teal-200"
           />
         ) : (
-          <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
+          <div className="w-11 h-11 rounded-full bg-lavender-600 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
             {initials}
           </div>
         )}
@@ -351,7 +351,7 @@ export function UserProfileDropdown({
             }}
             className="w-full text-left px-3 py-2 text-xs font-medium text-teal-700 hover:bg-teal-50 rounded-xl transition flex items-center gap-2 cursor-pointer"
           >
-            <LuSparkles className="w-4 h-4 text-teal-600" />
+            <LuCircleHelp className="w-4 h-4 text-teal-600" />
             Ver Tutorial Interactivo
           </button>
         )}
@@ -760,8 +760,8 @@ export function AccountModal({
     .toUpperCase() || "SJ";
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-xl rounded-2xl shadow-lg border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -779,7 +779,7 @@ export function AccountModal({
                 className="w-14 h-14 rounded-2xl object-cover border border-teal-200 shadow-xs"
               />
             ) : (
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-lavender-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
                 {userInitials}
               </div>
             )}
@@ -1174,8 +1174,8 @@ export function SettingsModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-lg border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -1542,8 +1542,8 @@ export function SubscriptionUpgradeModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-lg border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -1553,7 +1553,7 @@ export function SubscriptionUpgradeModal({
 
         {/* Encabezado */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-xs">
+          <div className="w-11 h-11 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-xs">
             <LuCreditCard className="w-6 h-6" />
           </div>
           <div>
@@ -1571,28 +1571,28 @@ export function SubscriptionUpgradeModal({
         </div>
 
         {/* Tarjeta Plan Actual */}
-        <div className="bg-gradient-to-r from-teal-900 to-slate-900 text-white rounded-2xl p-5 mb-5 shadow-xs">
+        <div className="bg-teal-900 text-white rounded-2xl p-5 mb-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <span className="text-[10px] font-bold text-teal-300 uppercase tracking-wider">
                 Plan Actual Activo
               </span>
-              <h4 className="text-xl font-black text-white mt-0.5">LifeOn Pro Enterprise</h4>
+              <h4 className="text-xl font-bold text-white mt-0.5">LifeOn Pro Enterprise</h4>
               <p className="text-xs text-gray-300 mt-1">
                 Facturación Anual • Próxima renovación: <b>01 de enero de 2027</b>
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/10 text-right">
+            <div className="bg-teal-800 px-3.5 py-2 rounded-lg border border-teal-700 text-right">
               <span className="text-[10px] text-gray-300 block">Tarifa Actual</span>
-              <span className="text-lg font-black text-teal-300">4,5 UF / mes</span>
+              <span className="text-lg font-bold text-teal-300">4,5 UF / mes</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 pt-4 border-t border-white/10 text-[11px] text-gray-200">
-            <div>✓ Matrices IPER Ilimitadas</div>
-            <div>✓ APR con IA 2.0</div>
-            <div>✓ 50 Usuarios Terreno</div>
-            <div>✓ Soporte Prioritario</div>
+            <div className="flex items-center gap-1"><LuCheck className="w-3.5 h-3.5 text-teal-300 flex-shrink-0" aria-hidden />Matrices IPER Ilimitadas</div>
+            <div className="flex items-center gap-1"><LuCheck className="w-3.5 h-3.5 text-teal-300 flex-shrink-0" aria-hidden />APR con IA 2.0</div>
+            <div className="flex items-center gap-1"><LuCheck className="w-3.5 h-3.5 text-teal-300 flex-shrink-0" aria-hidden />50 Usuarios Terreno</div>
+            <div className="flex items-center gap-1"><LuCheck className="w-3.5 h-3.5 text-teal-300 flex-shrink-0" aria-hidden />Soporte Prioritario</div>
           </div>
         </div>
 
@@ -1682,8 +1682,8 @@ export function HelpModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-xl rounded-2xl shadow-lg border border-gray-100 p-6 relative">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -1703,21 +1703,21 @@ export function HelpModal({
 
         <div className="flex flex-col gap-3 my-4">
           <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 hover:border-teal-200 transition">
-            <h5 className="text-sm font-semibold text-gray-900">📋 Guía de Cumplimiento DS 44 (Gestión de Riesgos)</h5>
+            <h5 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5"><LuClipboardList className="w-4 h-4 text-teal-700 flex-shrink-0" aria-hidden />Guía de Cumplimiento DS 44 (Gestión de Riesgos)</h5>
             <p className="text-xs text-gray-600 mt-1">
               Aprende a estructurar matrices IPER continuas, jerarquía de controles y asignación de responsables conforme a la normativa chilena.
             </p>
           </div>
 
           <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 hover:border-teal-200 transition">
-            <h5 className="text-sm font-semibold text-gray-900">🤖 Uso de APR Virtual con IA</h5>
+            <h5 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5"><LuAtom className="w-4 h-4 text-teal-700 flex-shrink-0" aria-hidden />Uso de APR Virtual con IA</h5>
             <p className="text-xs text-gray-600 mt-1">
               Genera Análisis de Peligros y Riesgos en menos de 1 minuto mediante nuestro motor especializado con prompts guiados.
             </p>
           </div>
 
           <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 hover:border-teal-200 transition">
-            <h5 className="text-sm font-semibold text-gray-900">📞 Contacto con Soporte Especialista SST</h5>
+            <h5 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5"><LuPhone className="w-4 h-4 text-teal-700 flex-shrink-0" aria-hidden />Contacto con Soporte Especialista SST</h5>
             <p className="text-xs text-gray-600 mt-1">
               Atención directa por correo a <b>soporte@lifeon.cl</b> o a través de nuestra mesa de ayuda disponible de lunes a viernes.
             </p>
@@ -1745,7 +1745,7 @@ export function HelpModal({
                 }}
                 className="px-3.5 py-2 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl transition cursor-pointer flex items-center gap-1.5"
               >
-                <LuSparkles className="w-3.5 h-3.5" />
+                <LuCircleHelp className="w-3.5 h-3.5" />
                 Iniciar Tutorial Guiado
               </button>
             ) : null}
@@ -1782,8 +1782,8 @@ export function FilterWorkplaceModal({
   const hasMultiple = workCenters.length > 1;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-lg border border-gray-100 p-6 relative">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -1905,7 +1905,7 @@ export function GlobalSearchDropdown({
   );
 
   return (
-    <div className="absolute left-0 right-0 top-12 bg-white rounded-2xl shadow-2xl border border-gray-100 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200 max-h-80 overflow-y-auto">
+    <div className="absolute left-0 right-0 top-12 bg-white rounded-2xl shadow-lg border border-gray-100 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200 max-h-80 overflow-y-auto">
       <div className="text-[11px] font-semibold text-gray-400 px-2 py-1 uppercase tracking-wider">
         Resultados para &quot;{query}&quot; ({filtered.length})
       </div>
@@ -2001,8 +2001,8 @@ export function ResetAccountConfirmModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-red-100 p-6 relative">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-lg border border-red-100 p-6 relative">
         {status === "idle" && (
           <>
             <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">

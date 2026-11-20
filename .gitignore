@@ -48,3 +48,6 @@ mobile/node_modules/
 mobile/.expo/
 mobile/dist/
 mobile/dist-android/
+
+# local resources
+/resources

@@ -24,7 +24,6 @@ import {
   LuTrash2,
   LuCopy,
   LuSquarePen,
-  LuSparkles,
   LuArrowRight,
   LuRotateCw,
   LuCircleCheck,
@@ -43,6 +42,10 @@ import {
   LuActivity,
   LuShieldCheck,
   LuPrinter,
+  LuInfo,
+  LuTable,
+  LuListChecks,
+  LuClipboardList,
 } from "react-icons/lu";
 import * as XLSX from "xlsx";
 import {
@@ -1162,7 +1165,7 @@ export default function IperMatrixView({
       // 3. Borrador
       case "Borrador":
         return [
-          { label: "Confeccionar con Asistente", icon: LuSparkles, action: openWizardForMatrix },
+          { label: "Confeccionar con Asistente", icon: LuTable, action: openWizardForMatrix },
           { label: "Ir a la matriz", icon: LuArrowRight, action: openMatrix },
           { label: "Editar datos matriz", icon: LuPencil, action: editData },
           { label: "Enviar a revisión", icon: LuSend, action: sendToReview },
@@ -1715,7 +1718,7 @@ export default function IperMatrixView({
     <div className="flex flex-col gap-3 font-[family-name:var(--font-poppins)] animate-in fade-in duration-300 relative">
       {/* Toast Flotante de Notificaciones */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 border border-slate-700 animate-in fade-in slide-in-from-bottom-3 duration-200">
           <LuCircleCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
           <span className="text-xs font-medium">{toastMessage}</span>
           <button
@@ -1754,7 +1757,7 @@ export default function IperMatrixView({
                 right: `${menuPosition.right}px`,
                 zIndex: 50,
               }}
-              className="w-60 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 text-xs text-left animate-in fade-in zoom-in-95 duration-150"
+              className="w-60 bg-white rounded-2xl shadow-lg border border-gray-100 p-2 text-xs text-left animate-in fade-in zoom-in-95 duration-150"
             >
               <div className="px-3 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                 Acciones
@@ -1795,7 +1798,7 @@ export default function IperMatrixView({
       {/* 1. Encabezado MIPER */}
       <div className="bg-white rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#F3E8FF] text-[#9333EA] flex items-center justify-center shadow-xs flex-shrink-0">
+          <div className="w-12 h-12 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center flex-shrink-0">
             <LuLayoutGrid className="w-6 h-6" />
           </div>
           <div>
@@ -1878,7 +1881,7 @@ export default function IperMatrixView({
       )}
 
       {/* 🌟 1. SECCIÓN DESTACADA: INFORMACIÓN DE RIESGOS LABORALES (IRL) (Req 7: inmediatamente bajo el título) */}
-      <div className="bg-gradient-to-br from-teal-50/90 via-emerald-50/40 to-cyan-50/30 border-2 border-teal-200/90 rounded-2xl p-6 shadow-xs relative overflow-hidden">
+      <div className="bg-teal-50 border-2 border-teal-200/90 rounded-2xl p-6 shadow-xs relative overflow-hidden">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center shadow-md flex-shrink-0">
@@ -1886,10 +1889,10 @@ export default function IperMatrixView({
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-black uppercase tracking-wider text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded-full border border-teal-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded-full border border-teal-200">
                   Documento Principal
                 </span>
-                <h3 className="text-lg font-black text-gray-900 tracking-tight">
+                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
                   Información de Riesgos Laborales (IRL)
                 </h3>
               </div>
@@ -1911,19 +1914,19 @@ export default function IperMatrixView({
 
         {/* Fila de Métricas IRL */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-teal-200/60">
-          <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-teal-100">
+          <div className="bg-white/80 p-3 rounded-xl border border-teal-100">
             <span className="text-[10px] text-gray-500 font-semibold uppercase">Cargos con IRL</span>
-            <p className="text-xl font-black text-gray-900 mt-0.5">{irlMetrics.total}</p>
+            <p className="text-xl font-bold text-gray-900 mt-0.5">{irlMetrics.total}</p>
           </div>
-          <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-teal-100">
+          <div className="bg-white/80 p-3 rounded-xl border border-teal-100">
             <span className="text-[10px] text-emerald-600 font-semibold uppercase">IRL actualizados</span>
-            <p className="text-xl font-black text-emerald-700 mt-0.5">{irlMetrics.updated}</p>
+            <p className="text-xl font-bold text-emerald-700 mt-0.5">{irlMetrics.updated}</p>
           </div>
-          <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-teal-100">
+          <div className="bg-white/80 p-3 rounded-xl border border-teal-100">
             <span className="text-[10px] text-amber-600 font-semibold uppercase">IRL pendientes</span>
-            <p className="text-xl font-black text-amber-700 mt-0.5">{irlMetrics.pending}</p>
+            <p className="text-xl font-bold text-amber-700 mt-0.5">{irlMetrics.pending}</p>
           </div>
-          <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-teal-100">
+          <div className="bg-white/80 p-3 rounded-xl border border-teal-100">
             <span className="text-[10px] text-gray-500 font-semibold uppercase">Última actualización</span>
             <p className="text-xs font-bold text-gray-800 mt-1.5 truncate">{irlMetrics.latestDate}</p>
           </div>
@@ -2433,7 +2436,7 @@ export default function IperMatrixView({
                                       cell.color === "red" &&
                                         "bg-[#EF4444] hover:bg-[#DC2626] text-white",
                                       isSelected &&
-                                        "ring-4 ring-slate-900/30 scale-105 z-10 font-black"
+                                        "ring-4 ring-slate-900/30 scale-105 z-10 font-bold"
                                     )}
                                   >
                                     <span className="text-xs opacity-80">
@@ -2445,7 +2448,7 @@ export default function IperMatrixView({
 
                                     {/* Badge con cantidad de riesgos */}
                                     {count > 0 && (
-                                      <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white text-gray-800 font-black text-[10px] flex items-center justify-center shadow-md border border-gray-100">
+                                      <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white text-gray-800 font-bold text-[10px] flex items-center justify-center shadow-md border border-gray-100">
                                         {count}
                                       </span>
                                     )}
@@ -2538,7 +2541,7 @@ export default function IperMatrixView({
                                       cell.color === "red" &&
                                         "bg-[#EF4444] hover:bg-[#DC2626] text-white",
                                       isSelected &&
-                                        "ring-4 ring-slate-900/30 scale-105 z-10 font-black"
+                                        "ring-4 ring-slate-900/30 scale-105 z-10 font-bold"
                                     )}
                                   >
                                     <span>{cell.val}</span>
@@ -2689,7 +2692,7 @@ export default function IperMatrixView({
                                 <>
                                   <span
                                     className={clsx(
-                                      "text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs inline-block",
+                                      "text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs inline-block",
                                       equiv.vepLevel === "Crítico" && "bg-red-600 text-white",
                                       equiv.vepLevel === "Alto" && "bg-orange-500 text-white",
                                       equiv.vepLevel === "Medio" && "bg-amber-500 text-white",
@@ -2708,7 +2711,7 @@ export default function IperMatrixView({
                             <>
                               <span
                                 className={clsx(
-                                  "text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs inline-block",
+                                  "text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs inline-block",
                                   item.vepLevel === "Crítico" && "bg-red-600 text-white",
                                   item.vepLevel === "Alto" && "bg-orange-500 text-white",
                                   item.vepLevel === "Medio" && "bg-amber-500 text-white",
@@ -2763,19 +2766,19 @@ export default function IperMatrixView({
                 <div className="grid grid-cols-3 gap-2 bg-gray-50/70 p-2.5 rounded-xl border border-gray-200/60 text-center">
                   <div className="bg-white p-2 rounded-lg border border-red-200 shadow-2xs">
                     <span className="text-xs font-bold text-red-600 block">
-                      🔴 4 Crítico
+                      <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1.5 align-middle" aria-hidden />4 Crítico
                     </span>
                     <span className="text-[10px] text-gray-500">Nivel 3 / No Aceptable</span>
                   </div>
                   <div className="bg-white p-2 rounded-lg border border-amber-200 shadow-2xs">
                     <span className="text-xs font-bold text-amber-600 block">
-                      🟡 2 Medio
+                      <span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 align-middle" aria-hidden />2 Medio
                     </span>
                     <span className="text-[10px] text-gray-500">Nivel 2 / Observado</span>
                   </div>
                   <div className="bg-white p-2 rounded-lg border border-emerald-200 shadow-2xs">
                     <span className="text-xs font-bold text-emerald-600 block">
-                      🟢 1 Bajo
+                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5 align-middle" aria-hidden />1 Bajo
                     </span>
                     <span className="text-[10px] text-gray-500">Nivel 1 / Aceptable</span>
                   </div>
@@ -2864,7 +2867,7 @@ export default function IperMatrixView({
                             {/* Semáforo de Nivel de Riesgo */}
                             <span
                               className={clsx(
-                                "text-[10px] font-black px-2 py-1 rounded-lg flex-shrink-0 flex items-center gap-1 shadow-2xs",
+                                "text-[10px] font-bold px-2 py-1 rounded-lg flex-shrink-0 flex items-center gap-1 shadow-2xs",
                                 isCritico && "bg-[#F04438] text-white",
                                 isMedio && "bg-amber-500 text-white",
                                 !isCritico && !isMedio && "bg-emerald-600 text-white"
@@ -2878,7 +2881,7 @@ export default function IperMatrixView({
                           {/* Protocolo y Magnitud */}
                           <div className="bg-white/90 p-2.5 rounded-lg border border-gray-200/80 flex flex-col gap-1 text-[11px]">
                             <div className="flex items-center justify-between text-[10px] text-teal-800 font-bold">
-                              <span>📋 {agent.protocolName}</span>
+                              <span className="inline-flex items-center gap-1"><LuClipboardList className="w-3 h-3" aria-hidden />{agent.protocolName}</span>
                               <span className="text-gray-400 font-normal">
                                 {agent.exposureType}
                               </span>
@@ -2914,8 +2917,8 @@ export default function IperMatrixView({
           MODAL: + NUEVA MATRIZ IPER (Reqs 9-14, 39)
           ========================================================================= */}
       {isNewMatrixOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-lg border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsNewMatrixOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -3053,7 +3056,7 @@ export default function IperMatrixView({
               <div className="bg-teal-50/70 border border-teal-200/80 rounded-xl p-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between flex-wrap gap-1">
                   <span className="flex items-center gap-1.5 text-[11px] font-bold text-teal-950">
-                    <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                    <LuListChecks className="w-3.5 h-3.5 text-teal-600" />
                     Propuestas de Nombre (inician con "Matriz de"):
                   </span>
                   <button
@@ -3173,7 +3176,7 @@ export default function IperMatrixView({
                     onClick={(e) => handleCreateMatrix(e, true)}
                     className="px-4 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition cursor-pointer shadow-xs flex items-center gap-1.5"
                   >
-                    <LuSparkles className="w-3.5 h-3.5" />
+                    <LuTable className="w-3.5 h-3.5" />
                     Crear y Confeccionar
                   </button>
                 </div>
@@ -3187,8 +3190,8 @@ export default function IperMatrixView({
           MODAL: EDITAR DATOS MATRIZ
           ========================================================================= */}
       {isEditDataOpen && editingMatrix && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-lg border border-gray-100 p-6 relative">
             <button
               onClick={() => setIsEditDataOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -3282,8 +3285,8 @@ export default function IperMatrixView({
           MODAL: HISTORIAL DE VERSIONES
           ========================================================================= */}
       {isHistoryOpen && selectedHistoryMatrix && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-lg border border-gray-100 p-6 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsHistoryOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -3292,7 +3295,7 @@ export default function IperMatrixView({
             </button>
 
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
+              <div className="p-2 rounded-xl bg-teal-50 text-teal-700">
                 <LuHistory className="w-5 h-5" />
               </div>
               <div>
@@ -3303,14 +3306,14 @@ export default function IperMatrixView({
               </div>
             </div>
 
-            <div className="mt-5 relative border-l-2 border-purple-200 ml-4 pl-5 flex flex-col gap-5">
+            <div className="mt-5 relative border-l-2 border-teal-200 ml-4 pl-5 flex flex-col gap-5">
               {/* Versión Actual */}
               <div className="relative">
-                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full bg-purple-600 border-2 border-white shadow-xs" />
-                <div className="bg-[#FAF5FF] border border-purple-100 rounded-xl p-3.5">
+                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full bg-teal-600 border-2 border-white shadow-xs" />
+                <div className="bg-teal-50 border border-teal-100 rounded-xl p-3.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-purple-900">v1.2 (Versión actual)</span>
-                    <span className="text-[11px] text-purple-700 font-medium">Hace 2 días</span>
+                    <span className="text-xs font-bold text-teal-900">v1.2 (Versión actual)</span>
+                    <span className="text-[11px] text-teal-700 font-medium">Hace 2 días</span>
                   </div>
                   <p className="text-xs text-gray-700 mt-1">
                     Actualización reglamentaria DS 44 y reevaluación de riesgos intolerables.
@@ -3375,8 +3378,8 @@ export default function IperMatrixView({
           MODAL: VER OBSERVACIONES
           ========================================================================= */}
       {isObservationsOpen && selectedObservationMatrix && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-lg border border-gray-100 p-6 relative">
             <button
               onClick={() => setIsObservationsOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -3465,8 +3468,8 @@ export default function IperMatrixView({
           MODAL: INGRESAR NUEVA OBSERVACIÓN (OBSERVAR MATRIZ)
           ========================================================================= */}
       {isAddObservationOpen && selectedObservationMatrix && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-lg border border-gray-100 p-6 relative">
             <button
               onClick={() => setIsAddObservationOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -3526,8 +3529,8 @@ export default function IperMatrixView({
           MODAL: VER SOLICITUD DE MODIFICACIÓN
           ========================================================================= */}
       {isModRequestOpen && selectedModificationMatrix && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-lg border border-gray-100 p-6 relative">
             <button
               onClick={() => setIsModRequestOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -3595,8 +3598,8 @@ export default function IperMatrixView({
           MODAL: SOLICITAR ACTUALIZACIÓN DE MATRIZ
           ========================================================================= */}
       {isCreateModRequestOpen && selectedModificationMatrix && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-lg border border-gray-100 p-6 relative">
             <button
               onClick={() => setIsCreateModRequestOpen(false)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -3656,8 +3659,8 @@ export default function IperMatrixView({
           MODAL: CONFIRMAR ELIMINACIÓN DE MATRIZ
           ========================================================================= */}
       {isDeleteConfirmOpen && matrixToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 p-6 relative text-center">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-lg border border-gray-100 p-6 relative text-center">
             <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3">
               <LuTrash2 className="w-6 h-6" />
             </div>
@@ -3698,8 +3701,8 @@ export default function IperMatrixView({
           MODAL: IMPORTAR MATRIZ IPER DESDE XLSX (Req 8: Máximo 2 Hojas)
           ========================================================================= */}
       {isImportOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100 p-6 relative">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-lg border border-gray-100 p-6 relative">
             <button
               onClick={() => {
                 setIsImportOpen(false);
@@ -3725,7 +3728,7 @@ export default function IperMatrixView({
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-4 text-xs text-gray-700 flex flex-col gap-2">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="font-bold text-gray-900 flex items-center gap-1.5">
-                  <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+                  <LuInfo className="w-3.5 h-3.5 text-teal-600" />
                   Estructura de la Plantilla (2 Hojas):
                 </span>
                 <button

@@ -14,6 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 
 export default function UserMenu() {
   const { data: session } = useSession();
+  const accountHref = session?.user?.is_staff ? "/admin" : "/testing-user-login";
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
@@ -47,7 +48,7 @@ export default function UserMenu() {
             >
               <MenuItem>
                 <Link
-                  href="/admin"
+                  href={accountHref}
                   className="flex items-center gap-2.5 w-full cursor-pointer text-neutral-primary data-focus:text-secondary 
                   transition-colors duration-200 rounded-lg py-1.5 hover:bg-grey-100"
                 >

@@ -715,6 +715,7 @@ export async function resetSupabaseDataForOrg(orgId: string, userId?: string): P
     "org_alex",
     "org_carlos",
     "org_pablo",
+    "org_axa",
   ];
   if (!ALLOWED_ORGS.includes(orgId)) {
     console.error("Seguridad: Intento de reset no autorizado para la organización:", orgId);

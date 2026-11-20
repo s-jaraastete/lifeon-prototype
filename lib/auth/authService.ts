@@ -109,6 +109,15 @@ export const TEST_ACCOUNTS_CONFIG: Record<string, TestAccountConfig> = {
     isDemo: false,
     resetAllowed: true,
   },
+  "william.baron@axacolpatria.co": {
+    id: "user_william",
+    name: "Willian Barón Santoyo",
+    email: "william.baron@axacolpatria.co",
+    orgId: "org_axa",
+    orgName: "AXA COLPATRIA",
+    isDemo: false,
+    resetAllowed: true,
+  },
   "sergio.jara@lifeon.cl": {
     id: "demo_sergio",
     name: "Sergio A. Jara Astete",
@@ -131,6 +140,7 @@ const DEV_PASSWORDS: Record<string, string[]> = {
   "alex.ordenes@safetyclub.cl": ["alex"],
   "carlos.subiabre@safetyclub.cl": ["carl"],
   "pablo.yanez1@safetyclub.cl": ["pabl"],
+  "william.baron@axacolpatria.co": ["will"],
   "sergio.jara@lifeon.cl": ["serg"],
 };
 

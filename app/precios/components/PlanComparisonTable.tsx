@@ -17,7 +17,14 @@ const comparisonData: ComparisonRow[] = [
     custom: true,
   },
   {
-    feature: 'Programa y Documentación Preventiva',
+    feature: 'Planificación y Gestión Preventiva',
+    free: true,
+    starter: true,
+    business: true,
+    custom: true,
+  },
+  {
+    feature: 'Documentación Técnica',
     free: 'Limited',
     starter: true,
     business: true,

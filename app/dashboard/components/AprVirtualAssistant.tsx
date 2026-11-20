@@ -14,6 +14,7 @@ const MODULE_TITLES: Record<DashboardMenuKey, string> = {
   artp: "ARTP",
   docs: "Planificación Preventiva",
   techDocs: "Documentación Técnica",
+  processSafety: "Seguridad de Procesos",
   apr: "APR Virtual",
 };
 
@@ -39,7 +40,7 @@ export default function AprVirtualAssistant({
           type="button"
           onClick={() => setOpen(true)}
           className={clsx(
-            "fixed bottom-5 z-40 flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-lg border border-teal-500/30 cursor-pointer transition",
+            "fixed bottom-5 z-40 flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-2xl bg-teal-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-lg border border-teal-500/30 cursor-pointer transition",
             positionClass
           )}
           title="APR Virtual IA"
@@ -52,12 +53,12 @@ export default function AprVirtualAssistant({
       {open && (
         <aside
           className={clsx(
-            "fixed bottom-5 z-40 w-[min(100vw-2rem,22rem)] h-[min(70vh,32rem)] rounded-2xl border border-teal-200 bg-white shadow-2xl flex flex-col overflow-hidden",
+            "fixed bottom-5 z-40 w-[min(100vw-2rem,22rem)] h-[min(70vh,32rem)] rounded-2xl border border-teal-200 bg-white shadow-lg flex flex-col overflow-hidden",
             positionClass
           )}
           aria-label="Asistente APR Virtual IA"
         >
-          <div className="px-4 py-3 bg-gradient-to-r from-teal-600 to-emerald-600 text-white flex items-center justify-between">
+          <div className="px-4 py-3 bg-teal-600 text-white flex items-center justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase text-teal-100">APR Virtual IA</p>
               <p className="text-sm font-bold">{MODULE_TITLES[activeModule]}</p>

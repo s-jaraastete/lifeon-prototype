@@ -1,13 +1,6 @@
 "use client";
 
 import clsx from "clsx";
-import {
-  LuTable,
-  LuShieldAlert,
-  LuFileCheck,
-  LuFolderTree,
-  LuFileText,
-} from "react-icons/lu";
 import { useLifeOnPreferences } from "@/hooks/useLifeOnPreferences";
 import { useIperMatrices } from "@/hooks/useIperMatrices";
 import { useDashboardOverviewCounts } from "@/hooks/useDashboardOverviewCounts";
@@ -18,10 +11,7 @@ export interface KpiMetric {
   value: string;
   subtitle: string;
   change: string;
-  isPositive?: boolean;
   color: string;
-  icon: React.ElementType;
-  badge?: string;
   targetTab?: string;
 }
 
@@ -61,9 +51,7 @@ export default function DashboardKpis({ onSelectMetric, activeWorkplace }: Dashb
         totalRisksCount === 0
           ? "Comienza en Matriz IPER"
           : `${totalRisksCount} riesgos identificados`,
-      isPositive: totalMatricesCount > 0,
-      color: "text-gray-900",
-      icon: LuTable,
+      color: "text-grey-800",
       targetTab: "iper",
     },
     {
@@ -78,24 +66,20 @@ export default function DashboardKpis({ onSelectMetric, activeWorkplace }: Dashb
         totalRisksCount === 0
           ? "Sin evaluaciones aún"
           : `${totalRisksCount - criticalRisksCount} controlados / residuales`,
-      isPositive: criticalRisksCount === 0,
-      color: criticalRisksCount > 0 ? "text-amber-600" : "text-emerald-600",
-      icon: LuShieldAlert,
+      color: criticalRisksCount > 0 ? "text-red-error-600" : "text-green-600",
       targetTab: "iper",
     },
     {
       id: "programa",
       label: "Programa Preventivo",
-      value: isProgramConfigured ? `${counts.compliancePercentage}%` : "Sin configurar",
+      value: isProgramConfigured ? `${counts.compliancePercentage}%` : "—",
       subtitle: isProgramConfigured
         ? `${counts.preventiveCompleted}/${counts.preventiveTotal} actividades al día`
         : "Programa de Trabajo no configurado",
       change: isProgramConfigured
         ? `${counts.preventiveInProgress} en curso • ${counts.preventivePending} pendientes`
         : "Configurar programa",
-      isPositive: isProgramConfigured,
-      color: isProgramConfigured ? "text-[#10B981]" : "text-gray-500",
-      icon: LuFileCheck,
+      color: isProgramConfigured ? "text-green-600" : "text-yellow-600",
       targetTab: "docs",
     },
     {
@@ -110,9 +94,7 @@ export default function DashboardKpis({ onSelectMetric, activeWorkplace }: Dashb
         cargosWithIrlCount > 0
           ? "Generado desde matrices vigentes"
           : "Requiere matrices vigentes",
-      isPositive: cargosWithIrlCount > 0,
-      color: cargosWithIrlCount > 0 ? "text-teal-700" : "text-gray-400",
-      icon: LuFileText,
+      color: cargosWithIrlCount > 0 ? "text-green-600" : "text-yellow-600",
       targetTab: "iper",
     },
     {
@@ -121,51 +103,32 @@ export default function DashboardKpis({ onSelectMetric, activeWorkplace }: Dashb
       value: `${counts.workCenters} ${counts.workCenters === 1 ? "Centro" : "Centros"}`,
       subtitle: `${counts.areas} áreas • ${counts.processes} procesos`,
       change: `${counts.positions} cargos • ${counts.members} usuarios`,
-      isPositive: true,
-      color: "text-teal-800",
-      icon: LuFolderTree,
+      color: "text-grey-800",
       targetTab: "org",
     },
   ];
 
+  // Stat Card según Figma › Dashboard: etiqueta, valor H4 SemiBold y una línea de estado coloreada.
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-      {kpis.map((kpi) => {
-        const Icon = kpi.icon;
-        return (
-          <button
-            key={kpi.id}
-            type="button"
-            onClick={() => kpi.targetTab && onSelectMetric?.(kpi.targetTab)}
-            className="p-4 rounded-2xl bg-white border border-gray-100 hover:border-teal-300 transition-all hover:shadow-md cursor-pointer text-left flex flex-col justify-between group"
-          >
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-xs font-bold text-gray-500 group-hover:text-teal-700 transition">
-                {kpi.label}
-              </span>
-              <div className="w-7 h-7 rounded-xl bg-gray-50 group-hover:bg-teal-50 flex items-center justify-center text-gray-400 group-hover:text-teal-600 transition">
-                <Icon className="w-4 h-4" />
-              </div>
-            </div>
-
-            <div>
-              <div className={clsx("text-2xl font-extrabold tracking-tight", kpi.color)}>
-                {kpi.value}
-              </div>
-              <p className="text-[11px] text-gray-500 font-medium mt-1 truncate">
-                {kpi.subtitle}
-              </p>
-            </div>
-
-            <div className="pt-2 mt-2 border-t border-gray-50 flex items-center justify-between text-[10px]">
-              <span className="text-gray-400 truncate">{kpi.change}</span>
-              <span className="text-teal-600 font-semibold group-hover:underline">
-                Ver &rarr;
-              </span>
-            </div>
-          </button>
-        );
-      })}
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      {kpis.map((kpi, i) => (
+        <button
+          key={kpi.id}
+          type="button"
+          title={kpi.change}
+          onClick={() => kpi.targetTab && onSelectMetric?.(kpi.targetTab)}
+          className={clsx(
+            "p-5 rounded-2xl bg-white border border-grey-300 text-left flex flex-col gap-2 cursor-pointer hover:border-grey-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/30 transition-colors",
+            i === kpis.length - 1 && kpis.length % 2 === 1 && "col-span-2 lg:col-span-1"
+          )}
+        >
+          <span className="text-sm text-grey-800 truncate">{kpi.label}</span>
+          <span className="text-[32px] leading-[38px] font-semibold text-grey-950 tabular-nums">
+            {kpi.value}
+          </span>
+          <span className={clsx("text-xs leading-5 line-clamp-2", kpi.color)}>{kpi.subtitle}</span>
+        </button>
+      ))}
     </div>
   );
 }

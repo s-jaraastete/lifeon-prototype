@@ -80,7 +80,7 @@ export default function IrlFormalDocument({
             ) : null}
             <div className="min-w-0">
               <p className="text-sm font-bold text-gray-900 leading-tight">{organizationName}</p>
-              <h1 className="text-[15px] sm:text-base font-black text-gray-900 uppercase tracking-tight mt-1 leading-snug">
+              <h1 className="text-[15px] sm:text-base font-bold text-gray-900 uppercase tracking-tight mt-1 leading-snug">
                 INFORMACIÓN DE RIESGOS LABORALES (IRL)
               </h1>
               <p className="text-[10px] text-gray-600 mt-1 leading-snug">{IRL_LEGAL_SUBTITLE}</p>
@@ -127,7 +127,7 @@ export default function IrlFormalDocument({
           <span className="text-[10px] text-gray-500 font-bold uppercase block">
             Cargo / Puesto de Trabajo Evaluado
           </span>
-          <span className="font-black text-teal-900 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200 inline-block">
+          <span className="font-bold text-teal-900 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200 inline-block">
             {cargoName}
           </span>
         </div>
@@ -154,7 +154,7 @@ export default function IrlFormalDocument({
       </div>
 
       <div>
-        <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+        <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2.5 flex items-center justify-between">
           <span>1. Tareas, peligros, riesgos y medidas de control del cargo</span>
           <span className="text-[10px] text-gray-500 font-normal font-mono">
             {evaluations.length} riesgo(s) asociado(s)
@@ -235,7 +235,7 @@ export default function IrlFormalDocument({
       </div>
 
       <div className="border-t-2 border-gray-800 pt-5 flex flex-col gap-4">
-        <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider">
+        <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
           3. Declaración de Recepción y Conformidad del Trabajador
         </h4>
         <p className="text-[11px] text-gray-700 leading-relaxed">

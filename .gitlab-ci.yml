@@ -1,0 +1,56 @@
+image: docker
+
+stages:
+  - docker
+  - migration
+  - deploy
+
+build_image:
+  stage: docker
+  only:
+    # - develop
+    - master
+    - none
+  variables:
+    DOCKER_DRIVER: "overlay2"
+    DOCKER_BUILDKIT: 1
+  services:
+    - docker
+  before_script:
+    - eval "$(ssh-agent -s)"
+    - ssh-add <(echo "$SUBMODULES_SSH_KEY")
+    - echo $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+    - source environment_variables/.${CI_COMMIT_REF_NAME}.env
+  script:
+    - TAG=$CI_COMMIT_REF_NAME
+    - docker pull $CI_REGISTRY_IMAGE:$TAG || true
+    - docker build --ssh default
+      --build-arg BACKEND_HOST="$BACKEND_HOST"
+      --build-arg NEXTAUTH_URL="$NEXTAUTH_URL"
+      --build-arg MIPER_MODULE_BACKEND="$MIPER_MODULE_BACKEND"
+      --build-arg MIPER_MODULE_FRONTEND="$MIPER_MODULE_FRONTEND"
+      --build-arg AUTH_MODULE_FRONTEND="$AUTH_MODULE_FRONTEND" 
+      --network host --pull --cache-from $CI_REGISTRY_IMAGE:$TAG -t $CI_REGISTRY_IMAGE:$TAG .
+    - docker push $CI_REGISTRY_IMAGE:$TAG
+
+
+deploy:
+  stage: deploy
+  only:
+    # - develop
+    - master
+    - none
+  image: debian
+  before_script:
+    - apt-get update -y
+    - apt-get install openssh-client -y
+    - eval "$(ssh-agent -s)"
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - '[ "$CI_COMMIT_REF_NAME" == "master" ] && SERVER=$SERVER_IP || SERVER=$SERVER_DEV_IP'
+    - ssh-keyscan -H $SERVER >> ~/.ssh/known_hosts
+    - DEPLOY_FILE=deploy.sh
+  script:
+    - ssh mrrobot@$SERVER 'bash -s' < ./$DEPLOY_FILE
+

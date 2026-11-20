@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import clsx from "clsx";
 import {
   LuShieldAlert,
-  LuSparkles,
   LuCheck,
   LuTriangleAlert,
   LuTable,
@@ -38,8 +37,8 @@ export default function IperModuleOnboardingModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 font-[family-name:var(--font-poppins)] select-none overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 flex flex-col justify-between animate-in fade-in zoom-in-95 duration-200 relative">
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 sm:p-6 font-[family-name:var(--font-poppins)] select-none overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-lg border border-gray-100 flex flex-col justify-between animate-in fade-in zoom-in-95 duration-200 relative">
         <div>
           {/* Encabezado */}
           <div className="flex items-start justify-between gap-3 mb-4">
@@ -51,7 +50,7 @@ export default function IperModuleOnboardingModal({
                 <span className="text-[11px] font-bold uppercase tracking-wider text-red-600">
                   Configuración Inicial de Metodología
                 </span>
-                <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
                   ¿Cómo desea evaluar los riesgos su organización?
                 </h2>
               </div>

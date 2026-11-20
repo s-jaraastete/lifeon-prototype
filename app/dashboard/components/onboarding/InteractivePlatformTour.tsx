@@ -10,9 +10,9 @@ import {
   LuLayers,
   LuSearch,
   LuAtom,
-  LuSparkles,
   LuTable,
   LuSlidersHorizontal,
+  LuLayoutGrid,
 } from "react-icons/lu";
 
 export interface TourStep {
@@ -53,7 +53,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "Tablero de Indicadores en Tiempo Real",
     description:
       "Monitorea de un vistazo el cumplimiento global de tu programa preventivo, las matrices vigentes, los peligros críticos y las auditorías programadas.",
-    icon: LuSparkles,
+    icon: LuLayoutGrid,
     preferredPlacement: "bottom",
   },
   {
@@ -271,14 +271,14 @@ export default function InteractivePlatformTour({
 
       {/* Si no hay targetRect, mostrar backdrop oscuro estándar */}
       {!targetRect && (
-        <div className="fixed inset-0 bg-slate-900/65 backdrop-blur-xs z-50 transition-opacity" />
+        <div className="fixed inset-0 bg-slate-900/65 z-50 transition-opacity" />
       )}
 
       {/* 2. Tarjeta Flotante Explicativa del Paso */}
       <div
         ref={popoverRef}
         style={calculatePopoverStyle()}
-        className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 flex flex-col justify-between gap-4 animate-in fade-in zoom-in-95 duration-200"
+        className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5 flex flex-col justify-between gap-4 animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Encabezado con Indicador de Paso y Botón Omitir */}
         <div className="flex items-center justify-between pb-3 border-b border-gray-100">

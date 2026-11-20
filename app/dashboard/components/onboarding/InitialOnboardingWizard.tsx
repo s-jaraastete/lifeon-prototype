@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import clsx from "clsx";
 import {
-  LuSparkles,
   LuArrowRight,
   LuArrowLeft,
   LuCheck,
@@ -134,17 +133,17 @@ export default function InitialOnboardingWizard({
   if (isSuccessScreen) {
     return (
       <div className="fixed inset-0 z-50 bg-[#EDF7F5] flex items-center justify-center p-4 sm:p-6 select-none font-[family-name:var(--font-poppins)] overflow-y-auto">
-        <div className="bg-white rounded-3xl max-w-lg w-full p-8 sm:p-10 shadow-xl border border-gray-100 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
+        <div className="bg-white rounded-3xl max-w-lg w-full p-8 sm:p-10 shadow-lg border border-gray-100 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
           <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6 shadow-xs">
             <LuShieldCheck className="w-9 h-9" />
           </div>
 
           <span className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-200/80 text-teal-800 text-xs font-semibold px-3 py-1 rounded-full mb-3">
-            <LuSparkles className="w-3.5 h-3.5 text-teal-600" />
+            <LuCircleCheck className="w-3.5 h-3.5 text-teal-600" />
             Configuración general lista
           </span>
 
-          <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mb-3">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight mb-3">
             Todo listo
           </h2>
 
@@ -198,7 +197,7 @@ export default function InitialOnboardingWizard({
           <button
             type="button"
             onClick={handleFinishAndEnter}
-            className="w-full py-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 transition shadow-md shadow-teal-700/20 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-4 rounded-xl text-sm font-bold text-white bg-teal-600 hover:from-teal-700 hover:to-emerald-700 transition shadow-md shadow-teal-700/20 flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Ir a LifeOn</span>
             <LuArrowRight className="w-4 h-4" />
@@ -213,8 +212,8 @@ export default function InitialOnboardingWizard({
       {/* Barra superior con progreso */}
       <div className="max-w-2xl w-full mx-auto flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-black text-[#F04438] leading-none">L</span>
-          <span className="text-2xl font-black text-[#0D9488] leading-none">O</span>
+          <span className="text-2xl font-bold text-[#F04438] leading-none">L</span>
+          <span className="text-2xl font-bold text-[#0D9488] leading-none">O</span>
           <span className="text-sm font-bold text-gray-700 ml-1">LifeOn</span>
         </div>
 
@@ -237,13 +236,13 @@ export default function InitialOnboardingWizard({
         {step === 1 && (
           <div className="flex flex-col flex-1 animate-in fade-in duration-200">
             <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mb-6">
-              <LuSparkles className="w-7 h-7" />
+              <LuSlidersHorizontal className="w-7 h-7" />
             </div>
 
             <span className="inline-block text-xs font-bold uppercase tracking-wider text-teal-700 mb-2">
               Gestión de Riesgos Laborales
             </span>
-            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-snug mb-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight leading-snug mb-3">
               Bienvenido a LifeOn
             </h1>
             <p className="text-sm sm:text-base text-gray-700 font-medium leading-relaxed mb-2">
@@ -312,7 +311,7 @@ export default function InitialOnboardingWizard({
               <LuBuilding2 className="w-7 h-7" />
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-snug mb-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight leading-snug mb-2">
               Información de tu Organización
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 mb-6">
@@ -381,7 +380,7 @@ export default function InitialOnboardingWizard({
               <LuGraduationCap className="w-7 h-7" />
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-snug mb-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight leading-snug mb-2">
               ¿Cuál es tu nivel de conocimientos en Gestión de Riesgos Laborales?
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 mb-6">
@@ -486,7 +485,7 @@ export default function InitialOnboardingWizard({
               <LuLayers className="w-7 h-7" />
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-snug mb-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight leading-snug mb-2">
               ¿Qué enfoque de Gestión de Riesgos necesita tu organización?
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 mb-6">
@@ -565,7 +564,7 @@ export default function InitialOnboardingWizard({
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800">
                         Avanzado
                       </span>
                       <span className="text-[10px] font-semibold text-gray-500">
@@ -613,11 +612,11 @@ export default function InitialOnboardingWizard({
         {/* PASO 5: Nivel de Acompañamiento en LifeOn */}
         {step === 5 && (
           <div className="flex flex-col flex-1 animate-in fade-in duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6">
+            <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center mb-6">
               <LuCircleHelp className="w-7 h-7" />
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight leading-snug mb-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight leading-snug mb-2">
               ¿Cuánta ayuda quieres recibir mientras utilizas LifeOn?
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 mb-6">

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { LuFileSearch2, LuTable } from "react-icons/lu";
+import { LuChartBar, LuFileText, LuTable } from "react-icons/lu";
 
 type BaseModuleDef = {
   bgClass: string;
@@ -11,9 +11,13 @@ export const BASE_MODULES = {
     bgClass: "bg-purple-300",
     renderIcon: (size: number) => <LuTable size={size} className="text-black" />,
   },
+  planificacion: {
+    bgClass: "bg-red-100",
+    renderIcon: (size: number) => <LuChartBar size={size} className="text-black" />,
+  },
   documentacion: {
-    bgClass: "bg-[#7dd3fc]",
-    renderIcon: (size: number) => <LuFileSearch2 size={size} className="text-black" />,
+    bgClass: "bg-sky-500",
+    renderIcon: (size: number) => <LuFileText size={size} className="text-black" />,
   },
   apr: {
     bgClass: "bg-gradient-to-b from-[#BDE7FF] to-[#ADF2D3]",
@@ -56,6 +60,12 @@ export const ModuleBox = ({
 export const MiperIcon = ({ box, iconSize }: ModuleIconProps) => (
   <ModuleBox bg={BASE_MODULES.miper.bgClass} box={box}>
     {BASE_MODULES.miper.renderIcon(iconSize)}
+  </ModuleBox>
+);
+
+export const PlanificacionIcon = ({ box, iconSize }: ModuleIconProps) => (
+  <ModuleBox bg={BASE_MODULES.planificacion.bgClass} box={box}>
+    {BASE_MODULES.planificacion.renderIcon(iconSize)}
   </ModuleBox>
 );
 

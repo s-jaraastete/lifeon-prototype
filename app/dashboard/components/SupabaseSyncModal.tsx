@@ -55,10 +55,10 @@ export default function SupabaseSyncModal({ isOpen, onClose }: SupabaseSyncModal
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 font-[family-name:var(--font-poppins)]">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden relative flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-in fade-in duration-150 font-[family-name:var(--font-poppins)]">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-lg border border-gray-100 overflow-hidden relative flex flex-col">
         {/* Cabecera */}
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
+        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-white">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shadow-2xs border border-teal-100">
               <LuDatabase className="w-5 h-5" />
@@ -101,7 +101,7 @@ export default function SupabaseSyncModal({ isOpen, onClose }: SupabaseSyncModal
                 </span>
               ) : status?.connected ? (
                 <span className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full font-bold text-[11px] border border-emerald-200">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   Conectado {status.latencyMs ? `(${status.latencyMs} ms)` : ""}
                 </span>
               ) : (

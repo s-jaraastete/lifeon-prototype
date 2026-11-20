@@ -61,10 +61,10 @@ export default function DocAuditModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-lg border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden">
         {/* Cabecera del Modal */}
-        <div className="p-5 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50/80 via-white to-teal-50/30 flex items-start justify-between gap-4">
+        <div className="p-5 sm:p-6 border-b border-gray-100 bg-white flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
               <LuClipboardCheck className="w-6 h-6" />
@@ -108,7 +108,7 @@ export default function DocAuditModal({
                 <span>Conformidad del Documento:</span>
                 <span
                   className={clsx(
-                    "text-xs font-extrabold px-2 py-0.5 rounded-md",
+                    "text-xs font-bold px-2 py-0.5 rounded-md",
                     doc.auditScore >= 90
                       ? "bg-emerald-100 text-emerald-800"
                       : doc.auditScore >= 70
@@ -257,7 +257,7 @@ export default function DocAuditModal({
                           </span>
                           <span
                             className={clsx(
-                              "text-[10px] font-extrabold px-2 py-0.5 rounded-md",
+                              "text-[10px] font-bold px-2 py-0.5 rounded-md",
                               pt.criticality === "Crítico" && "bg-red-50 text-red-700 border border-red-200",
                               pt.criticality === "Mayor" && "bg-amber-50 text-amber-700 border border-amber-200",
                               pt.criticality === "Menor" && "bg-blue-50 text-blue-700 border border-blue-200"

@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import clsx from "clsx";
 import {
   LuAtom,
-  LuSparkles,
   LuSend,
   LuRefreshCw,
 } from "react-icons/lu";
@@ -72,13 +71,13 @@ export default function AprVirtualView() {
     <div className="flex flex-col h-[calc(100vh-130px)] gap-3 animate-in fade-in duration-300">
       <div className="bg-white rounded-2xl p-4 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 text-white flex items-center justify-center shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-xs">
             <LuAtom className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base sm:text-lg font-bold text-gray-900">APR Virtual IA</h2>
-              <span className="bg-[#DBEAFE] text-[#155DFC] text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-blue-100 text-blue-600 text-[10px] font-medium px-2 py-0.5 rounded-full">
                 LifeOn AI
               </span>
             </div>
@@ -100,7 +99,7 @@ export default function AprVirtualView() {
 
       <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-shrink-0">
         <span className="text-[11px] font-semibold text-gray-400 flex items-center gap-1 flex-shrink-0 pl-1">
-          <LuSparkles className="w-3.5 h-3.5 text-teal-600" /> Sugerencias:
+          <LuAtom className="w-3.5 h-3.5 text-teal-600" /> Sugerencias:
         </span>
         {PREBUILT_PROMPTS.map((p) => (
           <button
@@ -133,8 +132,8 @@ export default function AprVirtualView() {
               className={clsx(
                 "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-bold text-xs shadow-2xs mt-1",
                 msg.role === "user"
-                  ? "bg-purple-600"
-                  : "bg-gradient-to-tr from-teal-600 to-emerald-500"
+                  ? "bg-lavender-600"
+                  : "bg-teal-700"
               )}
             >
               {msg.role === "user" ? firstName.charAt(0) : <LuAtom className="w-4 h-4" />}
