@@ -56,7 +56,7 @@ const ACCOUNTS = [
   { email: "alex.ordenes@safetyclub.cl", legacyId: "user_alex", memberId: "mem_user_alex", orgId: "org_alex", name: "Alex Ordenes" },
   { email: "carlos.subiabre@safetyclub.cl", legacyId: "user_carlos", memberId: "mem_user_carlos", orgId: "org_carlos", name: "Carlos Subiabre" },
   { email: "pablo.yanez1@safetyclub.cl", legacyId: "user_pablo", memberId: "mem_user_pablo", orgId: "org_pablo", name: "Pablo Yañez" },
-  { email: "william.baron@axacolpatria.co", legacyId: "user_william", memberId: "mem_user_william", orgId: "org_axa", name: "Willian Barón Santoyo" },
+  { email: "william.baron@axacolpatria.co", legacyId: "user_william", memberId: "mem_user_william", orgId: "org_axa", name: "William Barón Santoyo" },
 ];
 
 async function getPgClient() {

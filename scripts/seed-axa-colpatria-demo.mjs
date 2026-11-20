@@ -21,7 +21,7 @@ const ADMIN = {
   password: "will00",
   userId: "user_william",
   memberId: "mem_user_william",
-  firstName: "Willian",
+  firstName: "William",
   lastName: "Barón Santoyo",
 };
 
@@ -203,7 +203,7 @@ const preventive = [
   activity("10", "Aplicación de batería de riesgo psicosocial", "Gestión de Riesgos", "2026-06-01", "2026-10-31", "Anual", "Atrasada", 40, "Laura Martínez", "pos_axa_coord_sst", "Gestión Humana y SST"),
   activity("11", "Programa de pausas activas y conservación de la voz", "Capacitación y Difusión", "2026-02-02", "2026-12-18", "Mensual", "En curso", 80, "Carlos Gómez", "pos_axa_lider_cc", "Atención al Cliente"),
   activity("12", "Evaluaciones médicas ocupacionales periódicas", "Inspecciones y Verificaciones", "2026-07-01", "2026-12-20", "Anual", "En curso", 45, "Laura Martínez", "pos_axa_coord_sst", "Gestión Humana y SST"),
-  activity("13", "Rendición de cuentas y revisión por la dirección del SG-SST", "Gestión de Riesgos", "2026-12-01", "2026-12-22", "Anual", "Pendiente", 0, "Willian Barón", null, "Gestión Humana y SST"),
+  activity("13", "Rendición de cuentas y revisión por la dirección del SG-SST", "Gestión de Riesgos", "2026-12-01", "2026-12-22", "Anual", "Pendiente", 0, "William Barón", null, "Gestión Humana y SST"),
 ];
 
 const docs = [

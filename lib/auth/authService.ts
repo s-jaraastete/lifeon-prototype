@@ -111,7 +111,7 @@ export const TEST_ACCOUNTS_CONFIG: Record<string, TestAccountConfig> = {
   },
   "william.baron@axacolpatria.co": {
     id: "user_william",
-    name: "Willian Barón Santoyo",
+    name: "William Barón Santoyo",
     email: "william.baron@axacolpatria.co",
     orgId: "org_axa",
     orgName: "AXA COLPATRIA",
