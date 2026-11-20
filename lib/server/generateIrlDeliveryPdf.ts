@@ -1409,13 +1409,13 @@ class IrlPdfWriter {
 
 async function loadFonts(pdf: PDFDocument): Promise<Fonts> {
   pdf.registerFontkit(fontkit);
-  const fontDir = path.join(process.cwd(), "node_modules/@fontsource/noto-sans/files");
+  const fontDir = path.join(process.cwd(), "lib/server/fonts");
   const regularPath = path.join(fontDir, "noto-sans-latin-400-normal.woff");
   const boldPath = path.join(fontDir, "noto-sans-latin-700-normal.woff");
 
   if (!fs.existsSync(regularPath) || !fs.existsSync(boldPath)) {
     throw new Error(
-      "Fuentes Noto Sans no encontradas. Ejecuta npm install en la raíz del proyecto."
+      "Fuentes Noto Sans no encontradas en lib/server/fonts."
     );
   }
 

@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Las rutas de PDF leen las fuentes con fs en tiempo de ejecución: hay que empaquetarlas en la función.
+  outputFileTracingIncludes: {
+    "/api/artp-versions/[versionId]/pdf": ["./lib/server/fonts/*.woff"],
+    "/api/document-deliveries/[id]/pdf": ["./lib/server/fonts/*.woff"],
+    "/api/document-deliveries/irl-pdf-preview": ["./lib/server/fonts/*.woff"],
+  },
   env: {
     backendHost:
       process.env.NODE_ENV === "production"
