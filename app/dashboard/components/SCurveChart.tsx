@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { SCurveBuildResult } from "@/lib/preventive/sCurve";
+import ChartTooltip from "./ChartTooltip";
 
 type SCurveChartProps = {
   result: SCurveBuildResult;
@@ -47,8 +48,19 @@ export default function SCurveChart({ result, title, emptyMessage }: SCurveChart
             <XAxis dataKey="label" tick={{ fontSize: 10 }} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} unit="%" />
             <Tooltip
-              formatter={(value) => [value == null ? "—" : `${value}%`, ""]}
-              labelFormatter={(label) => `Periodo: ${label}`}
+              cursor={{ stroke: "#d4d4d4", strokeDasharray: "3 3" }}
+              content={({ active, payload, label }) =>
+                active && payload?.length ? (
+                  <ChartTooltip
+                    title={`Periodo ${label}`}
+                    rows={payload.map((p) => ({
+                      label: String(p.name),
+                      value: p.value == null ? "—" : `${p.value}%`,
+                      color: p.color,
+                    }))}
+                  />
+                ) : null
+              }
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Line
