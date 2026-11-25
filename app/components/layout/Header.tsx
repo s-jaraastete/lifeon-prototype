@@ -48,7 +48,8 @@ const Header = () => {
       process.env.NEXT_PUBLIC_AUTH_MODULE_FRONTEND ??
       "http://localhost:3002";
 
-    const loginUrl = new URL("/login", authFrontendUrl);
+    // Concatenate: new URL("/login", base) would drop a path prefix such as /auth.
+    const loginUrl = new URL(`${authFrontendUrl}/login`);
 
     loginUrl.searchParams.set(
       "callbackUrl",
