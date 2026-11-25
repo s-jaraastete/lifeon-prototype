@@ -41,6 +41,12 @@ const TestingUserLogin = async () => {
         <p>Nombre: {session.user.name}</p>
         <p>Correo: {session.user.email}</p>
       </div>
+
+      <div className="mt-6">
+        <a href="http://localhost:3003" className="text-primary border px-2 py-2 rounded-md hover:bg-gray-200 transition-all duration-300">
+          Documentación técnica
+        </a>
+      </div>
     </div>
   );
 };
