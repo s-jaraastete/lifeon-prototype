@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 // import ShoppingCart from "../shopping/ShoppingCart";
@@ -24,6 +24,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { status } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const isHome = pathname === "/";
 
   type NavLink = {
@@ -44,23 +45,7 @@ const Header = () => {
   };
 
   const handleLogin = () => {
-    const authFrontendUrl =
-      process.env.NEXT_PUBLIC_AUTH_MODULE_FRONTEND ??
-      "http://localhost:3002";
-
-    const miperFrontendUrl =
-      process.env.NEXT_PUBLIC_MIPER_MODULE_FRONTEND ??
-      "http://localhost:3001";
-
-    // Concatenate: new URL("/login", base) would drop a path prefix such as /auth.
-    const loginUrl = new URL(`${authFrontendUrl}/login`);
-
-    loginUrl.searchParams.set(
-      "callbackUrl",
-      `${miperFrontendUrl}/miper`
-    );
-
-    window.location.assign(loginUrl.toString());
+    router.push("/login");
   };
 
   const renderAuthControls = () => {
