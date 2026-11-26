@@ -48,12 +48,16 @@ const Header = () => {
       process.env.NEXT_PUBLIC_AUTH_MODULE_FRONTEND ??
       "http://localhost:3002";
 
+    const miperFrontendUrl =
+      process.env.NEXT_PUBLIC_MIPER_MODULE_FRONTEND ??
+      "http://localhost:3001";
+
     // Concatenate: new URL("/login", base) would drop a path prefix such as /auth.
     const loginUrl = new URL(`${authFrontendUrl}/login`);
 
     loginUrl.searchParams.set(
       "callbackUrl",
-      `${window.location.origin}/post-login`
+      `${miperFrontendUrl}/miper`
     );
 
     window.location.assign(loginUrl.toString());
