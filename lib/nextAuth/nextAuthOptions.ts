@@ -13,14 +13,6 @@ const cookieOptions = {
   httpOnly: true,
 }
 
-const nextAuthSecret =
-  process.env.NEXTAUTH_SECRET ??
-  (process.env.NODE_ENV === "production" ? undefined : "lifeon-local-nextauth-dev-only");
-
-if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
-  console.error("[NextAuth] NEXTAUTH_SECRET is required in production");
-}
-
 const refreshAccessToken = async (refreshToken: string) => {
   const host = process.env.NEXT_PUBLIC_ADMIN_MODULE_API;
   const payload = {
@@ -78,7 +70,7 @@ const nextAuthOptions: NextAuthOptions = {
       },
     }),
   ],
-  secret: nextAuthSecret ?? "lifeon-local-nextauth-dev-only",
+  secret: 'f3y=txg=k9_!vb=6duyv^02jlryh%m9q*%bzas$tsjj^l=-467',
   callbacks: {
     async session({session, token}) {
       session.accessToken = token.accessToken

@@ -8,7 +8,7 @@ const PostLoginPage = async () => {
 
   if (!session) {
     const authFrontendUrl =
-      process.env.NEXT_PUBLIC_AUTH_FRONTEND_URL ??
+      process.env.NEXT_PUBLIC_AUTH_MODULE_FRONTEND ??
       "http://localhost:3002";
 
     const purchaseFrontendUrl =
